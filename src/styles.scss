@@ -1,0 +1,5 @@
+// Global entry. Loaded once by the build (see angular.json -> styles).
+// Adds the :root token surface and the body reset.
+
+@use 'styles/theme';
+@use 'styles/base';

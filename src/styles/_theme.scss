@@ -1,0 +1,94 @@
+// Exposes SCSS tokens as CSS custom properties on :root.
+// Components consume `var(--token)` — never the SCSS variable directly —
+// so theming (light mode, custom palettes) becomes a one-file swap.
+
+@use 'tokens' as *;
+
+:root {
+  color-scheme: dark;
+
+  // Canvas
+  --canvas-default: #{$canvas-default};
+  --canvas-subtle:  #{$canvas-subtle};
+  --canvas-overlay: #{$canvas-overlay};
+  --canvas-inset:   #{$canvas-inset};
+
+  // Borders
+  --border-muted:   #{$border-muted};
+  --border-default: #{$border-default};
+  --border-strong:  #{$border-strong};
+
+  // Foreground
+  --fg-default:     #{$fg-default};
+  --fg-muted:       #{$fg-muted};
+  --fg-subtle:      #{$fg-subtle};
+  --fg-on-emphasis: #{$fg-on-emphasis};
+
+  // Accent
+  --accent-fg:       #{$accent-fg};
+  --accent-emphasis: #{$accent-emphasis};
+  --accent-subtle:   #{$accent-subtle};
+  --accent-muted:    #{$accent-muted};
+
+  // Semantic
+  --success-fg:     #{$success-fg};
+  --success-subtle: #{$success-subtle};
+  --success-muted:  #{$success-muted};
+
+  --danger-fg:      #{$danger-fg};
+  --danger-subtle:  #{$danger-subtle};
+  --danger-muted:   #{$danger-muted};
+
+  --attention-fg:     #{$attention-fg};
+  --attention-subtle: #{$attention-subtle};
+  --attention-muted:  #{$attention-muted};
+
+  --done-fg:     #{$done-fg};
+  --done-subtle: #{$done-subtle};
+
+  // Typography
+  --font-sans: #{$font-sans};
+  --font-mono: #{$font-mono};
+
+  --text-xs:  #{$text-xs};
+  --text-sm:  #{$text-sm};
+  --text-md:  #{$text-md};
+  --text-lg:  #{$text-lg};
+  --text-xl:  #{$text-xl};
+  --text-2xl: #{$text-2xl};
+  --text-3xl: #{$text-3xl};
+
+  // Spacing
+  --space-1:  #{$space-1};
+  --space-2:  #{$space-2};
+  --space-3:  #{$space-3};
+  --space-4:  #{$space-4};
+  --space-5:  #{$space-5};
+  --space-6:  #{$space-6};
+  --space-8:  #{$space-8};
+  --space-10: #{$space-10};
+  --space-12: #{$space-12};
+
+  // Radius
+  --radius-sm:   #{$radius-sm};
+  --radius-md:   #{$radius-md};
+  --radius-lg:   #{$radius-lg};
+  --radius-xl:   #{$radius-xl};
+  --radius-full: #{$radius-full};
+
+  // Elevation
+  --shadow-sm:       #{$shadow-sm};
+  --shadow-md:       #{$shadow-md};
+  --shadow-lg:       #{$shadow-lg};
+  --shadow-popover:  #{$shadow-popover};
+  --inner-highlight: #{$inner-highlight};
+
+  // Motion
+  --ease-out:        #{$ease-out};
+  --ease-in-out:     #{$ease-in-out};
+  --ease-apple:      #{$ease-apple};
+  --duration-instant: #{$duration-instant};
+  --duration-fast:    #{$duration-fast};
+  --duration-base:    #{$duration-base};
+  --duration-slow:    #{$duration-slow};
+}

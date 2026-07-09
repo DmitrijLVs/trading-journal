@@ -1,0 +1,10 @@
+// Public barrel for component SCSS files.
+// Components: `@use 'styles/index' as *;` → gives tokens ($space-2, etc.)
+// and mixins (@include focus-ring, etc.) without namespacing.
+//
+// For colors and other runtime-themable values, components should prefer
+// the CSS custom properties (`var(--canvas-subtle)`) exposed via `_theme.scss`
+// so a future light theme can swap them at runtime.
+
+@forward 'tokens';
+@forward 'mixins';

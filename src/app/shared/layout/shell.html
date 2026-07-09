@@ -1,0 +1,42 @@
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">ДТ</span>
+      <span class="brand-name">Дневник трейдера</span>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-section">
+        <a class="nav-item" routerLink="/dashboard" routerLinkActive="is-active">
+          <app-svg-icon name="dashboard" />
+          <span>Главная</span>
+        </a>
+        <a class="nav-item" routerLink="/trades" routerLinkActive="is-active">
+          <app-svg-icon name="trades" />
+          <span>Сделки</span>
+        </a>
+        <a class="nav-item" routerLink="/journal" routerLinkActive="is-active">
+          <app-svg-icon name="journal" />
+          <span>Дневник сделок</span>
+        </a>
+      </div>
+
+      <div class="nav-divider"></div>
+
+      <div class="nav-section">
+        <a class="nav-item" routerLink="/account" routerLinkActive="is-active">
+          <app-svg-icon name="account" />
+          <span>Аккаунт</span>
+        </a>
+        <a class="nav-item" routerLink="/settings" routerLinkActive="is-active">
+          <app-svg-icon name="settings" />
+          <span>Настройки</span>
+        </a>
+      </div>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <router-outlet />
+  </main>
+</div>

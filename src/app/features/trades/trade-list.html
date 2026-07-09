@@ -1,0 +1,107 @@
+<section class="page">
+  <header class="page-header">
+    <div class="title-block">
+      <h1>Мои сделки</h1>
+      <span class="count-badge">{{ store.trades().length }}</span>
+    </div>
+
+    <dl class="stats">
+      <div class="stat">
+        <dt>Открытые</dt>
+        <dd>{{ store.stats().openCount }}</dd>
+      </div>
+      <div class="stat">
+        <dt>Закрытые</dt>
+        <dd>{{ store.stats().closedCount }}</dd>
+      </div>
+      <div class="stat">
+        <dt>Винрейт</dt>
+        <dd>{{ (store.stats().winRate * 100).toFixed(1) }}%</dd>
+      </div>
+      <div class="stat">
+        <dt>Чистый P&amp;L</dt>
+        <dd
+          [class.win]="store.stats().totalPnl > 0"
+          [class.loss]="store.stats().totalPnl < 0"
+        >
+          {{ store.stats().totalPnl >= 0 ? '+' : '−' }}${{ Math.abs(store.stats().totalPnl).toFixed(2) }}
+        </dd>
+      </div>
+    </dl>
+  </header>
+
+  <div class="card">
+    @if (store.isLoading()) {
+      <div class="state">
+        <span class="spinner" aria-hidden="true"></span>
+        <span>Загрузка сделок…</span>
+      </div>
+    } @else if (store.error()) {
+      <div class="state state-error">Не удалось загрузить сделки.</div>
+    } @else if (store.trades().length === 0) {
+      <div class="state state-empty">Сделок пока нет.</div>
+    } @else {
+      <table>
+        <thead>
+          <tr>
+            <th class="col-type">Тип</th>
+            <th>Пара</th>
+            <th>Дата выхода</th>
+            <th>Длительность</th>
+            <th class="num">Чистый P&amp;L</th>
+            <th class="num">Доходность %</th>
+            <th class="num">Ср. вход</th>
+            <th class="num">Ср. выход</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (trade of store.trades(); track trade.id) {
+            <tr [class.row-win]="trade.status === 'closed' && pnl(trade) > 0">
+              <td class="col-type">
+                <span
+                  class="type-badge"
+                  [class.type-long]="trade.side === 'long'"
+                  [class.type-short]="trade.side === 'short'"
+                  [attr.title]="trade.side"
+                >
+                  {{ trade.side === 'long' ? 'B' : 'S' }}
+                </span>
+              </td>
+              <td class="pair">{{ trade.symbol }}</td>
+              <td class="datetime">
+                @if (trade.status === 'closed') {
+                  {{ formatDateTime(trade.closedAt) }}
+                } @else {
+                  <span class="open-tag">Открыта</span>
+                }
+              </td>
+              <td class="dim">{{ formatDuration(trade.openedAt, trade.closedAt) }}</td>
+              <td class="num" [class.win]="pnl(trade) > 0" [class.loss]="pnl(trade) < 0">
+                @if (trade.status === 'closed') {
+                  {{ pnl(trade) >= 0 ? '+' : '−' }}${{ Math.abs(pnl(trade)).toFixed(2) }}
+                } @else {
+                  <span class="dim">—</span>
+                }
+              </td>
+              <td
+                class="num"
+                [class.win]="pnlPercent(trade) > 0"
+                [class.loss]="pnlPercent(trade) < 0"
+              >
+                @if (trade.status === 'closed') {
+                  {{ pnlPercent(trade) >= 0 ? '+' : '' }}{{ pnlPercent(trade).toFixed(2) }}%
+                } @else {
+                  <span class="dim">—</span>
+                }
+              </td>
+              <td class="num mono">{{ trade.entryPrice }}</td>
+              <td class="num mono">
+                {{ trade.status === 'closed' ? trade.exitPrice : '—' }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+</section>

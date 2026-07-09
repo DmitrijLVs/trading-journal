@@ -1,0 +1,48 @@
+// Reusable patterns. Import via `@use 'styles/index' as *;` in components.
+
+@use 'tokens' as *;
+
+// Apple-style keyboard focus ring.
+@mixin focus-ring($color: $accent-fg, $offset: 2px) {
+  &:focus-visible {
+    outline: 2px solid $color;
+    outline-offset: $offset;
+  }
+}
+
+// macOS/iOS vibrancy — frosted-glass surface.
+// Pass a tint to keep the layer readable over varied backdrops.
+@mixin frosted($tint: rgba(22, 27, 34, 0.72)) {
+  background: $tint;
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+}
+
+// Raised surface with a subtle inner highlight (Apple card feel).
+@mixin elevated($bg: $canvas-subtle) {
+  background: $bg;
+  border: 1px solid $border-muted;
+  box-shadow: $inner-highlight, $shadow-sm;
+}
+
+// Thin, themed scrollbar (WebKit only — Firefox uses scrollbar-color).
+@mixin styled-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #{$border-default} transparent;
+
+  &::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: $border-default;
+    border-radius: $radius-full;
+    border: 2px solid $canvas-default;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: $border-strong;
+  }
+}
