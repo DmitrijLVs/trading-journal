@@ -1,0 +1,191 @@
+<div class="dash" tabindex="-1" (keydown)="onKeydown($event)">
+  <!-- ── Панель пространств ─────────────────────────────────────────── -->
+  <div class="bar">
+    <div class="tabs" role="tablist">
+      @for (ws of store.workspaces(); track ws.id) {
+        <div
+          class="tab"
+          role="tab"
+          [class.active]="ws.id === store.activeWorkspaceId()"
+          [attr.aria-selected]="ws.id === store.activeWorkspaceId()"
+          (click)="selectWorkspace(ws.id)"
+          (dblclick)="startRename(ws.id)"
+        >
+          @if (editingWorkspaceId() === ws.id) {
+            <input
+              #renameInput
+              class="rename"
+              type="text"
+              [value]="ws.name"
+              (keydown.enter)="commitRename(ws.id, $any($event.target).value)"
+              (keydown.escape)="editingWorkspaceId.set(null)"
+              (blur)="commitRename(ws.id, $any($event.target).value)"
+              (click)="$event.stopPropagation()"
+            />
+          } @else {
+            <span class="tab-name">{{ ws.name }}</span>
+            <span class="tab-count">{{ ws.widgets.length }}</span>
+            @if (store.workspaces().length > 1) {
+              <button
+                type="button"
+                class="tab-close"
+                aria-label="Закрыть пространство"
+                (click)="removeWorkspace(ws.id, $event)"
+              >
+                <app-icon name="x" style="--icon-size: 11px" />
+              </button>
+            }
+          }
+        </div>
+      }
+
+      <button
+        type="button"
+        class="tab-add"
+        appTooltip="Новое пространство"
+        [cdkMenuTriggerFor]="newWorkspaceMenu"
+      >
+        <app-icon name="plus" style="--icon-size: 14px" />
+      </button>
+    </div>
+
+    <div class="bar-actions">
+      <button
+        app-button
+        variant="ghost"
+        size="sm"
+        [iconOnly]="true"
+        [appTooltip]="store.layoutLocked() ? 'Раскладка заблокирована' : 'Заблокировать раскладку'"
+        (click)="toggleLock()"
+      >
+        <app-icon [name]="store.layoutLocked() ? 'lock' : 'unlock'" style="--icon-size: 15px" />
+      </button>
+
+      <button
+        app-button
+        variant="ghost"
+        size="sm"
+        [iconOnly]="true"
+        appTooltip="Действия с пространством"
+        [cdkMenuTriggerFor]="workspaceMenu"
+      >
+        <app-icon name="more-h" style="--icon-size: 15px" />
+      </button>
+
+      <button app-button variant="subtle" size="sm" (click)="openGallery()">
+        <app-icon name="plus" style="--icon-size: 13px" />
+        Виджет
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Сетка ──────────────────────────────────────────────────────── -->
+  <div class="grid-area">
+    @if (items().length > 0) {
+      <gridster [options]="gridsterOptions()" class="grid">
+        @for (item of items(); track item.widget.instanceId) {
+          <gridster-item [item]="item" class="cell">
+            <app-widget-shell
+              [widget]="item.widget"
+              [locked]="store.layoutLocked()"
+              (configure)="configureWidget(item.widget)"
+              (duplicate)="duplicateWidget(item.widget.instanceId)"
+              (toggleMaximize)="toggleMaximize(item.widget.instanceId)"
+              (remove)="removeWidget(item.widget.instanceId)"
+            >
+              <app-widget-host [widget]="item.widget" />
+            </app-widget-shell>
+          </gridster-item>
+        }
+      </gridster>
+    } @else {
+      <div class="blank">
+        <div class="blank-inner">
+          <h2>Пустое пространство</h2>
+          <p>Соберите свой дашборд из виджетов или начните с готового шаблона.</p>
+          <div class="blank-actions">
+            <button app-button variant="primary" (click)="openGallery()">
+              <app-icon name="plus" style="--icon-size: 14px" />
+              Добавить виджет
+            </button>
+            <button app-button variant="outline" [cdkMenuTriggerFor]="templatesMenu">
+              <app-icon name="template" style="--icon-size: 14px" />
+              Шаблоны
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Развёрнутый виджет поверх сетки -->
+    @if (maximizedWidget(); as widget) {
+      <div class="maximized">
+        <app-widget-shell
+          [widget]="widget"
+          [maximized]="true"
+          (configure)="configureWidget(widget)"
+          (duplicate)="duplicateWidget(widget.instanceId)"
+          (toggleMaximize)="toggleMaximize(widget.instanceId)"
+          (remove)="removeWidget(widget.instanceId)"
+        >
+          <app-widget-host [widget]="widget" />
+        </app-widget-shell>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- ── Меню ───────────────────────────────────────────────────────────── -->
+<ng-template #newWorkspaceMenu>
+  <div class="tj-menu" cdkMenu>
+    <button class="tj-menu-item" cdkMenuItem (click)="store.addWorkspace()">
+      <app-icon name="plus" style="--icon-size: 14px" />
+      Пустое пространство
+    </button>
+    <div class="tj-menu-separator"></div>
+    <div class="tj-menu-label">Из шаблона</div>
+    @for (template of templates; track template.id) {
+      <button class="tj-menu-item" cdkMenuItem (click)="applyTemplate(template)">
+        <app-icon name="template" style="--icon-size: 14px" />
+        {{ template.name }}
+      </button>
+    }
+  </div>
+</ng-template>
+
+<ng-template #templatesMenu>
+  <div class="tj-menu" cdkMenu>
+    @for (template of templates; track template.id) {
+      <button class="tj-menu-item" cdkMenuItem (click)="store.applyTemplate(template)">
+        <app-icon name="template" style="--icon-size: 14px" />
+        {{ template.name }}
+      </button>
+    }
+  </div>
+</ng-template>
+
+<ng-template #workspaceMenu>
+  <div class="tj-menu" cdkMenu>
+    <button class="tj-menu-item" cdkMenuItem (click)="startRename(store.activeWorkspaceId())">
+      <app-icon name="edit" style="--icon-size: 14px" />
+      Переименовать
+    </button>
+    <button class="tj-menu-item" cdkMenuItem (click)="store.duplicate(store.activeWorkspaceId())">
+      <app-icon name="duplicate" style="--icon-size: 14px" />
+      Дублировать
+    </button>
+    <div class="tj-menu-separator"></div>
+    <div class="tj-menu-label">Заменить шаблоном</div>
+    @for (template of templates; track template.id) {
+      <button class="tj-menu-item" cdkMenuItem (click)="store.applyTemplate(template)">
+        <app-icon name="template" style="--icon-size: 14px" />
+        {{ template.name }}
+      </button>
+    }
+    <div class="tj-menu-separator"></div>
+    <button class="tj-menu-item danger" cdkMenuItem (click)="clearActive()">
+      <app-icon name="trash" style="--icon-size: 14px" />
+      Очистить пространство
+    </button>
+  </div>
+</ng-template>

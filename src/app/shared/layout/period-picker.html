@@ -1,0 +1,62 @@
+<button
+  type="button"
+  class="trigger"
+  cdkOverlayOrigin
+  #origin="cdkOverlayOrigin"
+  [class.open]="open()"
+  (click)="toggle()"
+>
+  <app-icon name="calendar" style="--icon-size: 14px" />
+  <span>{{ store.label() }}</span>
+  <app-icon class="caret" name="chevron-down" style="--icon-size: 12px" />
+</button>
+
+<ng-template
+  cdkConnectedOverlay
+  [cdkConnectedOverlayOrigin]="origin"
+  [cdkConnectedOverlayOpen]="open()"
+  [cdkConnectedOverlayHasBackdrop]="true"
+  cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
+  [cdkConnectedOverlayOffsetY]="6"
+  (backdropClick)="open.set(false)"
+>
+  <div class="panel tj-pop-in">
+    <div class="presets">
+      @for (preset of presets; track preset) {
+        <button
+          type="button"
+          class="preset"
+          [class.active]="store.preset() === preset"
+          (click)="pick(preset)"
+        >
+          <span>{{ labels[preset] }}</span>
+          @if (store.preset() === preset) {
+            <app-icon name="check" style="--icon-size: 13px" />
+          }
+        </button>
+      }
+    </div>
+
+    <div class="custom">
+      <div class="custom-title">Свой диапазон</div>
+      <div class="range">
+        <input
+          class="tj-input"
+          type="date"
+          [value]="draftFrom()"
+          (change)="draftFrom.set($any($event.target).value)"
+        />
+        <span class="dash">—</span>
+        <input
+          class="tj-input"
+          type="date"
+          [value]="draftTo()"
+          (change)="draftTo.set($any($event.target).value)"
+        />
+      </div>
+      <button app-button variant="primary" size="sm" class="apply" (click)="applyCustom()">
+        Применить
+      </button>
+    </div>
+  </div>
+</ng-template>

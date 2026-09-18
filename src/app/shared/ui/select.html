@@ -1,0 +1,70 @@
+<button
+  type="button"
+  class="trigger"
+  [class.sm]="size() === 'sm'"
+  [class.open]="open()"
+  [class.placeholder]="!hasSelection()"
+  cdkOverlayOrigin
+  #origin="cdkOverlayOrigin"
+  (click)="toggle()"
+>
+  <span class="label">{{ triggerLabel() }}</span>
+  @if (clearable() && hasSelection()) {
+    <span class="clear" role="button" aria-label="Сбросить" (click)="clear($event)">
+      <app-icon name="x" style="--icon-size: 12px" />
+    </span>
+  }
+  <app-icon class="caret" name="chevron-down" style="--icon-size: 13px" />
+</button>
+
+<ng-template
+  cdkConnectedOverlay
+  [cdkConnectedOverlayOrigin]="origin"
+  [cdkConnectedOverlayOpen]="open()"
+  [cdkConnectedOverlayHasBackdrop]="true"
+  cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
+  [cdkConnectedOverlayOffsetY]="4"
+  (backdropClick)="close()"
+  (detach)="close()"
+>
+  <div class="panel tj-pop-in" role="listbox" [attr.aria-multiselectable]="multi()">
+    @if (showSearch()) {
+      <div class="search">
+        <app-icon name="search" style="--icon-size: 13px" />
+        <input
+          type="text"
+          placeholder="Найти…"
+          [value]="query()"
+          (input)="query.set($any($event.target).value)"
+        />
+      </div>
+    }
+    <div class="list">
+      @for (opt of filtered(); track opt.value) {
+        <button
+          type="button"
+          class="option"
+          role="option"
+          [class.selected]="isSelected(opt)"
+          [attr.aria-selected]="isSelected(opt)"
+          (click)="pick(opt)"
+        >
+          @if (multi()) {
+            <span class="checkbox" [class.on]="isSelected(opt)">
+              <app-icon name="check" style="--icon-size: 11px" />
+            </span>
+          }
+          <span class="option-label">{{ opt.label }}</span>
+          @if (opt.hint) {
+            <span class="hint">{{ opt.hint }}</span>
+          }
+          @if (!multi() && isSelected(opt)) {
+            <app-icon class="tick" name="check" style="--icon-size: 13px" />
+          }
+        </button>
+      } @empty {
+        <div class="empty">Ничего не найдено</div>
+      }
+    </div>
+  </div>
+</ng-template>

@@ -1,107 +1,234 @@
-<section class="page">
-  <header class="page-header">
-    <div class="title-block">
-      <h1>Мои сделки</h1>
-      <span class="count-badge">{{ store.trades().length }}</span>
+<section class="tj-page">
+  <header class="tj-page-head">
+    <div>
+      <h1>Сделки</h1>
+      <p class="tj-page-sub">
+        {{ summary().tradeCount }} закрытых · {{ summary().openCount }} открытых ·
+        винрейт {{ (summary().winRate * 100).toFixed(1) }}%
+      </p>
     </div>
-
-    <dl class="stats">
-      <div class="stat">
-        <dt>Открытые</dt>
-        <dd>{{ store.stats().openCount }}</dd>
-      </div>
-      <div class="stat">
-        <dt>Закрытые</dt>
-        <dd>{{ store.stats().closedCount }}</dd>
-      </div>
-      <div class="stat">
-        <dt>Винрейт</dt>
-        <dd>{{ (store.stats().winRate * 100).toFixed(1) }}%</dd>
-      </div>
-      <div class="stat">
-        <dt>Чистый P&amp;L</dt>
-        <dd
-          [class.win]="store.stats().totalPnl > 0"
-          [class.loss]="store.stats().totalPnl < 0"
-        >
-          {{ store.stats().totalPnl >= 0 ? '+' : '−' }}${{ Math.abs(store.stats().totalPnl).toFixed(2) }}
-        </dd>
-      </div>
-    </dl>
   </header>
 
-  <div class="card">
-    @if (store.isLoading()) {
-      <div class="state">
-        <span class="spinner" aria-hidden="true"></span>
-        <span>Загрузка сделок…</span>
+  <!-- ── Фильтры ─────────────────────────────────────────────────────── -->
+  <div class="filters">
+    <div class="search">
+      <app-icon name="search" style="--icon-size: 14px" />
+      <input
+        type="text"
+        placeholder="Тикер, стратегия, тег, заметка…"
+        [value]="store.tableFilters().search ?? ''"
+        (input)="setSearch($any($event.target).value)"
+      />
+    </div>
+
+    <app-select
+      [options]="symbolOptions()"
+      placeholder="Инструмент"
+      [multi]="true"
+      [clearable]="true"
+      size="sm"
+      [values]="store.tableFilters().symbols ?? []"
+      (valuesChange)="setSymbols($event)"
+    />
+    <app-select
+      [options]="sideOptions"
+      placeholder="Направление"
+      [clearable]="true"
+      size="sm"
+      [value]="store.tableFilters().side ?? null"
+      (valueChange)="setSide($event)"
+    />
+    <app-select
+      [options]="statusOptions"
+      placeholder="Статус"
+      [clearable]="true"
+      size="sm"
+      [value]="store.tableFilters().status ?? null"
+      (valueChange)="setStatus($event)"
+    />
+    <app-select
+      [options]="strategyOptions()"
+      placeholder="Стратегия"
+      [multi]="true"
+      [clearable]="true"
+      size="sm"
+      [values]="store.tableFilters().strategies ?? []"
+      (valuesChange)="setStrategies($event)"
+    />
+    <app-select
+      [options]="tagOptions()"
+      placeholder="Теги"
+      [multi]="true"
+      [clearable]="true"
+      size="sm"
+      [values]="store.tableFilters().tags ?? []"
+      (valuesChange)="setTags($event)"
+    />
+    <app-select
+      [options]="gradeOptions"
+      placeholder="Сетап"
+      [multi]="true"
+      [clearable]="true"
+      size="sm"
+      [values]="store.tableFilters().setupGrades ?? []"
+      (valuesChange)="setGrades($event)"
+    />
+
+    @if (store.hasActiveTableFilters()) {
+      <button app-button variant="ghost" size="sm" (click)="reset()">
+        <app-icon name="x" style="--icon-size: 12px" />
+        Сбросить
+      </button>
+    }
+  </div>
+
+  <!-- ── Таблица ─────────────────────────────────────────────────────── -->
+  <div class="table-card tj-card">
+    @if (store.isLoading() && !store.hasLoaded()) {
+      <div class="loading">
+        @for (i of [1, 2, 3, 4, 5, 6, 7, 8]; track i) {
+          <app-skeleton height="36px" />
+        }
       </div>
-    } @else if (store.error()) {
-      <div class="state state-error">Не удалось загрузить сделки.</div>
-    } @else if (store.trades().length === 0) {
-      <div class="state state-empty">Сделок пока нет.</div>
-    } @else {
-      <table>
-        <thead>
-          <tr>
-            <th class="col-type">Тип</th>
-            <th>Пара</th>
-            <th>Дата выхода</th>
-            <th>Длительность</th>
-            <th class="num">Чистый P&amp;L</th>
-            <th class="num">Доходность %</th>
-            <th class="num">Ср. вход</th>
-            <th class="num">Ср. выход</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (trade of store.trades(); track trade.id) {
-            <tr [class.row-win]="trade.status === 'closed' && pnl(trade) > 0">
-              <td class="col-type">
-                <span
-                  class="type-badge"
-                  [class.type-long]="trade.side === 'long'"
-                  [class.type-short]="trade.side === 'short'"
-                  [attr.title]="trade.side"
-                >
-                  {{ trade.side === 'long' ? 'B' : 'S' }}
+    } @else if (visibleRows().length > 0) {
+      <div class="table-scroll">
+        <table class="tj-table">
+          <thead>
+            <tr>
+              <th>
+                <span class="tj-th-sort" [class.active]="sortKey() === 'openedAt'" (click)="sortBy('openedAt')">
+                  Открыта <span class="arrow">{{ sortArrow('openedAt') }}</span>
                 </span>
-              </td>
-              <td class="pair">{{ trade.symbol }}</td>
-              <td class="datetime">
-                @if (trade.status === 'closed') {
-                  {{ formatDateTime(trade.closedAt) }}
-                } @else {
-                  <span class="open-tag">Открыта</span>
-                }
-              </td>
-              <td class="dim">{{ formatDuration(trade.openedAt, trade.closedAt) }}</td>
-              <td class="num" [class.win]="pnl(trade) > 0" [class.loss]="pnl(trade) < 0">
-                @if (trade.status === 'closed') {
-                  {{ pnl(trade) >= 0 ? '+' : '−' }}${{ Math.abs(pnl(trade)).toFixed(2) }}
-                } @else {
-                  <span class="dim">—</span>
-                }
-              </td>
-              <td
-                class="num"
-                [class.win]="pnlPercent(trade) > 0"
-                [class.loss]="pnlPercent(trade) < 0"
-              >
-                @if (trade.status === 'closed') {
-                  {{ pnlPercent(trade) >= 0 ? '+' : '' }}{{ pnlPercent(trade).toFixed(2) }}%
-                } @else {
-                  <span class="dim">—</span>
-                }
-              </td>
-              <td class="num mono">{{ trade.entryPrice }}</td>
-              <td class="num mono">
-                {{ trade.status === 'closed' ? trade.exitPrice : '—' }}
-              </td>
+              </th>
+              <th>
+                <span class="tj-th-sort" [class.active]="sortKey() === 'symbol'" (click)="sortBy('symbol')">
+                  Тикер <span class="arrow">{{ sortArrow('symbol') }}</span>
+                </span>
+              </th>
+              <th>Напр.</th>
+              <th class="num">
+                <span class="tj-th-sort" [class.active]="sortKey() === 'notional'" (click)="sortBy('notional')">
+                  Объём <span class="arrow">{{ sortArrow('notional') }}</span>
+                </span>
+              </th>
+              <th class="num">Вход</th>
+              <th class="num">Выход</th>
+              <th class="num">
+                <span class="tj-th-sort" [class.active]="sortKey() === 'pnl'" (click)="sortBy('pnl')">
+                  P&L <span class="arrow">{{ sortArrow('pnl') }}</span>
+                </span>
+              </th>
+              <th class="num">
+                <span class="tj-th-sort" [class.active]="sortKey() === 'pnlPct'" (click)="sortBy('pnlPct')">
+                  % <span class="arrow">{{ sortArrow('pnlPct') }}</span>
+                </span>
+              </th>
+              <th class="num">
+                <span class="tj-th-sort" [class.active]="sortKey() === 'r'" (click)="sortBy('r')">
+                  R <span class="arrow">{{ sortArrow('r') }}</span>
+                </span>
+              </th>
+              <th class="num">
+                <span class="tj-th-sort" [class.active]="sortKey() === 'duration'" (click)="sortBy('duration')">
+                  Время <span class="arrow">{{ sortArrow('duration') }}</span>
+                </span>
+              </th>
+              <th>Стратегия</th>
+              <th>Теги</th>
             </tr>
-          }
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            @for (row of visibleRows(); track row.trade.id) {
+              <tr class="clickable" (click)="openTrade(row.trade)">
+                <td class="muted">{{ fmtDateTime(row.trade.openedAt) }}</td>
+                <td class="sym">{{ row.trade.symbol }}</td>
+                <td>
+                  <span class="tj-side" [class]="row.trade.side">
+                    <app-icon [name]="row.trade.side" style="--icon-size: 12px" />
+                    {{ row.trade.side === 'long' ? 'Лонг' : 'Шорт' }}
+                    @if (row.trade.leverage > 1) {
+                      <span class="lev">×{{ row.trade.leverage }}</span>
+                    }
+                  </span>
+                </td>
+                <td class="num muted">{{ fmtNotional(row.notional) }}</td>
+                <td class="num">{{ fmtPrice(row.trade.entryPrice) }}</td>
+                <td class="num">
+                  @if (row.trade.status === 'closed') {
+                    {{ fmtPrice(row.trade.exitPrice) }}
+                  } @else {
+                    <span class="open-badge">открыта</span>
+                  }
+                </td>
+                <td class="num">
+                  @if (row.trade.status === 'closed') {
+                    <app-pnl [value]="row.pnl" />
+                  } @else {
+                    <span class="muted">—</span>
+                  }
+                </td>
+                <td class="num">
+                  @if (row.trade.status === 'closed') {
+                    <app-pnl [value]="row.pnlPct" kind="percent" />
+                  } @else {
+                    <span class="muted">—</span>
+                  }
+                </td>
+                <td class="num">
+                  @if (row.r !== null) {
+                    <app-pnl [value]="row.r" kind="r" />
+                  } @else {
+                    <span class="muted">—</span>
+                  }
+                </td>
+                <td class="num muted">{{ fmtDuration(row.trade) }}</td>
+                <td class="muted">{{ row.trade.strategy }}</td>
+                <td class="tags-cell">
+                  @for (tag of row.trade.tags.slice(0, 2); track tag) {
+                    <span class="tag">{{ tag }}</span>
+                  }
+                  @if (row.trade.tags.length > 2) {
+                    <span class="tag more">+{{ row.trade.tags.length - 2 }}</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="6">
+                Итого: {{ summary().tradeCount }} сделок ·
+                {{ summary().winCount }} W / {{ summary().lossCount }} L ·
+                комиссии {{ fmtMoney(summary().fees) }}
+              </td>
+              <td class="num"><app-pnl [value]="summary().netPnl" /></td>
+              <td></td>
+              <td class="num muted">
+                {{ summary().avgR === null ? '—' : (summary().avgR!.toFixed(2) + 'R') }}
+              </td>
+              <td colspan="3"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      @if (hasMore()) {
+        <div class="load-more">
+          <button app-button variant="outline" size="sm" (click)="showMore()">
+            Показать ещё ({{ sortedRows().length - visibleRows().length }})
+          </button>
+        </div>
+      }
+    } @else {
+      <app-empty-state
+        icon="filter"
+        title="Ничего не найдено"
+        description="Попробуйте изменить фильтры или расширить период анализа."
+      >
+        @if (store.hasActiveTableFilters()) {
+          <button app-button variant="outline" size="sm" (click)="reset()">Сбросить фильтры</button>
+        }
+      </app-empty-state>
     }
   </div>
 </section>

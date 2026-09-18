@@ -1,0 +1,95 @@
+<div class="card tj-card" [class.expanded]="expanded()">
+  <!-- Шапка дня -->
+  <button type="button" class="head" (click)="expanded.set(!expanded())">
+    <div class="date">
+      <span class="title">{{ title() }}</span>
+      <span class="meta">
+        {{ day().trades.length }} сд. · винрейт {{ winRate().toFixed(0) }}%
+        @if (day().entry?.followedPlan === false) {
+          <span class="off-plan">не по плану</span>
+        }
+      </span>
+    </div>
+
+    @if (moodEmoji(); as emoji) {
+      <span class="mood" [title]="'Состояние дня'">{{ emoji }}</span>
+    }
+
+    <app-pnl class="pnl" [value]="day().pnl" />
+    <app-icon class="chevron" [name]="expanded() ? 'chevron-up' : 'chevron-down'" style="--icon-size: 15px" />
+  </button>
+
+  <!-- Заметка -->
+  <div class="note-block">
+    @if (editing()) {
+      <div class="editor">
+        <textarea
+          class="tj-textarea"
+          rows="4"
+          placeholder="Как прошёл день: рынок, решения, эмоции, выводы…"
+          [value]="noteDraft()"
+          (input)="noteDraft.set($any($event.target).value)"
+        ></textarea>
+        <div class="editor-row">
+          <app-select
+            [options]="moodOptions"
+            placeholder="Состояние"
+            [clearable]="true"
+            size="sm"
+            [value]="moodDraft()"
+            (valueChange)="moodDraft.set($event)"
+          />
+          <label class="plan-toggle">
+            <app-toggle [checked]="planDraft()" (checkedChange)="planDraft.set($event)" />
+            Торговал по плану
+          </label>
+          <span class="grow"></span>
+          <button app-button variant="ghost" size="sm" (click)="editing.set(false)">Отмена</button>
+          <button app-button variant="primary" size="sm" (click)="save()">Сохранить</button>
+        </div>
+      </div>
+    } @else if (day().entry?.note) {
+      <p class="note" (click)="startEdit()">{{ day().entry!.note }}</p>
+    } @else {
+      <button type="button" class="add-note" (click)="startEdit()">
+        <app-icon name="edit" style="--icon-size: 13px" />
+        Добавить заметку дня
+      </button>
+    }
+  </div>
+
+  <!-- Сделки дня -->
+  @if (expanded() && rows().length > 0) {
+    <div class="trades">
+      <table class="tj-table">
+        <thead>
+          <tr>
+            <th>Тикер</th>
+            <th></th>
+            <th>Стратегия</th>
+            <th class="num">Время</th>
+            <th class="num">R</th>
+            <th class="num">P&L</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of rows(); track row.trade.id) {
+            <tr>
+              <td><a class="sym" [routerLink]="['/trades', row.trade.id]">{{ row.trade.symbol }}</a></td>
+              <td>
+                <span class="tj-side" [class]="row.trade.side">
+                  <app-icon [name]="row.trade.side" style="--icon-size: 12px" />
+                  {{ row.trade.side === 'long' ? 'L' : 'S' }}
+                </span>
+              </td>
+              <td class="muted">{{ row.trade.strategy }}</td>
+              <td class="num muted">{{ row.duration }}</td>
+              <td class="num muted">{{ row.r === null ? '—' : row.r.toFixed(1) + 'R' }}</td>
+              <td class="num"><app-pnl [value]="row.pnl" /></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

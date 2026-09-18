@@ -1,0 +1,92 @@
+<app-dialog-shell
+  title="Подключить счёт"
+  subtitle="Ключи с правами «только чтение». Демо-режим: данные не покидают браузер."
+>
+  <div class="form">
+    <div class="tj-field">
+      <label>Биржа</label>
+      <div class="exchanges">
+        @for (ex of exchanges; track ex.id) {
+          <button
+            type="button"
+            class="exchange"
+            [class.active]="exchange() === ex.id"
+            (click)="pickExchange(ex.id)"
+          >
+            <span class="mark" [style.background]="ex.color + '22'" [style.color]="ex.color">
+              {{ ex.mark }}
+            </span>
+            {{ ex.label }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="tj-field grow">
+        <label>Название счёта *</label>
+        <input class="tj-input" placeholder="Binance Futures" [formField]="accountForm.name" />
+        @if (accountForm.name().touched() && accountForm.name().invalid()) {
+          <span class="tj-error">{{ accountForm.name().errors()[0]?.message }}</span>
+        }
+      </div>
+      <div class="tj-field">
+        <label>Рынок</label>
+        <app-segmented [options]="marketOptions" [value]="market()" (valueChange)="market.set($any($event))" />
+      </div>
+      <div class="tj-field">
+        <label>Стартовый баланс, $</label>
+        <input class="tj-input tj-input--mono" type="number" [formField]="accountForm.startBalance" />
+      </div>
+    </div>
+
+    <div class="tj-field">
+      <label>API Key *</label>
+      <input
+        class="tj-input tj-input--mono"
+        placeholder="например: q7PdXk2N…"
+        autocomplete="off"
+        [formField]="accountForm.apiKey"
+      />
+      @if (accountForm.apiKey().touched() && accountForm.apiKey().invalid()) {
+        <span class="tj-error">{{ accountForm.apiKey().errors()[0]?.message }}</span>
+      }
+    </div>
+
+    <div class="tj-field">
+      <label>API Secret *</label>
+      <div class="secret">
+        <input
+          class="tj-input tj-input--mono"
+          [type]="showSecret() ? 'text' : 'password'"
+          autocomplete="off"
+          [formField]="accountForm.apiSecret"
+        />
+        <button
+          type="button"
+          class="reveal"
+          [attr.aria-label]="showSecret() ? 'Скрыть секрет' : 'Показать секрет'"
+          (click)="showSecret.set(!showSecret())"
+        >
+          <app-icon [name]="showSecret() ? 'eye-off' : 'eye'" style="--icon-size: 15px" />
+        </button>
+      </div>
+      @if (accountForm.apiSecret().touched() && accountForm.apiSecret().invalid()) {
+        <span class="tj-error">{{ accountForm.apiSecret().errors()[0]?.message }}</span>
+      }
+    </div>
+
+    <div class="hint">
+      <app-icon name="info" style="--icon-size: 14px" />
+      Создайте ключ в личном кабинете биржи с правами «чтение». Торговые права и вывод средств не нужны.
+    </div>
+  </div>
+
+  <ng-container dialog-footer>
+    <button app-button variant="outline" (click)="ref.close()">Отмена</button>
+    <button app-button variant="primary" (click)="save()">
+      <app-icon name="link" style="--icon-size: 14px" />
+      Подключить
+    </button>
+  </ng-container>
+</app-dialog-shell>

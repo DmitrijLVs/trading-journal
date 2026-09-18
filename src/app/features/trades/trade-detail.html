@@ -1,0 +1,219 @@
+<section class="tj-page">
+  @if (trade(); as t) {
+    <!-- ── Шапка ─────────────────────────────────────────────────────── -->
+    <header class="head">
+      <a app-button variant="ghost" size="sm" [iconOnly]="true" routerLink="/trades" aria-label="К списку сделок">
+        <app-icon name="arrow-left" style="--icon-size: 16px" />
+      </a>
+
+      <div class="title">
+        <div class="row-1">
+          <h1>{{ t.symbol }}</h1>
+          <span class="tj-side" [class]="t.side">
+            <app-icon [name]="t.side" style="--icon-size: 14px" />
+            {{ t.side === 'long' ? 'Лонг' : 'Шорт' }} ×{{ t.leverage }}
+          </span>
+          @if (t.status === 'open') {
+            <span app-badge tone="accent">Открыта</span>
+          } @else {
+            <span app-badge tone="outline">Закрыта</span>
+          }
+          @if (t.setupGrade) {
+            <span app-badge tone="purple">Сетап {{ t.setupGrade }}</span>
+          }
+        </div>
+        <p class="row-2">
+          {{ fmtDateTime(t.openedAt) }}
+          @if (t.status === 'closed') {
+            → {{ fmtDateTime(t.closedAt) }}
+          }
+          · {{ t.strategy }} · {{ t.timeframe }}
+        </p>
+      </div>
+
+      <span class="spacer"></span>
+
+      @if (result(); as r) {
+        @if (t.status === 'closed') {
+          <div class="head-pnl">
+            <app-pnl class="big" [value]="r.pnl" />
+            <span class="sub">
+              <app-pnl [value]="r.pnlPct" kind="percent" /> ·
+              <app-pnl [value]="r.roi" kind="percent" /> на маржу
+            </span>
+          </div>
+        }
+      }
+
+      <button app-button variant="danger" size="sm" [iconOnly]="true" appTooltip="Удалить из журнала" (click)="remove()">
+        <app-icon name="trash" style="--icon-size: 14px" />
+      </button>
+    </header>
+
+    <!-- ── Контент ────────────────────────────────────────────────────── -->
+    <div class="grid">
+      <div class="col-main">
+        <div class="tj-card chart-card">
+          @if (chartData(); as data) {
+            <app-trade-chart [trade]="t" [chartData]="data" />
+          } @else {
+            <div class="chart-loading">
+              <app-skeleton height="100%" />
+            </div>
+          }
+        </div>
+
+        <div class="tj-card panel">
+          <h3>Заметка по сделке</h3>
+          <textarea
+            class="tj-textarea"
+            rows="5"
+            placeholder="Почему вошли, что видели на графике, что чувствовали, какие выводы…"
+            [value]="noteDraft()"
+            (input)="noteDraft.set($any($event.target).value)"
+          ></textarea>
+          @if (noteDirty()) {
+            <div class="note-actions">
+              <button app-button variant="primary" size="sm" (click)="saveNote()">Сохранить</button>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="col-side">
+        <!-- Результат -->
+        @if (t.status === 'closed' && result(); as r) {
+          <div class="tj-card panel">
+            <h3>Результат</h3>
+            <dl class="stats">
+              <div><dt>Чистый P&L</dt><dd><app-pnl [value]="r.pnl" /></dd></div>
+              <div><dt>Движение цены</dt><dd><app-pnl [value]="r.pnlPct" kind="percent" /></dd></div>
+              <div><dt>ROI на маржу</dt><dd><app-pnl [value]="r.roi" kind="percent" /></dd></div>
+              <div><dt>R-multiple</dt><dd>
+                @if (r.r !== null) {
+                  <app-pnl [value]="r.r" kind="r" />
+                } @else { — }
+              </dd></div>
+              <div><dt>Комиссии</dt><dd class="mono">{{ fmtMoney(t.fees) }}</dd></div>
+              @if (t.funding !== 0) {
+                <div><dt>Фандинг</dt><dd class="mono">{{ fmtMoney(t.funding) }}</dd></div>
+              }
+            </dl>
+          </div>
+        }
+
+        <!-- План -->
+        <div class="tj-card panel">
+          <h3>План и риск</h3>
+          <dl class="stats">
+            <div><dt>Вход</dt><dd class="mono">{{ fmtPrice(t.entryPrice) }}</dd></div>
+            @if (t.status === 'closed') {
+              <div><dt>Выход</dt><dd class="mono">{{ fmtPrice(t.exitPrice) }}</dd></div>
+            }
+            <div><dt>Стоп-лосс</dt><dd class="mono loss">
+              {{ t.stopLoss !== null ? fmtPrice(t.stopLoss) : 'не задан' }}
+            </dd></div>
+            <div><dt>Тейк-профит</dt><dd class="mono win">
+              {{ t.takeProfit !== null ? fmtPrice(t.takeProfit) : 'не задан' }}
+            </dd></div>
+            @if (plan(); as p) {
+              <div><dt>Риск ($)</dt><dd class="mono">{{ fmtMoney(p.risk) }}</dd></div>
+              @if (p.slPct !== null) {
+                <div><dt>Стоп от входа</dt><dd class="mono">{{ p.slPct.toFixed(2) }}%</dd></div>
+              }
+              @if (p.rr !== null) {
+                <div><dt>План R:R</dt><dd class="mono">1 : {{ p.rr.toFixed(1) }}</dd></div>
+              }
+            }
+          </dl>
+        </div>
+
+        <!-- Исполнение -->
+        @if (execution(); as e) {
+          <div class="tj-card panel">
+            <h3>Исполнение</h3>
+            <dl class="stats">
+              <div><dt>Объём</dt><dd class="mono">{{ t.quantity }} ({{ fmtMoney(e.notional) }})</dd></div>
+              <div><dt>Маржа</dt><dd class="mono">{{ fmtMoney(e.margin) }} · ×{{ t.leverage }}</dd></div>
+              <div><dt>В позиции</dt><dd>{{ e.duration }}</dd></div>
+              <div><dt>Сессия</dt><dd>{{ e.session }}</dd></div>
+              <div><dt>Таймфрейм</dt><dd class="mono">{{ t.timeframe }}</dd></div>
+            </dl>
+          </div>
+        }
+
+        <!-- Психология и разметка -->
+        <div class="tj-card panel">
+          <h3>Разбор</h3>
+
+          <div class="field">
+            <label>Оценка сетапа</label>
+            <app-segmented [options]="gradeOptions" [value]="t.setupGrade ?? ''" (valueChange)="setGrade($event)" />
+          </div>
+
+          <div class="field">
+            <label>Состояние</label>
+            <app-select
+              [options]="moodOptions"
+              placeholder="Как вы себя чувствовали?"
+              [clearable]="true"
+              [value]="t.mood"
+              (valueChange)="setMood($event)"
+            />
+          </div>
+
+          <div class="field">
+            <label>Ошибки</label>
+            <app-select
+              [options]="mistakeOptions()"
+              placeholder="Отметить ошибки"
+              [multi]="true"
+              [clearable]="true"
+              [values]="t.mistakes"
+              (valuesChange)="setMistakes($event)"
+            />
+            @if (t.mistakes.length > 0) {
+              <div class="chips">
+                @for (m of t.mistakes; track m) {
+                  <span app-badge tone="danger">{{ m }}</span>
+                }
+              </div>
+            }
+          </div>
+
+          <div class="field">
+            <label>Теги</label>
+            <app-select
+              [options]="tagOptions()"
+              placeholder="Теги сделки"
+              [multi]="true"
+              [clearable]="true"
+              [values]="t.tags"
+              (valuesChange)="setTags($event)"
+            />
+            @if (t.tags.length > 0) {
+              <div class="chips">
+                @for (tag of t.tags; track tag) {
+                  <span app-badge tone="neutral">{{ tag }}</span>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  } @else if (isLoading()) {
+    <div class="page-loading">
+      <app-skeleton height="48px" />
+      <app-skeleton height="420px" />
+    </div>
+  } @else {
+    <app-empty-state
+      icon="search"
+      title="Сделка не найдена"
+      description="Возможно, она была удалена или ссылка устарела."
+    >
+      <a app-button variant="outline" routerLink="/trades">К списку сделок</a>
+    </app-empty-state>
+  }
+</section>

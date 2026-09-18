@@ -11,12 +11,16 @@
   "private": true,
   "packageManager": "npm@11.6.2",
   "dependencies": {
+    "@angular/cdk": "^21.2.14",
     "@angular/common": "^21.2.0",
     "@angular/compiler": "^21.2.0",
     "@angular/core": "^21.2.0",
     "@angular/forms": "^21.2.0",
     "@angular/platform-browser": "^21.2.0",
     "@angular/router": "^21.2.0",
+    "angular-gridster2": "^21.0.1",
+    "echarts": "^6.1.0",
+    "night-vision": "file:local_modules/night-vision-0.4.0.tgz",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

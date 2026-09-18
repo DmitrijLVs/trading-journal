@@ -1,0 +1,194 @@
+// Navy ~ 0.2-lite
+//
+// TradeJournal — разметка сделки на свечах: уровни входа/выхода до правого
+// края, пунктирные уровни TP/SL с пилюлями, стрелки исполнения вынесены за
+// диапазон свечи, точки-якоря на точной цене, пунктирная скобка сделки и
+// пилюля результата у правого края. exitIndex = -1 — позиция ещё открыта.
+
+[OVERLAY name=TradeJournal, ctx=Canvas, version=1.1.0]
+
+prop('entryIndex', { type: 'number', def: 0 })
+prop('exitIndex', { type: 'number', def: -1 })
+prop('entry', { type: 'number', def: 0 })
+prop('exit', { type: 'number', def: 0 })
+prop('long', { type: 'number', def: 1 })
+prop('sl', { type: 'number', def: 0 })
+prop('tp', { type: 'number', def: 0 })
+prop('buyColor', { type: 'Color', def: '#3fb950' })
+prop('sellColor', { type: 'Color', def: '#f85149' })
+prop('pnlColor', { type: 'Color', def: '#3fb950' })
+prop('backColor', { type: 'Color', def: '#161b22' })
+prop('onColor', { type: 'Color', def: '#0d1117' })
+prop('pnlLabel', { type: 'string', def: '' })
+
+draw(ctx) {
+    const layout = $core.layout
+    const data = $core.data
+    if (!data || data.length < 2) { return }
+    const w = layout.width
+
+    const closed = $props.exitIndex >= 0
+    const yE = layout.value2y($props.entry)
+    const pe = data[$props.entryIndex]
+    const xE = pe ? layout.ti2x(pe[0], $props.entryIndex) : 0
+
+    const stepPx = Math.abs(layout.ti2x(data[1][0], 1) - layout.ti2x(data[0][0], 0))
+    const size = Math.max(7, Math.min(stepPx * 0.9, 12))
+    const gap = 7
+
+    const isLong = $props.long === 1
+    const entryColor = isLong ? $props.buyColor : $props.sellColor
+    const exitColor = isLong ? $props.sellColor : $props.buyColor
+
+    ctx.save()
+    ctx.font = '510 11px "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace'
+    ctx.textBaseline = 'middle'
+    ctx.lineJoin = 'round'
+
+    // Плановые уровни — под уровнями исполнения.
+    if ($props.sl > 0) {
+        planLevel(ctx, xE, layout.value2y($props.sl), w, $props.sellColor, 'SL', $props.onColor)
+    }
+    if ($props.tp > 0) {
+        planLevel(ctx, xE, layout.value2y($props.tp), w, $props.buyColor, 'TP', $props.onColor)
+    }
+
+    level(ctx, xE, yE, w, entryColor)
+
+    if (closed) {
+        const yX = layout.value2y($props.exit)
+        const px = data[$props.exitIndex]
+        const xX = px ? layout.ti2x(px[0], $props.exitIndex) : w
+
+        level(ctx, xX, yX, w, exitColor)
+        bracket(ctx, xX, yE, yX, $props.pnlColor)
+
+        if (px) {
+            const yXA = isLong ? layout.value2y(px[2]) - gap : layout.value2y(px[3]) + gap
+            marker(ctx, xX, yXA, !isLong, exitColor, $props.backColor, size)
+        }
+        anchor(ctx, xX, yX, exitColor, $props.backColor)
+        badge(ctx, w, (yE + yX) / 2, $props.pnlLabel, $props.pnlColor, $props.onColor)
+    } else {
+        badge(ctx, w, yE - 22, $props.pnlLabel, entryColor, $props.onColor)
+    }
+
+    if (pe) {
+        const yEA = isLong ? layout.value2y(pe[3]) + gap : layout.value2y(pe[2]) - gap
+        marker(ctx, xE, yEA, isLong, entryColor, $props.backColor, size)
+    }
+    anchor(ctx, xE, yE, entryColor, $props.backColor)
+
+    ctx.restore()
+}
+
+anchor(ctx, x, y, fill, border) {
+    ctx.beginPath()
+    ctx.arc(x, y, 3.5, 0, Math.PI * 2)
+    ctx.lineWidth = 2
+    ctx.strokeStyle = border
+    ctx.stroke()
+    ctx.fillStyle = fill
+    ctx.fill()
+}
+
+level(ctx, x, y, w, color) {
+    ctx.strokeStyle = color
+    ctx.lineWidth = 1
+    ctx.globalAlpha = 0.9
+    ctx.beginPath()
+    ctx.moveTo(x, y)
+    ctx.lineTo(w, y)
+    ctx.stroke()
+    ctx.globalAlpha = 1
+}
+
+planLevel(ctx, x, y, w, color, text, textColor) {
+    ctx.strokeStyle = color
+    ctx.lineWidth = 1
+    ctx.setLineDash([5, 4])
+    ctx.globalAlpha = 0.55
+    ctx.beginPath()
+    ctx.moveTo(x, y)
+    ctx.lineTo(w, y)
+    ctx.stroke()
+    ctx.setLineDash([])
+    ctx.globalAlpha = 1
+
+    const tw = ctx.measureText(text).width + 10
+    const bx = w - tw - 6
+    ctx.globalAlpha = 0.9
+    ctx.fillStyle = color
+    rounded(ctx, bx, y - 8, tw, 16, 3)
+    ctx.fill()
+    ctx.globalAlpha = 1
+    ctx.fillStyle = textColor
+    ctx.textAlign = 'center'
+    ctx.fillText(text, bx + tw / 2, y + 0.5)
+    ctx.textAlign = 'left'
+}
+
+bracket(ctx, x, y1, y2, color) {
+    if (Math.abs(y2 - y1) < 8) { return }
+    ctx.strokeStyle = color
+    ctx.lineWidth = 1
+    ctx.setLineDash([3, 3])
+    ctx.globalAlpha = 0.55
+    ctx.beginPath()
+    ctx.moveTo(x, y1)
+    ctx.lineTo(x, y2)
+    ctx.stroke()
+    ctx.setLineDash([])
+    ctx.globalAlpha = 1
+}
+
+marker(ctx, x, y, up, fill, border, size) {
+    ctx.beginPath()
+    if (up) {
+        ctx.moveTo(x, y)
+        ctx.lineTo(x - size, y + size * 1.6)
+        ctx.lineTo(x + size, y + size * 1.6)
+    } else {
+        ctx.moveTo(x, y)
+        ctx.lineTo(x - size, y - size * 1.6)
+        ctx.lineTo(x + size, y - size * 1.6)
+    }
+    ctx.closePath()
+    ctx.lineWidth = 3
+    ctx.strokeStyle = border
+    ctx.stroke()
+    ctx.fillStyle = fill
+    ctx.fill()
+}
+
+badge(ctx, w, y, text, fill, textColor) {
+    if (!text) { return }
+    const tw = ctx.measureText(text).width + 18
+    const x = w - tw - 6
+    rounded(ctx, x, y - 10, tw, 20, 4)
+    ctx.fillStyle = fill
+    ctx.fill()
+    ctx.fillStyle = textColor
+    ctx.textAlign = 'center'
+    ctx.fillText(text, x + tw / 2, y + 0.5)
+    ctx.textAlign = 'left'
+}
+
+rounded(ctx, x, y, w, h, r) {
+    ctx.beginPath()
+    ctx.moveTo(x + r, y)
+    ctx.arcTo(x + w, y, x + w, y + h, r)
+    ctx.arcTo(x + w, y + h, x, y + h, r)
+    ctx.arcTo(x, y + h, x, y, r)
+    ctx.arcTo(x, y, x + w, y, r)
+    ctx.closePath()
+}
+
+// hi/lo не используем: автодиапазон включает колонку объёма. Заявляем только
+// уровни сделки — свечной диапазон даст объединение с оверлеем Candles.
+yRange(data, hi, lo) => [
+    Math.max($props.entry, $props.exit, $props.tp, $props.sl) * 1.004,
+    Math.min($props.entry, $props.exit || $props.entry, $props.sl || $props.entry, $props.tp || $props.entry) * 0.996
+]
+
+legend(x) => []

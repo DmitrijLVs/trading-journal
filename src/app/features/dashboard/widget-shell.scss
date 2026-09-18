@@ -1,0 +1,105 @@
+@use 'styles/index' as *;
+
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--canvas-subtle);
+  border: 1px solid var(--border-muted);
+  border-radius: $radius-lg;
+  box-shadow: $inner-highlight;
+  overflow: hidden;
+  transition: border-color $duration-fast $ease-apple;
+
+  &:hover {
+    border-color: var(--border-default);
+  }
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  height: 34px;
+  padding: 0 $space-2 0 $space-3;
+  border-bottom: 1px solid var(--border-muted);
+  flex: none;
+
+  &.widget-drag-handle {
+    cursor: grab;
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
+}
+
+.grip {
+  display: inline-flex;
+  color: var(--fg-subtle);
+  opacity: 0;
+  transition: opacity $duration-fast $ease-apple;
+  margin-left: -4px;
+
+  :host(:hover) & {
+    opacity: 0.9;
+  }
+}
+
+.title {
+  margin: 0;
+  font-size: $text-sm;
+  font-weight: 600;
+  color: var(--fg-default);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.period {
+  flex: none;
+  font-size: $text-xs;
+  color: var(--accent-fg);
+  background: var(--accent-subtle);
+  border-radius: $radius-full;
+  padding: 1px $space-2;
+}
+
+.actions {
+  margin-left: auto;
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity $duration-fast $ease-apple;
+
+  :host(:hover) & {
+    opacity: 1;
+  }
+}
+
+.action {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: none;
+  border: none;
+  border-radius: $radius-sm;
+  color: var(--fg-muted);
+  cursor: pointer;
+  transition: background $duration-instant $ease-apple, color $duration-instant $ease-apple;
+
+  &:hover {
+    background: var(--border-muted);
+    color: var(--fg-default);
+  }
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}

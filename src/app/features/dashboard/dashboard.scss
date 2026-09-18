@@ -1,0 +1,232 @@
+@use 'styles/index' as *;
+
+:host {
+  display: block;
+  height: 100%;
+}
+
+.dash {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  outline: none;
+}
+
+// ── Панель пространств ──────────────────────────────────────────────────────
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  padding: $space-2 $space-4 0;
+  flex: none;
+}
+
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  height: 32px;
+  padding: 0 $space-3;
+  border-radius: $radius-md $radius-md 0 0;
+  border: 1px solid transparent;
+  border-bottom: none;
+  color: var(--fg-muted);
+  font-size: $text-sm;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition: background $duration-fast $ease-apple, color $duration-fast $ease-apple;
+
+  &:hover {
+    background: var(--canvas-overlay);
+    color: var(--fg-default);
+
+    .tab-close { opacity: 1; }
+  }
+
+  &.active {
+    background: var(--canvas-subtle);
+    border-color: var(--border-muted);
+    color: var(--fg-default);
+
+    .tab-name { font-weight: 600; }
+  }
+}
+
+.tab-count {
+  font-size: $text-xs;
+  font-family: $font-mono;
+  color: var(--fg-subtle);
+  background: var(--canvas-inset);
+  border-radius: $radius-full;
+  padding: 0 6px;
+  line-height: 16px;
+}
+
+.tab-close {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-right: -4px;
+  background: none;
+  border: none;
+  border-radius: $radius-sm;
+  color: var(--fg-subtle);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity $duration-fast $ease-apple;
+
+  &:hover {
+    background: var(--border-muted);
+    color: var(--fg-default);
+  }
+}
+
+.rename {
+  width: 130px;
+  height: 22px;
+  background: var(--canvas-inset);
+  border: 1px solid var(--accent-fg);
+  border-radius: $radius-sm;
+  color: var(--fg-default);
+  font-size: $text-sm;
+  padding: 0 $space-2;
+  outline: none;
+}
+
+.tab-add {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-left: $space-1;
+  background: none;
+  border: 1px dashed var(--border-default);
+  border-radius: $radius-md;
+  color: var(--fg-muted);
+  cursor: pointer;
+  transition: all $duration-fast $ease-apple;
+
+  &:hover {
+    border-color: var(--accent-muted);
+    color: var(--accent-fg);
+    background: var(--accent-subtle);
+  }
+}
+
+.bar-actions {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  margin-left: auto;
+  flex: none;
+}
+
+// ── Сетка ───────────────────────────────────────────────────────────────────
+
+.grid-area {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  border-top: 1px solid var(--border-muted);
+  margin-top: -1px;
+}
+
+.grid {
+  background: transparent;
+  height: 100%;
+}
+
+gridster-item.cell {
+  background: transparent;
+  border-radius: $radius-lg;
+  overflow: visible;
+
+  &.gridster-item-moving,
+  &.gridster-item-resizing {
+    z-index: 10;
+
+    app-widget-shell {
+      box-shadow: $shadow-lg;
+      border-color: var(--accent-muted);
+    }
+  }
+}
+
+.maximized {
+  position: absolute;
+  inset: $space-3;
+  z-index: 50;
+  animation: maximize-in $duration-base $ease-out;
+
+  app-widget-shell {
+    height: 100%;
+    box-shadow: $shadow-popover;
+    border-color: var(--border-default);
+  }
+}
+
+@keyframes maximize-in {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+// ── Пустое пространство ─────────────────────────────────────────────────────
+
+.blank {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.blank-inner {
+  text-align: center;
+  max-width: 380px;
+  padding: $space-8;
+  animation: maximize-in $duration-slow $ease-out;
+
+  h2 {
+    margin: 0 0 $space-2;
+    font-size: $text-xl;
+    font-weight: 650;
+  }
+
+  p {
+    margin: 0 0 $space-5;
+    color: var(--fg-muted);
+    font-size: $text-md;
+    line-height: 1.5;
+  }
+}
+
+.blank-actions {
+  display: flex;
+  gap: $space-2;
+  justify-content: center;
+}

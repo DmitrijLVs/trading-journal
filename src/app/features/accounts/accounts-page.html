@@ -1,0 +1,80 @@
+<section class="tj-page">
+  <header class="tj-page-head">
+    <div>
+      <h1>Счета</h1>
+      <p class="tj-page-sub">
+        Суммарно {{ fmtMoney(totalBalance()) }} ·
+        P&L за всё время <app-pnl [value]="totalPnl()" />
+      </p>
+    </div>
+    <span class="spacer"></span>
+    <button app-button variant="primary" (click)="addAccount()">
+      <app-icon name="plus" style="--icon-size: 14px" />
+      Подключить счёт
+    </button>
+  </header>
+
+  <div class="cards">
+    @for (card of cards(); track card.account.id) {
+      <div class="card tj-card">
+        <div class="card-head">
+          <span class="mark" [style.background]="card.color + '22'" [style.color]="card.color">
+            {{ card.mark }}
+          </span>
+          <div class="names">
+            <span class="name">{{ card.account.name }}</span>
+            <span class="sub">
+              <span app-badge tone="outline">{{ marketLabel(card.account) }}</span>
+              <span class="count">{{ card.tradeCount }} сделок</span>
+            </span>
+          </div>
+          <button
+            app-button
+            variant="ghost"
+            size="sm"
+            [iconOnly]="true"
+            aria-label="Отключить счёт"
+            (click)="remove(card)"
+          >
+            <app-icon name="trash" style="--icon-size: 14px" />
+          </button>
+        </div>
+
+        <div class="balance-row">
+          <div class="balance">
+            <span class="k">Баланс</span>
+            <span class="v">{{ fmtMoney(card.balance) }}</span>
+            <app-pnl class="delta" [value]="card.pnl" />
+          </div>
+          <app-spark-line class="spark" [data]="card.spark" [w]="140" [h]="40" />
+        </div>
+
+        <div class="api-row">
+          <app-icon name="key" style="--icon-size: 13px" />
+          <code>{{ card.account.apiKeyMasked }}</code>
+        </div>
+
+        <div class="sync-row">
+          <div class="sync-meta">
+            <span class="k">Автосинхронизация</span>
+            <span class="v">
+              @if (card.account.syncEnabled) {
+                последняя: {{ fmtSync(card) }}
+              } @else {
+                на паузе
+              }
+            </span>
+          </div>
+          <app-toggle [checked]="card.account.syncEnabled" (checkedChange)="toggleSync(card, $event)" />
+        </div>
+      </div>
+    }
+
+    <!-- Карточка-приглашение -->
+    <button type="button" class="card add-card" (click)="addAccount()">
+      <span class="add-glyph"><app-icon name="plus" style="--icon-size: 20px" /></span>
+      <span class="add-title">Подключить биржу</span>
+      <span class="add-sub">Binance, Bybit, OKX, Bitget — по API-ключу с правами «чтение»</span>
+    </button>
+  </div>
+</section>

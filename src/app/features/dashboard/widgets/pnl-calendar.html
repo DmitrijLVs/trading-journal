@@ -1,0 +1,47 @@
+<div class="cal">
+  <div class="cal-head">
+    <button type="button" class="nav" aria-label="Предыдущий месяц" (click)="shift(-1)">
+      <app-icon name="chevron-left" style="--icon-size: 14px" />
+    </button>
+    <button type="button" class="month" (click)="reset()" [class.dim]="!isCurrentMonth()">
+      {{ monthLabel() }}
+    </button>
+    <button type="button" class="nav" aria-label="Следующий месяц" (click)="shift(1)">
+      <app-icon name="chevron-right" style="--icon-size: 14px" />
+    </button>
+    <div class="total">
+      @let t = monthTotal();
+      <span class="total-pnl" [class.pos]="t.pnl > 0" [class.neg]="t.pnl < 0">{{ money(t.pnl) }}</span>
+      <span class="total-count">{{ t.count }} сд.</span>
+    </div>
+  </div>
+
+  <div class="grid weekdays">
+    @for (wd of weekdays; track wd) {
+      <span class="wd">{{ wd }}</span>
+    }
+  </div>
+
+  <div class="grid days">
+    @for (cell of cells(); track $index) {
+      @if (cell) {
+        <div
+          class="cell"
+          [class.pos]="cell.pnl !== null && cell.pnl > 0"
+          [class.neg]="cell.pnl !== null && cell.pnl < 0"
+          [class.today]="cell.isToday"
+          [style.--i]="cell.intensity"
+          [appTooltip]="tooltipFor(cell)"
+        >
+          <span class="d">{{ cell.day }}</span>
+          @if (cell.pnl !== null) {
+            <span class="p">{{ compact(cell.pnl) }}</span>
+            <span class="c">{{ cell.count }}</span>
+          }
+        </div>
+      } @else {
+        <div class="cell empty"></div>
+      }
+    }
+  </div>
+</div>

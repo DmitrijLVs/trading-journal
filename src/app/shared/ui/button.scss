@@ -1,0 +1,110 @@
+@use 'styles/index' as *;
+
+:host {
+  // Компонент-кнопка: все стили на самом элементе.
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: $radius-md;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $space-2;
+  white-space: nowrap;
+  user-select: none;
+  text-decoration: none;
+  transition:
+    background $duration-fast $ease-apple,
+    border-color $duration-fast $ease-apple,
+    color $duration-fast $ease-apple,
+    transform $duration-instant $ease-apple,
+    box-shadow $duration-fast $ease-apple;
+
+  @include focus-ring;
+
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+:host(.btn--md) {
+  height: 32px;
+  padding: 0 $space-3;
+  font-size: $text-md;
+}
+
+:host(.btn--sm) {
+  height: 28px;
+  padding: 0 $space-2 * 1.25;
+  font-size: $text-sm;
+}
+
+:host(.btn--xs) {
+  height: 24px;
+  padding: 0 $space-2;
+  font-size: $text-xs;
+}
+
+:host(.btn--icon-only.btn--md) { width: 32px; padding: 0; }
+:host(.btn--icon-only.btn--sm) { width: 28px; padding: 0; }
+:host(.btn--icon-only.btn--xs) { width: 24px; padding: 0; }
+
+:host(.btn--primary) {
+  background: var(--accent-emphasis);
+  color: var(--fg-on-emphasis);
+  box-shadow: $inner-highlight;
+
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent-emphasis) 88%, white);
+  }
+}
+
+:host(.btn--subtle) {
+  background: var(--canvas-overlay);
+  border-color: var(--border-default);
+  color: var(--fg-default);
+
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--canvas-overlay) 85%, white);
+    border-color: var(--border-strong);
+  }
+}
+
+:host(.btn--outline) {
+  background: transparent;
+  border-color: var(--border-default);
+  color: var(--fg-default);
+
+  &:hover:not(:disabled) {
+    background: var(--canvas-overlay);
+    border-color: var(--border-strong);
+  }
+}
+
+:host(.btn--ghost) {
+  background: transparent;
+  color: var(--fg-muted);
+
+  &:hover:not(:disabled) {
+    background: var(--canvas-overlay);
+    color: var(--fg-default);
+  }
+}
+
+:host(.btn--danger) {
+  background: transparent;
+  border-color: var(--border-default);
+  color: var(--danger-fg);
+
+  &:hover:not(:disabled) {
+    background: var(--danger-subtle);
+    border-color: var(--danger-muted);
+  }
+}

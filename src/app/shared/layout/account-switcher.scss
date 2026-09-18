@@ -1,0 +1,131 @@
+@use 'styles/index' as *;
+
+.trigger {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  height: 36px;
+  padding: 0 $space-2 0 6px;
+  background: transparent;
+  border: 1px solid var(--border-default);
+  border-radius: $radius-lg;
+  cursor: pointer;
+  color: var(--fg-default);
+  transition:
+    background $duration-fast $ease-apple,
+    border-color $duration-fast $ease-apple;
+  @include focus-ring;
+
+  &:hover,
+  &.open {
+    background: var(--canvas-overlay);
+    border-color: var(--border-strong);
+  }
+}
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: $radius-md;
+  font-size: $text-xs;
+  font-weight: 700;
+  flex: none;
+
+  &.all {
+    background: var(--accent-subtle);
+    color: var(--accent-fg);
+  }
+}
+
+.titles {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.15;
+  min-width: 0;
+}
+
+.name {
+  font-size: $text-sm;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.balance {
+  font-size: $text-xs;
+  font-family: $font-mono;
+  color: var(--fg-muted);
+}
+
+.caret {
+  color: var(--fg-subtle);
+  margin-left: $space-1;
+  transition: transform $duration-base $ease-out;
+
+  .open & {
+    transform: rotate(180deg);
+  }
+}
+
+// ── Панель ──────────────────────────────────────────────────────────────────
+
+.panel {
+  width: 280px;
+  padding: $space-1;
+  background: var(--canvas-overlay);
+  border: 1px solid var(--border-default);
+  border-radius: $radius-lg;
+  box-shadow: $shadow-popover;
+}
+
+.row {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  width: 100%;
+  padding: $space-2;
+  background: none;
+  border: none;
+  border-radius: $radius-md;
+  color: var(--fg-default);
+  cursor: pointer;
+  text-align: left;
+  text-decoration: none;
+  transition: background $duration-instant $ease-apple;
+
+  &:hover {
+    background: var(--border-muted);
+  }
+
+  &.active .name {
+    color: var(--accent-fg);
+  }
+
+  .hint {
+    font-size: $text-xs;
+    color: var(--fg-subtle);
+  }
+
+  .value {
+    margin-left: auto;
+    font-family: $font-mono;
+    font-size: $text-sm;
+    color: var(--fg-muted);
+  }
+
+  &.manage .name {
+    color: var(--fg-muted);
+    font-weight: 500;
+  }
+}
+
+.separator {
+  height: 1px;
+  margin: $space-1 $space-2;
+  background: var(--border-muted);
+}

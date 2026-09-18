@@ -1,0 +1,158 @@
+// Переиспользуемые поверхности: страницы, карточки, таблицы данных.
+
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+.tj-page {
+  padding: $space-5 $space-6;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.tj-page-head {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+  margin-bottom: $space-5;
+
+  h1 {
+    margin: 0;
+    font-size: $text-2xl;
+    font-weight: 650;
+    letter-spacing: -0.015em;
+  }
+
+  .tj-page-sub {
+    margin: $space-1 0 0;
+    color: var(--fg-muted);
+    font-size: $text-sm;
+  }
+
+  .spacer {
+    flex: 1;
+  }
+}
+
+.tj-card {
+  @include elevated;
+  border-radius: $radius-lg;
+}
+
+// ── Таблица данных ──────────────────────────────────────────────────────────
+.tj-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: $text-sm;
+
+  th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--canvas-subtle);
+    color: var(--fg-muted);
+    font-size: $text-xs;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    text-align: left;
+    padding: $space-2 $space-3;
+    border-bottom: 1px solid var(--border-default);
+    white-space: nowrap;
+    user-select: none;
+  }
+
+  td {
+    padding: $space-2 $space-3;
+    border-bottom: 1px solid var(--border-muted);
+    color: var(--fg-default);
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+
+  tbody tr {
+    transition: background $duration-instant $ease-apple;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.025);
+    }
+
+    &.clickable {
+      cursor: pointer;
+    }
+  }
+
+  .num {
+    text-align: right;
+    font-family: $font-mono;
+    font-variant-numeric: tabular-nums;
+  }
+
+  th.num {
+    font-family: $font-sans;
+  }
+
+  .muted {
+    color: var(--fg-muted);
+  }
+}
+
+// Сортируемый заголовок
+.tj-th-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  border-radius: $radius-sm;
+
+  &:hover {
+    color: var(--fg-default);
+  }
+
+  .arrow {
+    font-size: 9px;
+    line-height: 1;
+    opacity: 0;
+    transition: opacity $duration-fast $ease-apple;
+  }
+
+  &.active {
+    color: var(--fg-default);
+
+    .arrow {
+      opacity: 1;
+    }
+  }
+}
+
+// Превью позиции при перетаскивании виджета (рендерится внутри gridster)
+.gridster-preview {
+  background: var(--accent-subtle) !important;
+  border: 1px dashed var(--accent-muted);
+  border-radius: $radius-lg;
+}
+
+// Линии сетки при drag/resize: дефолт gridster — ярко-белые, приглушаем.
+// Специфичность выше, чем у встроенных стилей (encapsulation: None).
+gridster.display-grid .gridster-column {
+  border-left-color: var(--border-muted);
+  border-right-color: var(--border-muted);
+}
+
+gridster.display-grid .gridster-row {
+  border-top-color: var(--border-muted);
+  border-bottom-color: var(--border-muted);
+}
+
+// Плашка направления сделки
+.tj-side {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: $text-xs;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+
+  &.long { color: var(--success-fg); }
+  &.short { color: var(--danger-fg); }
+}

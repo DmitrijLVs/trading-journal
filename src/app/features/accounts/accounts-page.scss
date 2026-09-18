@@ -1,0 +1,201 @@
+@use 'styles/index' as *;
+
+:host {
+  display: block;
+}
+
+.tj-page-sub app-pnl {
+  font-size: $text-sm;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: $space-4;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  padding: $space-4;
+  gap: $space-3;
+  transition: border-color $duration-fast $ease-apple, transform $duration-fast $ease-out;
+
+  &:hover {
+    border-color: var(--border-default);
+  }
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: $space-3;
+}
+
+.mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: $radius-lg;
+  font-size: $text-lg;
+  font-weight: 700;
+  flex: none;
+}
+
+.names {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+
+  .name {
+    font-size: $text-lg;
+    font-weight: 650;
+  }
+
+  .sub {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+  }
+
+  .count {
+    color: var(--fg-subtle);
+    font-size: $text-xs;
+  }
+}
+
+.balance-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: $space-3;
+}
+
+.balance {
+  display: flex;
+  flex-direction: column;
+
+  .k {
+    color: var(--fg-subtle);
+    font-size: $text-xs;
+  }
+
+  .v {
+    font-family: $font-mono;
+    font-size: $text-2xl;
+    font-weight: 650;
+    letter-spacing: -0.02em;
+  }
+
+  .delta {
+    font-size: $text-sm;
+  }
+}
+
+.spark {
+  width: 140px;
+  height: 40px;
+  flex: none;
+}
+
+.api-row {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  color: var(--fg-subtle);
+
+  code {
+    font-family: $font-mono;
+    font-size: $text-xs;
+    color: var(--fg-muted);
+    background: var(--canvas-inset);
+    border: 1px solid var(--border-muted);
+    border-radius: $radius-sm;
+    padding: 2px $space-2;
+  }
+}
+
+.sync-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+  border-top: 1px solid var(--border-muted);
+  padding-top: $space-3;
+  margin-top: auto;
+}
+
+.sync-meta {
+  display: flex;
+  flex-direction: column;
+
+  .k {
+    font-size: $text-sm;
+    color: var(--fg-default);
+    font-weight: 500;
+  }
+
+  .v {
+    font-size: $text-xs;
+    color: var(--fg-subtle);
+  }
+}
+
+// ── Карточка-приглашение ────────────────────────────────────────────────────
+
+.add-card {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: $space-2;
+  min-height: 220px;
+  background: transparent;
+  border: 1px dashed var(--border-default);
+  border-radius: $radius-lg;
+  color: var(--fg-muted);
+  cursor: pointer;
+  text-align: center;
+  padding: $space-5;
+  transition: all $duration-fast $ease-apple;
+
+  &:hover {
+    border-color: var(--accent-muted);
+    background: var(--accent-subtle);
+
+    .add-glyph {
+      color: var(--accent-fg);
+      transform: scale(1.08);
+    }
+  }
+}
+
+.add-glyph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px dashed var(--border-strong);
+  color: var(--fg-muted);
+  transition: all $duration-fast $ease-out;
+}
+
+.add-title {
+  font-size: $text-md;
+  font-weight: 600;
+  color: var(--fg-default);
+}
+
+.add-sub {
+  font-size: $text-xs;
+  color: var(--fg-subtle);
+  max-width: 240px;
+  line-height: 1.5;
+}

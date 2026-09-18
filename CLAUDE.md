@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Product
 
-Trading-journal application modeled on https://tradermake.money/ — trade logging, P&L analytics, statistics, equity curve, calendar view, tagging, filters by instrument/strategy/timeframe. The repo today is only the Angular scaffold; every architectural decision should anticipate this destination.
+Trading-journal application modeled on https://tradermake.money/ — trade logging, P&L analytics, statistics, equity curve, calendar view, tagging, filters by instrument/strategy/timeframe.
+
+Implemented today (all data mocked via `core/mock/*` + `mockApiInterceptor`): widget dashboard with workspaces (angular-gridster2, drag/resize/maximize/lock, templates, per-widget settings), 16 widget types (ECharts + DOM), trades table with filters/sorting, trade detail with night-vision candle chart (`trade-journal.navy`: entry/exit/SL/TP markup), Signal Forms account dialog (trades are NOT entered manually — they arrive via exchange sync only; analysis fields are edited inline on trade detail), daily journal with notes/mood, accounts page with API keys, settings with CSV export. Shared UI kit in `shared/ui` (CDK overlay select/menu/dialog/tooltip/toast). Key gotcha: night-vision auto-range includes the volume column — custom `.navy` overlays must not derive `yRange` from the incoming hi/lo.
 
 ## Commands
 

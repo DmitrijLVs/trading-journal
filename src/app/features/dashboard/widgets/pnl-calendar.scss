@@ -1,0 +1,159 @@
+@use 'styles/index' as *;
+
+:host {
+  display: block;
+  height: 100%;
+}
+
+.cal {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: $space-2 $space-3 $space-3;
+  gap: $space-2;
+}
+
+.cal-head {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.nav {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: none;
+  border: none;
+  border-radius: $radius-sm;
+  color: var(--fg-muted);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--border-muted);
+    color: var(--fg-default);
+  }
+}
+
+.month {
+  appearance: none;
+  background: none;
+  border: none;
+  color: var(--fg-default);
+  font-size: $text-sm;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px $space-2;
+  border-radius: $radius-sm;
+
+  &.dim:hover {
+    background: var(--border-muted);
+  }
+}
+
+.total {
+  margin-left: auto;
+  display: flex;
+  align-items: baseline;
+  gap: $space-2;
+
+  .total-pnl {
+    font-family: $font-mono;
+    font-size: $text-sm;
+    font-weight: 600;
+
+    &.pos { color: var(--success-fg); }
+    &.neg { color: var(--danger-fg); }
+  }
+
+  .total-count {
+    color: var(--fg-subtle);
+    font-size: $text-xs;
+  }
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.weekdays .wd {
+  text-align: center;
+  font-size: $text-xs;
+  color: var(--fg-subtle);
+  padding-bottom: 1px;
+}
+
+.days {
+  flex: 1;
+  grid-auto-rows: 1fr;
+  min-height: 0;
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  border-radius: 5px;
+  border: 1px solid var(--border-muted);
+  background: var(--canvas-inset);
+  padding: 3px 5px;
+  min-height: 0;
+  overflow: hidden;
+  transition: transform $duration-fast $ease-out, border-color $duration-fast $ease-apple;
+
+  &:not(.empty):hover {
+    transform: scale(1.04);
+    border-color: var(--border-strong);
+    z-index: 1;
+  }
+
+  &.empty {
+    border-color: transparent;
+    background: transparent;
+  }
+
+  // Интенсивность — через color-mix с прозрачностью от --i.
+  &.pos {
+    background: color-mix(in srgb, var(--success-fg) calc(var(--i) * 26%), var(--canvas-inset));
+    border-color: color-mix(in srgb, var(--success-fg) calc(var(--i) * 38%), var(--border-muted));
+  }
+
+  &.neg {
+    background: color-mix(in srgb, var(--danger-fg) calc(var(--i) * 26%), var(--canvas-inset));
+    border-color: color-mix(in srgb, var(--danger-fg) calc(var(--i) * 38%), var(--border-muted));
+  }
+
+  &.today {
+    outline: 1.5px solid var(--accent-fg);
+    outline-offset: -1.5px;
+  }
+}
+
+.d {
+  font-size: $text-xs;
+  color: var(--fg-subtle);
+  line-height: 1.1;
+}
+
+.p {
+  font-family: $font-mono;
+  font-size: $text-xs;
+  font-weight: 600;
+  color: var(--fg-default);
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.c {
+  font-size: 9px;
+  color: var(--fg-subtle);
+  line-height: 1.1;
+}

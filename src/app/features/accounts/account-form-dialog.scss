@@ -1,0 +1,110 @@
+@use 'styles/index' as *;
+
+:host {
+  display: block;
+  min-width: min(88vw, 560px);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.row {
+  display: flex;
+  gap: $space-3;
+
+  .grow {
+    flex: 1;
+  }
+}
+
+.exchanges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+}
+
+.exchange {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-3;
+  background: var(--canvas-inset);
+  border: 1px solid var(--border-default);
+  border-radius: $radius-lg;
+  color: var(--fg-default);
+  font-size: $text-sm;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all $duration-fast $ease-apple;
+
+  .mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: $radius-md;
+    font-size: $text-xs;
+    font-weight: 700;
+  }
+
+  &:hover {
+    border-color: var(--border-strong);
+  }
+
+  &.active {
+    border-color: var(--accent-fg);
+    background: var(--accent-subtle);
+  }
+}
+
+.secret {
+  position: relative;
+
+  .tj-input {
+    padding-right: 38px;
+  }
+}
+
+.reveal {
+  appearance: none;
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: $radius-sm;
+  color: var(--fg-subtle);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--fg-default);
+    background: var(--border-muted);
+  }
+}
+
+.hint {
+  display: flex;
+  gap: $space-2;
+  align-items: flex-start;
+  padding: $space-3;
+  background: var(--accent-subtle);
+  border-radius: $radius-md;
+  color: var(--fg-muted);
+  font-size: $text-xs;
+  line-height: 1.5;
+
+  app-icon {
+    color: var(--accent-fg);
+    margin-top: 1px;
+  }
+}

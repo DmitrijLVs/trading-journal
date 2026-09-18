@@ -1,5 +1,11 @@
 // Global entry. Loaded once by the build (see angular.json -> styles).
-// Adds the :root token surface and the body reset.
+// Adds the :root token surface, the body reset and app-wide patterns.
 
 @use 'styles/theme';
 @use 'styles/base';
+@use 'styles/overlays';
+@use 'styles/forms';
+@use 'styles/surfaces';
+
+// CDK overlay prerequisites (структурные стили, без @angular/cdk scss).
+@use '@angular/cdk/overlay-prebuilt.css';

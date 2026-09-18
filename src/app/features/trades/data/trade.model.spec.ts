@@ -1,19 +1,39 @@
-import { Trade, aggregateStats, calculatePnl, calculatePnlPercent } from './trade.model';
+import { describe, expect, it } from 'vitest';
+import {
+  Trade,
+  calculatePnl,
+  calculatePnlPercent,
+  calculateRMultiple,
+  calculateRoi,
+  plannedRiskReward,
+  plannedRiskUsd,
+  tradingSession,
+} from './trade.model';
 
-function trade(overrides: Partial<Trade> = {}): Trade {
+function makeTrade(overrides: Partial<Trade> = {}): Trade {
   return {
-    id: 't1',
-    accountId: 'a1',
-    symbol: 'AAPL',
+    id: 't-1',
+    accountId: 'acc',
+    symbol: 'BTCUSDT',
+    market: 'futures',
     side: 'long',
-    quantity: 10,
+    leverage: 10,
+    quantity: 1,
     entryPrice: 100,
     exitPrice: 110,
+    stopLoss: 95,
+    takeProfit: 120,
+    riskUsd: null,
     status: 'closed',
-    openedAt: '2025-01-01',
-    closedAt: '2025-01-02',
-    fees: 0,
-    strategy: '',
+    openedAt: '2026-01-05T10:00:00Z',
+    closedAt: '2026-01-05T14:00:00Z',
+    fees: 1,
+    funding: 0,
+    strategy: 'Тест',
+    timeframe: '15m',
+    setupGrade: null,
+    mood: null,
+    mistakes: [],
     tags: [],
     notes: '',
     ...overrides,
@@ -21,56 +41,59 @@ function trade(overrides: Partial<Trade> = {}): Trade {
 }
 
 describe('calculatePnl', () => {
-  it('returns 0 for open trades', () => {
-    expect(calculatePnl(trade({ status: 'open', exitPrice: 0, closedAt: '' }))).toBe(0);
+  it('лонг: (выход − вход) × объём − комиссии', () => {
+    expect(calculatePnl(makeTrade())).toBe(9); // 10 - 1 fee
   });
 
-  it('computes long P&L net of fees', () => {
-    expect(
-      calculatePnl(trade({ side: 'long', quantity: 10, entryPrice: 100, exitPrice: 110, fees: 5 })),
-    ).toBe(95);
+  it('шорт: прибыль при падении цены', () => {
+    expect(calculatePnl(makeTrade({ side: 'short', exitPrice: 90 }))).toBe(9);
   });
 
-  it('inverts sign for short trades', () => {
-    expect(
-      calculatePnl(trade({ side: 'short', quantity: 10, entryPrice: 110, exitPrice: 100 })),
-    ).toBe(100);
+  it('открытая сделка — ноль', () => {
+    expect(calculatePnl(makeTrade({ status: 'open', exitPrice: 0, closedAt: '' }))).toBe(0);
   });
 });
 
-describe('calculatePnlPercent', () => {
-  it('returns 0 when entry price is 0', () => {
-    expect(calculatePnlPercent(trade({ entryPrice: 0, exitPrice: 100 }))).toBe(0);
+describe('calculatePnlPercent / ROI', () => {
+  it('движение цены без плеча', () => {
+    expect(calculatePnlPercent(makeTrade())).toBeCloseTo(10);
   });
 
-  it('returns positive percent on winning long', () => {
-    expect(calculatePnlPercent(trade({ side: 'long', entryPrice: 100, exitPrice: 110 }))).toBe(10);
+  it('ROI учитывает маржу (плечо)', () => {
+    // margin = 100/10 = 10; pnl = 9 → 90%
+    expect(calculateRoi(makeTrade())).toBeCloseTo(90);
   });
 });
 
-describe('aggregateStats', () => {
-  it('returns zeros for empty list', () => {
-    expect(aggregateStats([])).toEqual({
-      count: 0,
-      openCount: 0,
-      closedCount: 0,
-      totalPnl: 0,
-      winRate: 0,
-      averagePnl: 0,
-    });
+describe('риск и R-multiple', () => {
+  it('риск из стопа: |вход − SL| × объём', () => {
+    expect(plannedRiskUsd(makeTrade())).toBe(5);
   });
 
-  it('counts open/closed and totals P&L', () => {
-    const stats = aggregateStats([
-      trade({ id: '1', exitPrice: 110 }),
-      trade({ id: '2', exitPrice: 90 }),
-      trade({ id: '3', status: 'open', exitPrice: 0, closedAt: '' }),
-    ]);
-    expect(stats.count).toBe(3);
-    expect(stats.openCount).toBe(1);
-    expect(stats.closedCount).toBe(2);
-    expect(stats.totalPnl).toBe(0);
-    expect(stats.winRate).toBe(0.5);
-    expect(stats.averagePnl).toBe(0);
+  it('явный riskUsd важнее стопа', () => {
+    expect(plannedRiskUsd(makeTrade({ riskUsd: 50 }))).toBe(50);
+  });
+
+  it('R = чистый P&L / риск', () => {
+    expect(calculateRMultiple(makeTrade())).toBeCloseTo(9 / 5);
+  });
+
+  it('без стопа и риска R не считается', () => {
+    expect(calculateRMultiple(makeTrade({ stopLoss: null, riskUsd: null }))).toBeNull();
+  });
+
+  it('плановый R:R по TP/SL', () => {
+    expect(plannedRiskReward(makeTrade())).toBeCloseTo(4); // reward 20 / risk 5
+  });
+});
+
+describe('tradingSession', () => {
+  it.each([
+    ['2026-01-05T03:00:00Z', 'asia'],
+    ['2026-01-05T09:00:00Z', 'london'],
+    ['2026-01-05T15:00:00Z', 'newyork'],
+    ['2026-01-05T22:30:00Z', 'off'],
+  ])('%s → %s', (iso, expected) => {
+    expect(tradingSession(iso)).toBe(expected);
   });
 });

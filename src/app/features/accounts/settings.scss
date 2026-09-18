@@ -1,0 +1,107 @@
+@use 'styles/index' as *;
+
+:host {
+  display: block;
+}
+
+.narrow {
+  max-width: 760px;
+}
+
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+.section {
+  padding: $space-4 $space-5;
+
+  h2 {
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    margin: 0 0 $space-4;
+    font-size: $text-md;
+    font-weight: 650;
+
+    app-icon {
+      color: var(--fg-muted);
+    }
+  }
+}
+
+.row {
+  display: flex;
+  gap: $space-3;
+  margin-bottom: $space-3;
+
+  .grow {
+    flex: 1;
+  }
+
+  .tj-field {
+    min-width: 130px;
+  }
+}
+
+app-select {
+  display: block;
+  width: 100%;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-4;
+  padding: $space-3 0;
+  border-top: 1px solid var(--border-muted);
+  cursor: pointer;
+
+  .t {
+    display: block;
+    font-size: $text-sm;
+    font-weight: 500;
+    color: var(--fg-default);
+  }
+
+  .d {
+    display: block;
+    font-size: $text-xs;
+    color: var(--fg-subtle);
+    margin-top: 1px;
+  }
+}
+
+.data-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-4;
+  padding: $space-3 0;
+
+  & + .data-row {
+    border-top: 1px solid var(--border-muted);
+  }
+
+  .t {
+    display: block;
+    font-size: $text-sm;
+    font-weight: 500;
+    color: var(--fg-default);
+  }
+
+  .d {
+    display: block;
+    font-size: $text-xs;
+    color: var(--fg-subtle);
+    margin-top: 1px;
+    max-width: 420px;
+  }
+}

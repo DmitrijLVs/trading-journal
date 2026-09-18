@@ -1,0 +1,92 @@
+<section class="tj-page narrow">
+  <header class="tj-page-head">
+    <div>
+      <h1>Настройки</h1>
+      <p class="tj-page-sub">Профиль, отображение и данные.</p>
+    </div>
+  </header>
+
+  <div class="sections">
+    <!-- Профиль -->
+    <div class="tj-card section">
+      <h2><app-icon name="user" style="--icon-size: 15px" /> Профиль</h2>
+      <div class="row">
+        <div class="tj-field grow">
+          <label>Имя</label>
+          <input class="tj-input" [value]="name()" (input)="name.set($any($event.target).value)" />
+        </div>
+        <div class="tj-field grow">
+          <label>E-mail</label>
+          <input class="tj-input" type="email" [value]="email()" (input)="email.set($any($event.target).value)" />
+        </div>
+      </div>
+      <div class="actions">
+        <button app-button variant="primary" size="sm" (click)="saveProfile()">Сохранить</button>
+      </div>
+    </div>
+
+    <!-- Торговля -->
+    <div class="tj-card section">
+      <h2><app-icon name="trades" style="--icon-size: 15px" /> Торговля и отображение</h2>
+      <div class="row">
+        <div class="tj-field grow">
+          <label>Часовой пояс</label>
+          <app-select [options]="timezoneOptions" [value]="timezone()" (valueChange)="timezone.set($event)" />
+        </div>
+        <div class="tj-field grow">
+          <label>Валюта учёта</label>
+          <app-select [options]="currencyOptions" [value]="currency()" (valueChange)="currency.set($event)" />
+        </div>
+        <div class="tj-field">
+          <label>Риск на сделку, %</label>
+          <input
+            class="tj-input tj-input--mono"
+            type="number"
+            step="0.1"
+            [value]="defaultRisk()"
+            (input)="defaultRisk.set(+$any($event.target).value)"
+          />
+        </div>
+      </div>
+      <label class="toggle-row">
+        <span>
+          <span class="t">Неделя начинается с понедельника</span>
+          <span class="d">Влияет на календарь P&L и распределения по дням</span>
+        </span>
+        <app-toggle [checked]="weekStartMonday()" (checkedChange)="weekStartMonday.set($event)" />
+      </label>
+      <label class="toggle-row">
+        <span>
+          <span class="t">Подтверждать удаление</span>
+          <span class="d">Спрашивать перед удалением сделок и счетов</span>
+        </span>
+        <app-toggle [checked]="confirmDeletes()" (checkedChange)="confirmDeletes.set($event)" />
+      </label>
+    </div>
+
+    <!-- Данные -->
+    <div class="tj-card section">
+      <h2><app-icon name="download" style="--icon-size: 15px" /> Данные</h2>
+      <div class="data-row">
+        <div>
+          <span class="t">Экспорт сделок в CSV</span>
+          <span class="d">Вся история со всеми полями — для Excel или собственной аналитики</span>
+        </div>
+        <button app-button variant="outline" size="sm" (click)="exportCsv()">
+          <app-icon name="download" style="--icon-size: 13px" />
+          Экспорт
+        </button>
+      </div>
+      <div class="data-row danger">
+        <div>
+          <span class="t">Сбросить локальные данные</span>
+          <span class="d">Раскладка дашборда, выбранный счёт и период — к значениям по умолчанию</span>
+        </div>
+        <button app-button variant="danger" size="sm" (click)="resetLocal()">
+          <app-icon name="refresh" style="--icon-size: 13px" />
+          Сбросить
+        </button>
+      </div>
+    </div>
+  </div>
+</section>

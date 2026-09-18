@@ -1,0 +1,182 @@
+@use 'styles/index' as *;
+
+:host {
+  display: inline-block;
+}
+
+.trigger {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  width: 100%;
+  height: 32px;
+  padding: 0 $space-2 0 $space-3;
+  background: var(--canvas-overlay);
+  border: 1px solid var(--border-default);
+  border-radius: $radius-md;
+  color: var(--fg-default);
+  font-size: $text-md;
+  cursor: pointer;
+  transition:
+    border-color $duration-fast $ease-apple,
+    background $duration-fast $ease-apple;
+  @include focus-ring;
+
+  &.sm {
+    height: 28px;
+    font-size: $text-sm;
+  }
+
+  &:hover {
+    border-color: var(--border-strong);
+  }
+
+  &.open {
+    border-color: var(--accent-muted);
+  }
+
+  &.placeholder .label {
+    color: var(--fg-subtle);
+  }
+}
+
+.label {
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.caret {
+  color: var(--fg-subtle);
+  transition: transform $duration-base $ease-out;
+
+  .open & {
+    transform: rotate(180deg);
+  }
+}
+
+.clear {
+  display: inline-flex;
+  color: var(--fg-subtle);
+  border-radius: $radius-sm;
+  padding: 2px;
+
+  &:hover {
+    color: var(--fg-default);
+    background: var(--border-muted);
+  }
+}
+
+// ── Панель ──────────────────────────────────────────────────────────────────
+
+.panel {
+  min-width: 200px;
+  max-width: 320px;
+  background: var(--canvas-overlay);
+  border: 1px solid var(--border-default);
+  border-radius: $radius-lg;
+  box-shadow: $shadow-popover;
+  overflow: hidden;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-3;
+  border-bottom: 1px solid var(--border-muted);
+  color: var(--fg-subtle);
+
+  input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--fg-default);
+    font-size: $text-sm;
+
+    &::placeholder {
+      color: var(--fg-subtle);
+    }
+  }
+}
+
+.list {
+  max-height: 280px;
+  overflow-y: auto;
+  padding: $space-1;
+  @include styled-scrollbar;
+}
+
+.option {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  width: 100%;
+  padding: $space-2 $space-2;
+  background: none;
+  border: none;
+  border-radius: $radius-md;
+  color: var(--fg-default);
+  font-size: $text-sm;
+  text-align: left;
+  cursor: pointer;
+  transition: background $duration-instant $ease-apple;
+
+  &:hover {
+    background: var(--border-muted);
+  }
+
+  &.selected .option-label {
+    font-weight: 600;
+  }
+}
+
+.option-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hint {
+  color: var(--fg-subtle);
+  font-size: $text-xs;
+  font-family: $font-mono;
+}
+
+.tick {
+  color: var(--accent-fg);
+}
+
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: $radius-sm;
+  color: transparent;
+  transition:
+    background $duration-fast $ease-apple,
+    border-color $duration-fast $ease-apple,
+    color $duration-fast $ease-apple;
+
+  &.on {
+    background: var(--accent-emphasis);
+    border-color: var(--accent-emphasis);
+    color: var(--fg-on-emphasis);
+  }
+}
+
+.empty {
+  padding: $space-4;
+  text-align: center;
+  color: var(--fg-subtle);
+  font-size: $text-sm;
+}

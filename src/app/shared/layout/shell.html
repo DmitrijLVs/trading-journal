@@ -1,42 +1,56 @@
 <div class="layout">
   <aside class="sidebar">
-    <div class="brand">
-      <span class="brand-mark">ДТ</span>
-      <span class="brand-name">Дневник трейдера</span>
-    </div>
+    <a class="brand" routerLink="/dashboard">
+      <span class="brand-mark">
+        <app-icon name="trades" style="--icon-size: 17px" />
+      </span>
+      <span class="brand-name">TradeLog</span>
+    </a>
 
     <nav class="nav">
       <div class="nav-section">
-        <a class="nav-item" routerLink="/dashboard" routerLinkActive="is-active">
-          <app-svg-icon name="dashboard" />
-          <span>Главная</span>
-        </a>
-        <a class="nav-item" routerLink="/trades" routerLinkActive="is-active">
-          <app-svg-icon name="trades" />
-          <span>Сделки</span>
-        </a>
-        <a class="nav-item" routerLink="/journal" routerLinkActive="is-active">
-          <app-svg-icon name="journal" />
-          <span>Дневник сделок</span>
-        </a>
+        @for (item of mainNav; track item.path) {
+          <a class="nav-item" [routerLink]="item.path" routerLinkActive="is-active">
+            <app-icon [name]="item.icon" />
+            <span>{{ item.label }}</span>
+          </a>
+        }
       </div>
 
       <div class="nav-divider"></div>
 
       <div class="nav-section">
-        <a class="nav-item" routerLink="/account" routerLinkActive="is-active">
-          <app-svg-icon name="account" />
-          <span>Аккаунт</span>
-        </a>
-        <a class="nav-item" routerLink="/settings" routerLinkActive="is-active">
-          <app-svg-icon name="settings" />
-          <span>Настройки</span>
-        </a>
+        @for (item of systemNav; track item.path) {
+          <a class="nav-item" [routerLink]="item.path" routerLinkActive="is-active">
+            <app-icon [name]="item.icon" />
+            <span>{{ item.label }}</span>
+          </a>
+        }
       </div>
     </nav>
+
+    <div class="sidebar-foot">
+      <div class="user">
+        <span class="user-avatar">ДК</span>
+        <span class="user-meta">
+          <span class="user-name">Дмитрий</span>
+          <span class="user-plan">Pro · демо-данные</span>
+        </span>
+      </div>
+    </div>
   </aside>
 
-  <main class="main">
-    <router-outlet />
-  </main>
+  <div class="main">
+    <header class="topbar">
+      <app-account-switcher />
+      <div class="topbar-spacer"></div>
+      <app-period-picker />
+    </header>
+
+    <main class="content">
+      <router-outlet />
+    </main>
+  </div>
 </div>
+
+<app-toast-outlet />

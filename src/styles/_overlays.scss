@@ -1,0 +1,128 @@
+// Глобальные стили CDK-оверлеев: панели диалогов, меню, анимации появления.
+// CDK рендерит оверлеи вне дерева компонент, поэтому стили только глобальные.
+
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+// ── Общая анимация появления поповеров ──────────────────────────────────────
+.tj-pop-in {
+  animation: tj-pop-in $duration-fast $ease-out;
+  transform-origin: top center;
+}
+
+@keyframes tj-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+// ── Диалоги (CDK Dialog) ────────────────────────────────────────────────────
+.tj-dialog-backdrop {
+  background: rgba(1, 4, 9, 0.6);
+  backdrop-filter: blur(3px);
+  animation: tj-fade-in $duration-base $ease-apple;
+}
+
+@keyframes tj-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.tj-dialog-panel {
+  background: var(--canvas-subtle);
+  border: 1px solid var(--border-default);
+  border-radius: $radius-xl;
+  box-shadow: $shadow-popover, $inner-highlight;
+  min-width: 380px;
+  max-width: min(92vw, 640px);
+  animation: tj-dialog-in $duration-base $ease-out;
+  overflow: hidden;
+}
+
+.tj-dialog-panel--wide {
+  max-width: min(94vw, 880px);
+}
+
+@keyframes tj-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+// ── Меню (CDK Menu) ─────────────────────────────────────────────────────────
+.tj-menu {
+  display: flex;
+  flex-direction: column;
+  min-width: 190px;
+  padding: $space-1;
+  background: var(--canvas-overlay);
+  border: 1px solid var(--border-default);
+  border-radius: $radius-lg;
+  box-shadow: $shadow-popover;
+  animation: tj-pop-in $duration-fast $ease-out;
+}
+
+.tj-menu-item {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-2;
+  background: none;
+  border: none;
+  border-radius: $radius-md;
+  color: var(--fg-default);
+  font-size: $text-sm;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background $duration-instant $ease-apple;
+
+  app-icon {
+    color: var(--fg-muted);
+  }
+
+  &:hover,
+  &.cdk-menu-item-highlighted {
+    background: var(--border-muted);
+  }
+
+  &.danger {
+    color: var(--danger-fg);
+
+    app-icon { color: var(--danger-fg); }
+
+    &:hover { background: var(--danger-subtle); }
+  }
+
+  &[disabled] {
+    opacity: 0.45;
+    cursor: default;
+  }
+}
+
+.tj-menu-separator {
+  height: 1px;
+  margin: $space-1 $space-2;
+  background: var(--border-muted);
+  border: none;
+}
+
+.tj-menu-label {
+  padding: $space-2 $space-2 $space-1;
+  color: var(--fg-subtle);
+  font-size: $text-xs;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}

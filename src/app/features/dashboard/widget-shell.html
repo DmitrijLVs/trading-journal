@@ -1,0 +1,48 @@
+<header class="head" [class.widget-drag-handle]="!locked() && !maximized()">
+  <span class="grip">
+    <app-icon name="grip" style="--icon-size: 12px" />
+  </span>
+  <h3 class="title">{{ title() }}</h3>
+  @if (periodBadge(); as badge) {
+    <span class="period">{{ badge }}</span>
+  }
+  <div class="actions">
+    <button type="button" class="action" aria-label="Развернуть" (click)="toggleMaximize.emit()">
+      <app-icon [name]="maximized() ? 'minimize' : 'maximize'" style="--icon-size: 13px" />
+    </button>
+    <button
+      type="button"
+      class="action"
+      aria-label="Меню виджета"
+      [cdkMenuTriggerFor]="menu"
+    >
+      <app-icon name="more-h" style="--icon-size: 14px" />
+    </button>
+  </div>
+</header>
+
+<div class="body">
+  <ng-content />
+</div>
+
+<ng-template #menu>
+  <div class="tj-menu" cdkMenu>
+    <button class="tj-menu-item" cdkMenuItem (click)="configure.emit()">
+      <app-icon name="settings" style="--icon-size: 14px" />
+      Настроить
+    </button>
+    <button class="tj-menu-item" cdkMenuItem (click)="duplicate.emit()">
+      <app-icon name="duplicate" style="--icon-size: 14px" />
+      Дублировать
+    </button>
+    <button class="tj-menu-item" cdkMenuItem (click)="toggleMaximize.emit()">
+      <app-icon [name]="maximized() ? 'minimize' : 'maximize'" style="--icon-size: 14px" />
+      {{ maximized() ? 'Свернуть' : 'Развернуть' }}
+    </button>
+    <div class="tj-menu-separator"></div>
+    <button class="tj-menu-item danger" cdkMenuItem (click)="remove.emit()">
+      <app-icon name="trash" style="--icon-size: 14px" />
+      Удалить
+    </button>
+  </div>
+</ng-template>

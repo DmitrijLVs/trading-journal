@@ -1,0 +1,88 @@
+// Единые стили форм: подключаются глобально, компоненты используют классы.
+
+@use 'tokens' as *;
+@use 'mixins' as *;
+
+.tj-field {
+  display: flex;
+  flex-direction: column;
+  gap: $space-1;
+
+  > label {
+    color: var(--fg-muted);
+    font-size: $text-xs;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .tj-error {
+    color: var(--danger-fg);
+    font-size: $text-xs;
+  }
+}
+
+.tj-input,
+.tj-textarea {
+  appearance: none;
+  width: 100%;
+  background: var(--canvas-inset);
+  border: 1px solid var(--border-default);
+  border-radius: $radius-md;
+  color: var(--fg-default);
+  font-size: $text-md;
+  font-family: inherit;
+  padding: 0 $space-3;
+  height: 32px;
+  transition:
+    border-color $duration-fast $ease-apple,
+    box-shadow $duration-fast $ease-apple;
+
+  &::placeholder {
+    color: var(--fg-subtle);
+  }
+
+  &:hover:not(:focus) {
+    border-color: var(--border-strong);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--accent-fg);
+    box-shadow: 0 0 0 3px var(--accent-subtle);
+  }
+
+  &.ng-invalid.ng-touched,
+  &.invalid {
+    border-color: var(--danger-fg);
+
+    &:focus {
+      box-shadow: 0 0 0 3px var(--danger-subtle);
+    }
+  }
+
+  &[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.tj-input--mono {
+  font-family: $font-mono;
+  font-size: $text-sm;
+}
+
+.tj-textarea {
+  height: auto;
+  min-height: 84px;
+  padding: $space-2 $space-3;
+  line-height: 1.5;
+  resize: vertical;
+  @include styled-scrollbar;
+}
+
+// Нативный date-input в тёмной теме
+input[type='date'].tj-input {
+  color-scheme: dark;
+  font-family: $font-mono;
+  font-size: $text-sm;
+}

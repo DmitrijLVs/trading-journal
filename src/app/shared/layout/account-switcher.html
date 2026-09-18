@@ -1,0 +1,69 @@
+<button
+  type="button"
+  class="trigger"
+  cdkOverlayOrigin
+  #origin="cdkOverlayOrigin"
+  [class.open]="open()"
+  (click)="open.set(!open())"
+>
+  @if (triggerMark(); as mark) {
+    <span class="avatar" [style.background]="mark.color + '22'" [style.color]="mark.color">
+      {{ mark.mark }}
+    </span>
+  } @else {
+    <span class="avatar all"><app-icon name="layers" style="--icon-size: 13px" /></span>
+  }
+  <span class="titles">
+    <span class="name">{{ triggerTitle() }}</span>
+    <span class="balance">{{ triggerBalance() }}</span>
+  </span>
+  <app-icon class="caret" name="chevron-down" style="--icon-size: 13px" />
+</button>
+
+<ng-template
+  cdkConnectedOverlay
+  [cdkConnectedOverlayOrigin]="origin"
+  [cdkConnectedOverlayOpen]="open()"
+  [cdkConnectedOverlayHasBackdrop]="true"
+  cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
+  [cdkConnectedOverlayOffsetY]="6"
+  (backdropClick)="open.set(false)"
+>
+  <div class="panel tj-pop-in">
+    <button type="button" class="row" [class.active]="selectedId() === 'all'" (click)="select('all')">
+      <span class="avatar all"><app-icon name="layers" style="--icon-size: 13px" /></span>
+      <span class="titles">
+        <span class="name">Все счета</span>
+        <span class="hint">Сводная аналитика</span>
+      </span>
+      <span class="value">{{ format(totalBalance()) }}</span>
+    </button>
+
+    <div class="separator"></div>
+
+    @for (row of rows(); track row.account.id) {
+      <button
+        type="button"
+        class="row"
+        [class.active]="selectedId() === row.account.id"
+        (click)="select(row.account.id)"
+      >
+        <span class="avatar" [style.background]="row.color + '22'" [style.color]="row.color">
+          {{ row.mark }}
+        </span>
+        <span class="titles">
+          <span class="name">{{ row.account.name }}</span>
+          <span class="hint">{{ row.account.market === 'futures' ? 'Фьючерсы' : 'Спот' }}</span>
+        </span>
+        <span class="value">{{ format(row.balance) }}</span>
+      </button>
+    }
+
+    <div class="separator"></div>
+
+    <a class="row manage" routerLink="/accounts" (click)="open.set(false)">
+      <span class="avatar all"><app-icon name="plus" style="--icon-size: 13px" /></span>
+      <span class="titles"><span class="name">Управление счетами</span></span>
+    </a>
+  </div>
+</ng-template>
