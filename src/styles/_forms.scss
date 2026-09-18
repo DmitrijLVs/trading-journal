@@ -80,6 +80,13 @@
   @include styled-scrollbar;
 }
 
+// Заметки пользователя — «от руки», как запись в тетради.
+.tj-textarea--hand {
+  font-family: $font-hand;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
 // Нативный date-input в тёмной теме
 input[type='date'].tj-input {
   color-scheme: dark;

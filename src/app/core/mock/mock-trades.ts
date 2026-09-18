@@ -1,4 +1,4 @@
-import { Mood, SetupGrade, Trade, TradeSide } from '../../features/trades/data/trade.model';
+import { SetupGrade, Trade, TradeSide } from '../../features/trades/data/trade.model';
 import { JournalEntry } from '../../features/journal/data/journal.model';
 import { SeededRng, hashSeed } from './seeded-rng';
 import {
@@ -15,10 +15,17 @@ import {
   WIN_NOTES,
 } from './mock-universe';
 
-/** Начало и конец истории (год торговли до «сегодня»). */
-const HISTORY_START = Date.UTC(2025, 6, 7);
-const HISTORY_END = Date.UTC(2026, 6, 8);
 const DAY_MS = 86_400_000;
+
+/** Сегодняшняя UTC-полночь — история всегда «живая» и доходит до вчера. */
+const TODAY = (() => {
+  const now = new Date();
+  return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+})();
+
+/** Год торговли: последняя закрытая сделка — вчера, открытые — сегодня. */
+const HISTORY_END = TODAY - DAY_MS;
+const HISTORY_START = HISTORY_END - 365 * DAY_MS;
 
 /**
  * Правдоподобная цена инструмента в момент времени: базовая цена ×
@@ -60,8 +67,8 @@ export function generateMockData(seed = 20260709): GeneratedData {
     const dayStart = HISTORY_START + dayIdx * DAY_MS;
     const weekday = new Date(dayStart).getUTCDay();
     const isWeekend = weekday === 0 || weekday === 6;
-    // Трейдер торгует не каждый день; по выходным — заметно реже.
-    if (!rng.bool(isWeekend ? 0.3 : 0.74)) continue;
+    // Торгует почти каждый будний день; по выходным — примерно через раз.
+    if (!rng.bool(isWeekend ? 0.45 : 0.9)) continue;
 
     const tradesToday = rng.weighted([
       [1, 30],
@@ -71,10 +78,11 @@ export function generateMockData(seed = 20260709): GeneratedData {
       [5, 6],
     ] as const);
 
-    // Прогресс года слегка повышает винрейт (трейдер учится), поверх —
-    // медленная синусоида «полос удачи».
+    // Стабильно прибыльный трейдер: винрейт 56–68%, растёт к концу года,
+    // поверх — медленная синусоида «полос удачи». Вместе с длинным хвостом
+    // побед по R это даёт положительный результат почти каждый месяц.
     const progress = dayIdx / totalDays;
-    const winRate = 0.5 + progress * 0.07 + 0.05 * Math.sin(dayIdx / 9);
+    const winRate = 0.56 + progress * 0.08 + 0.04 * Math.sin(dayIdx / 9);
 
     for (let k = 0; k < tradesToday; k++) {
       trades.push(generateTrade(rng, dayStart, winRate));
@@ -83,10 +91,10 @@ export function generateMockData(seed = 20260709): GeneratedData {
 
   trades.sort((a, b) => new Date(a.openedAt).getTime() - new Date(b.openedAt).getTime());
 
-  // Несколько открытых позиций «сегодня».
+  // Несколько открытых позиций «сегодня» — ранним утром UTC, чтобы не уйти в будущее.
   const openCount = rng.int(2, 4);
   for (let i = 0; i < openCount; i++) {
-    trades.push(generateOpenTrade(rng, HISTORY_END + i * 3_600_000 * 5));
+    trades.push(generateOpenTrade(rng, TODAY + (1 + i * 2) * 3_600_000));
   }
 
   trades.forEach((t, i) => (t.id = `t-${String(i + 1).padStart(4, '0')}`));
@@ -166,7 +174,6 @@ function generateTrade(rng: SeededRng, dayStart: number, winRate: number): Trade
   ] as (readonly [SetupGrade, number])[]);
 
   const mistakes = pickMistakes(rng, isWin, overRisk, rMultiple);
-  const mood = pickMood(rng, isWin);
   const tags = rng.sample(TAGS, rng.weighted([[0, 0.15], [1, 0.4], [2, 0.32], [3, 0.13]] as const));
   if (overRisk && !tags.includes('FOMO')) tags.push('FOMO');
 
@@ -193,7 +200,6 @@ function generateTrade(rng: SeededRng, dayStart: number, winRate: number): Trade
     strategy: rng.pick(styleMeta.strategies),
     timeframe: rng.pick(styleMeta.timeframes),
     setupGrade: grade,
-    mood,
     mistakes,
     tags,
     notes,
@@ -232,7 +238,6 @@ function generateOpenTrade(rng: SeededRng, openedMs: number): Trade {
     strategy: rng.pick(STYLES[1].strategies),
     timeframe: rng.pick(['15m', '1h']),
     setupGrade: rng.pick(['A', 'B'] as const),
-    mood: null,
     mistakes: [],
     tags: rng.sample(TAGS, 1),
     notes: rng.pick(OPEN_NOTES),
@@ -252,21 +257,6 @@ function pickMistakes(rng: SeededRng, isWin: boolean, overRisk: boolean, rMultip
   }
   if (isWin && rng.bool(0.08)) result.push('Рано зафиксировал');
   return result;
-}
-
-function pickMood(rng: SeededRng, isWin: boolean): Mood {
-  return isWin
-    ? rng.weighted([
-        ['confident', 0.35],
-        ['calm', 0.4],
-        ['neutral', 0.25],
-      ] as (readonly [Mood, number])[])
-    : rng.weighted([
-        ['neutral', 0.3],
-        ['calm', 0.2],
-        ['anxious', 0.35],
-        ['tilt', 0.15],
-      ] as (readonly [Mood, number])[]);
 }
 
 function price2minQty(price: number): number {

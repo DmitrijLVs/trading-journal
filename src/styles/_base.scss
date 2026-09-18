@@ -16,8 +16,9 @@ body {
 }
 
 body {
-  background: $canvas-default;
-  color: $fg-default;
+  // Через CSS-переменные, а не SCSS-константы: так тема переключается на :root.
+  background: var(--canvas-default);
+  color: var(--fg-default);
   font-family: $font-sans;
   font-size: $text-md;
   line-height: $leading-normal;
@@ -27,7 +28,7 @@ body {
 }
 
 a {
-  color: $accent-fg;
+  color: var(--accent-fg);
   text-decoration: none;
 }
 
@@ -41,5 +42,5 @@ textarea {
 }
 
 ::selection {
-  background: rgba(10, 132, 255, 0.35);
+  background: color-mix(in srgb, var(--accent-fg) 35%, transparent);
 }

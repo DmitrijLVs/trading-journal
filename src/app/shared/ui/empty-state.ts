@@ -1,14 +1,15 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { Icon } from './icon';
 import { IconName } from './icons';
+import { SketchFrame } from './sketch/sketch-frame';
 
 @Component({
   selector: 'app-empty-state',
-  imports: [Icon],
+  imports: [Icon, SketchFrame],
   template: `
     <div class="wrap">
-      <div class="glyph">
-        <app-icon [name]="icon()" style="--icon-size: 26px" />
+      <div class="glyph" appSketchFrame [sketchRadius]="26" [sketchRoughness]="1.4">
+        <app-icon [name]="icon()" style="--icon-size: 24px" />
       </div>
       <h3>{{ title() }}</h3>
       @if (description()) {
@@ -32,22 +33,22 @@ import { IconName } from './icons';
     }
 
     .glyph {
+      --sketch-stroke: var(--border-strong);
       display: flex;
       align-items: center;
       justify-content: center;
       width: 52px;
       height: 52px;
-      border-radius: $radius-xl;
-      background: var(--canvas-overlay);
-      border: 1px solid var(--border-muted);
+      border-radius: 50%;
       color: var(--fg-subtle);
       margin-bottom: $space-2;
     }
 
     h3 {
       margin: 0;
-      font-size: $text-md;
-      font-weight: 600;
+      font-family: $font-hand;
+      font-size: 18px;
+      font-weight: 400;
       color: var(--fg-default);
     }
 

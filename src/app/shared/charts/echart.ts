@@ -11,7 +11,7 @@ import {
   viewChild,
 } from '@angular/core';
 import type { EChartsCoreOption, ECharts } from 'echarts/core';
-import { echarts, setupECharts } from './chart-theme';
+import { currentThemeTick, echarts, registerChartTheme, setupECharts } from './chart-theme';
 
 /**
  * Обёртка ECharts: сигнал options → setOption, авторесайз через
@@ -43,13 +43,14 @@ export class EChart {
   private readonly ready = signal(false);
   private chart: ECharts | null = null;
   private resizeObserver: ResizeObserver | null = null;
+  private renderedTick = currentThemeTick();
 
   constructor() {
     setupECharts();
 
     afterNextRender(() => {
       const el = this.host().nativeElement;
-      this.chart = echarts.init(el, 'tj-dark', { renderer: 'canvas' });
+      this.chart = echarts.init(el, 'tj', { renderer: 'canvas' });
 
       this.resizeObserver = new ResizeObserver(() => {
         this.chart?.resize({ animation: { duration: 160 } });
@@ -60,7 +61,16 @@ export class EChart {
 
     effect(() => {
       const options = this.options();
+      const tick = currentThemeTick();
       if (!this.ready() || !this.chart) return;
+      if (tick !== this.renderedTick) {
+        // Цвета осей/легенды живут в теме echarts — пересобираем её и график.
+        this.renderedTick = tick;
+        registerChartTheme();
+        const el = this.host().nativeElement;
+        this.chart.dispose();
+        this.chart = echarts.init(el, 'tj', { renderer: 'canvas' });
+      }
       this.chart.setOption(options, { notMerge: true });
     });
 

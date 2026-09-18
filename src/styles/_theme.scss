@@ -46,9 +46,12 @@
   --done-fg:     #{$done-fg};
   --done-subtle: #{$done-subtle};
 
+  --teal-fg:     #{$teal-fg};
+
   // Typography
   --font-sans: #{$font-sans};
   --font-mono: #{$font-mono};
+  --font-hand: #{$font-hand};
 
   --text-xs:  #{$text-xs};
   --text-sm:  #{$text-sm};
@@ -91,4 +94,54 @@
   --duration-fast:    #{$duration-fast};
   --duration-base:    #{$duration-base};
   --duration-slow:    #{$duration-slow};
+}
+
+// ── Тема «Бумага» — светлая: слоновая кость, графитовые чернила ─────────────
+// Переключается ThemeStore через data-theme на <html>. Переопределяем только
+// цвета; типографика, отступы и motion общие.
+:root[data-theme='paper'] {
+  color-scheme: light;
+
+  --canvas-default: #f3efe6;
+  --canvas-subtle:  #fbf9f3;
+  --canvas-overlay: #ffffff;
+  --canvas-inset:   #ebe6da;
+
+  --border-muted:   #e3ddcf;
+  --border-default: #d2cbba;
+  --border-strong:  #9d9584;
+
+  --fg-default:     #2b2824;
+  --fg-muted:       #6b655a;
+  --fg-subtle:      #8f8878;
+  --fg-on-emphasis: #ffffff;
+
+  // Карандашная охра на бумаге — темнее, чтобы держать контраст.
+  --accent-fg:       #9c7118;
+  --accent-emphasis: #8f6612;
+  --accent-subtle:   rgba(156, 113, 24, 0.12);
+  --accent-muted:    rgba(156, 113, 24, 0.35);
+
+  --success-fg:     #2e9e4a;
+  --success-subtle: rgba(46, 158, 74, 0.12);
+  --success-muted:  rgba(46, 158, 74, 0.3);
+
+  --danger-fg:      #d64a3e;
+  --danger-subtle:  rgba(214, 74, 62, 0.12);
+  --danger-muted:   rgba(214, 74, 62, 0.3);
+
+  --attention-fg:     #c9671f;
+  --attention-subtle: rgba(201, 103, 31, 0.14);
+  --attention-muted:  rgba(201, 103, 31, 0.36);
+
+  --done-fg:     #7c4fd6;
+  --done-subtle: rgba(124, 79, 214, 0.14);
+
+  --teal-fg:     #1f9fb0;
+
+  --shadow-sm:       0 1px 0 rgba(60, 50, 30, 0.08);
+  --shadow-md:       0 4px 12px rgba(60, 50, 30, 0.12);
+  --shadow-lg:       0 12px 32px rgba(60, 50, 30, 0.16);
+  --shadow-popover:  0 16px 48px rgba(60, 50, 30, 0.2);
+  --inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }

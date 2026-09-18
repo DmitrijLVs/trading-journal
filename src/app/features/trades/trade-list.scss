@@ -17,7 +17,8 @@
   align-items: center;
   gap: $space-2;
   height: 28px;
-  min-width: 240px;
+  flex: 1 1 340px;
+  max-width: 560px;
   padding: 0 $space-3;
   background: var(--canvas-inset);
   border: 1px solid var(--border-default);
@@ -43,14 +44,40 @@
   }
 }
 
-.table-card {
-  overflow: hidden;
+// Таблица без карточки: лежит прямо на странице, рамок нет — только линии строк.
+.table-wrap {
+  scroll-margin-top: $space-4;
 }
 
 .table-scroll {
-  overflow: auto;
-  max-height: calc(100vh - 275px);
+  overflow-x: auto;
   @include styled-scrollbar;
+}
+
+.trades {
+  th {
+    background: var(--canvas-default);
+    top: 0;
+  }
+
+  tbody tr.is-open > td {
+    background: var(--canvas-subtle);
+    border-bottom-color: transparent;
+  }
+
+  tr.expand-row > td {
+    padding: 0;
+    border-bottom: 1px solid var(--border-muted);
+    white-space: normal;
+
+    &:hover {
+      background: transparent;
+    }
+  }
+
+  tr.expand-row:hover {
+    background: transparent;
+  }
 }
 
 .loading {
@@ -81,11 +108,16 @@
 
 .tags-cell {
   white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tag {
+  // Теги пишет пользователь — рукописные.
   display: inline-block;
-  font-size: $text-xs;
+  font-family: $font-hand;
+  font-size: 13px;
   color: var(--fg-muted);
   background: var(--canvas-overlay);
   border: 1px solid var(--border-muted);
@@ -100,17 +132,85 @@
 }
 
 tfoot td {
-  background: var(--canvas-overlay);
   color: var(--fg-muted);
   font-size: $text-xs;
   border-bottom: none;
-  position: sticky;
-  bottom: 0;
+  border-top: 1px solid var(--border-default);
 }
 
-.load-more {
+// ── Пагинация ───────────────────────────────────────────────────────────────
+
+.pager {
   display: flex;
+  align-items: center;
+  gap: $space-4;
+  padding: $space-3 0;
+}
+
+.pager-range {
+  font-family: $font-mono;
+  font-size: $text-xs;
+  color: var(--fg-muted);
+  min-width: 120px;
+}
+
+.pager-pages {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin: 0 auto;
+}
+
+.pg {
+  --sketch-stroke: var(--accent-fg);
+  position: relative;
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  padding: $space-3;
-  border-top: 1px solid var(--border-muted);
+  min-width: 30px;
+  height: 30px;
+  padding: 0 $space-2;
+  background: none;
+  border: none;
+  border-radius: $radius-md;
+  color: var(--fg-muted);
+  font-family: $font-mono;
+  font-size: $text-sm;
+  cursor: pointer;
+  transition: background $duration-fast $ease-apple, color $duration-fast $ease-apple;
+
+  &:hover:not(:disabled) {
+    background: var(--canvas-overlay);
+    color: var(--fg-default);
+  }
+
+  &.active {
+    color: var(--fg-default);
+    font-weight: 600;
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+}
+
+.pg-ink {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  bottom: 3px;
+  height: 5px;
+}
+
+.pg-gap {
+  color: var(--fg-subtle);
+  padding: 0 4px;
+  user-select: none;
+}
+
+.pager-size {
+  width: 170px;
+  flex: none;
 }

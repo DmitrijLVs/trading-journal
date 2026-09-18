@@ -8,7 +8,6 @@ import {
   Trade,
   calculatePnl,
   calculateRMultiple,
-  formatDateTime,
   formatPrice,
   plannedRiskReward,
   plannedRiskUsd,
@@ -17,8 +16,10 @@ import {
 const TABLE_STYLE = `
   @use 'styles/index' as *;
 
-  :host { display: block; height: 100%; overflow-y: auto; @include styled-scrollbar; }
+  :host { display: block; height: 100%; overflow: auto; container-type: inline-size; @include styled-scrollbar; }
   .tj-table th { background: var(--canvas-subtle); }
+  // Узкий виджет — прячем второстепенные колонки, чтобы не резать основные.
+  @container (max-width: 440px) { .col-narrow-hide { display: none; } }
   .tj-table td { padding-block: 6px; }
   .sym {
     font-weight: 600;
@@ -41,7 +42,7 @@ const TABLE_STYLE = `
             <th></th>
             <th>Закрыта</th>
             <th class="num">P&L</th>
-            <th class="num">R</th>
+            <th class="num col-narrow-hide">R</th>
           </tr>
         </thead>
         <tbody>
@@ -56,7 +57,7 @@ const TABLE_STYLE = `
               </td>
               <td class="muted">{{ closedAt(row.trade) }}</td>
               <td class="num"><app-pnl [value]="row.pnl" /></td>
-              <td class="num muted">{{ rText(row.r) }}</td>
+              <td class="num muted col-narrow-hide">{{ rText(row.r) }}</td>
             </tr>
           }
         </tbody>
@@ -78,8 +79,11 @@ export class WidgetRecentTrades extends WidgetBase {
       .map((trade) => ({ trade, pnl: calculatePnl(trade), r: calculateRMultiple(trade) }));
   });
 
+  /** «08.07 16:11» — в виджете года и месяца словами не нужно. */
   protected closedAt(trade: Trade): string {
-    return formatDateTime(trade.closedAt);
+    const d = new Date(trade.closedAt);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${pad(d.getDate())}.${pad(d.getMonth() + 1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
 
   protected rText(r: number | null): string {
@@ -101,9 +105,9 @@ export class WidgetRecentTrades extends WidgetBase {
             <th></th>
             <th class="num">Вход</th>
             <th class="num">SL</th>
-            <th class="num">TP</th>
+            <th class="num col-narrow-hide">TP</th>
             <th class="num">Риск</th>
-            <th class="num">R:R</th>
+            <th class="num col-narrow-hide">R:R</th>
           </tr>
         </thead>
         <tbody>
@@ -119,9 +123,9 @@ export class WidgetRecentTrades extends WidgetBase {
               </td>
               <td class="num">{{ price(row.trade.entryPrice) }}</td>
               <td class="num loss">{{ row.trade.stopLoss !== null ? price(row.trade.stopLoss) : '—' }}</td>
-              <td class="num win">{{ row.trade.takeProfit !== null ? price(row.trade.takeProfit) : '—' }}</td>
+              <td class="num win col-narrow-hide">{{ row.trade.takeProfit !== null ? price(row.trade.takeProfit) : '—' }}</td>
               <td class="num muted">{{ row.risk === null ? '—' : '$' + row.risk.toFixed(0) }}</td>
-              <td class="num muted">{{ row.rr === null ? '—' : '1:' + row.rr.toFixed(1) }}</td>
+              <td class="num muted col-narrow-hide">{{ row.rr === null ? '—' : '1:' + row.rr.toFixed(1) }}</td>
             </tr>
           }
         </tbody>

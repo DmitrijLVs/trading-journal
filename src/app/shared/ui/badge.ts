@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, booleanAttribute, input } from '@angular/core';
 
-/** Компактный статус/тег: <span app-badge tone="success">…</span> */
+/** Компактный статус/тег: <span app-badge tone="success">…</span>.
+ *  `hand` — рукописный вариант для пользовательских тегов и пометок. */
 @Component({
   selector: 'span[app-badge]',
   template: `<ng-content />`,
@@ -36,12 +37,19 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
       border-color: var(--border-default);
       color: var(--fg-muted);
     }
+    :host(.hand) {
+      font-family: $font-hand;
+      font-size: 13px;
+      height: 22px;
+      border-radius: $radius-md;
+    }
   `,
-  host: { '[class]': '"tone-" + tone()' },
+  host: { '[class]': '"tone-" + tone()', '[class.hand]': 'hand()' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Badge {
   readonly tone = input<'neutral' | 'success' | 'danger' | 'accent' | 'attention' | 'purple' | 'outline'>(
     'neutral',
   );
+  readonly hand = input(false, { transform: booleanAttribute });
 }

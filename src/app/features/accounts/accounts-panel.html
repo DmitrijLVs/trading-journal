@@ -1,20 +1,14 @@
-<section class="tj-page">
-  <header class="tj-page-head">
-    <div>
-      <h1>Счета</h1>
-      <p class="tj-page-sub">
-        Суммарно {{ fmtMoney(totalBalance()) }} ·
-        P&L за всё время <app-pnl [value]="totalPnl()" />
-      </p>
-    </div>
-    <span class="spacer"></span>
-    <button app-button variant="primary" (click)="addAccount()">
-      <app-icon name="plus" style="--icon-size: 14px" />
-      Подключить счёт
-    </button>
-  </header>
+<div class="panel-head">
+  <p class="summary">
+    Суммарно {{ fmtMoney(totalBalance()) }} · P&L за всё время <app-pnl [value]="totalPnl()" />
+  </p>
+  <button app-button variant="primary" size="sm" (click)="addAccount()">
+    <app-icon name="plus" style="--icon-size: 14px" />
+    Подключить счёт
+  </button>
+</div>
 
-  <div class="cards">
+<div class="cards">
     @for (card of cards(); track card.account.id) {
       <div class="card tj-card">
         <div class="card-head">
@@ -77,4 +71,3 @@
       <span class="add-sub">Binance, Bybit, OKX, Bitget — по API-ключу с правами «чтение»</span>
     </button>
   </div>
-</section>

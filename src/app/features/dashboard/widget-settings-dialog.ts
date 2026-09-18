@@ -11,6 +11,7 @@ import { DialogShell } from '../../shared/ui/dialog-shell';
 import { Button } from '../../shared/ui/button';
 import { Select, SelectOption } from '../../shared/ui/select';
 import { Toggle } from '../../shared/ui/toggle';
+import { Segmented, SegmentOption } from '../../shared/ui/segmented';
 import { PERIOD_LABELS, PeriodPreset } from '../../core/state/period-store';
 
 const PERIOD_OPTIONS: SelectOption[] = [
@@ -41,7 +42,7 @@ const METRIC_OPTIONS: SelectOption[] = [
 
 /** Настройки экземпляра виджета: заголовок, период, разрез, метрика. */
 @Component({
-  imports: [DialogShell, Button, Select, Toggle],
+  imports: [DialogShell, Button, Select, Toggle, Segmented],
   template: `
     <app-dialog-shell title="Настройки виджета" [subtitle]="placeholderTitle">
       <div class="form">
@@ -88,6 +89,13 @@ const METRIC_OPTIONS: SelectOption[] = [
           </div>
         }
 
+        @if (isCumulative) {
+          <div class="tj-field">
+            <label>Единицы</label>
+            <app-segmented [options]="valueModeOptions" [value]="valueMode()" (valueChange)="valueMode.set($event)" />
+          </div>
+        }
+
         @if (isEquity) {
           <label class="toggle-row">
             <span>Показывать просадку</span>
@@ -130,6 +138,12 @@ export class WidgetSettingsDialog {
 
   protected readonly isDistribution = this.widget.type === 'distribution';
   protected readonly isEquity = this.widget.type === 'equity-curve';
+  protected readonly isCumulative = this.widget.type === 'cumulative-profit';
+
+  protected readonly valueModeOptions: SegmentOption[] = [
+    { value: 'percent', label: '% от депозита' },
+    { value: 'money', label: 'В деньгах' },
+  ];
   protected readonly hasLimit =
     this.widget.type === 'distribution' ||
     this.widget.type === 'recent-trades' ||
@@ -143,6 +157,7 @@ export class WidgetSettingsDialog {
   protected readonly metric = signal<string | null>(this.widget.settings.metric ?? 'pnl');
   protected readonly limit = signal(this.widget.settings.limit ?? 10);
   protected readonly showDrawdown = signal(this.widget.settings.showDrawdown ?? true);
+  protected readonly valueMode = signal<string>(this.widget.settings.valueMode ?? 'percent');
 
   protected save(): void {
     const settings: WidgetSettings = {
@@ -156,6 +171,7 @@ export class WidgetSettingsDialog {
     }
     if (this.hasLimit) settings.limit = Math.max(3, Math.min(30, this.limit() || 10));
     if (this.isEquity) settings.showDrawdown = this.showDrawdown();
+    if (this.isCumulative) settings.valueMode = this.valueMode() as WidgetSettings['valueMode'];
     this.ref.close(settings);
   }
 }

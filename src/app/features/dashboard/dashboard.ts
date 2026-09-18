@@ -1,9 +1,12 @@
 import { Dialog } from '@angular/cdk/dialog';
+import { Overlay } from '@angular/cdk/overlay';
 import { CdkMenu, CdkMenuItem, CdkMenuTrigger } from '@angular/cdk/menu';
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
+  afterNextRender,
   effect,
   inject,
   signal,
@@ -19,16 +22,19 @@ import {
 } from 'angular-gridster2';
 import { firstValueFrom } from 'rxjs';
 import { GRID_COLS, GRID_ROWS, WorkspacesStore } from './workspaces-store';
-import { WidgetInstance, WidgetSettings } from './data/workspace.model';
-import { WORKSPACE_TEMPLATES, WorkspaceTemplate } from './data/workspace-templates';
+import { WidgetInstance, WidgetSettings, widgetDefFor } from './data/workspace.model';
 import { WidgetShell } from './widget-shell';
 import { WidgetHost } from './widget-host';
-import { WidgetGallery } from './widget-gallery';
+import { AddWidgetPanel, AddWidgetPanelData } from './add-widget-panel';
 import { WidgetSettingsDialog } from './widget-settings-dialog';
 import { Icon } from '../../shared/ui/icon';
 import { Button } from '../../shared/ui/button';
 import { Tooltip } from '../../shared/ui/tooltip';
 import { ConfirmService } from '../../shared/ui/confirm-dialog';
+import { SketchArrow } from '../../shared/ui/sketch/sketch-arrow';
+import { SketchUnderline } from '../../shared/ui/sketch/sketch-underline';
+
+const GRID_MARGIN = 6;
 
 /** Gridster мутирует x/y/cols/rows прямо на элементах — работаем с локальными
  *  копиями, позиции возвращаются в стор через itemChangeCallback. */
@@ -49,6 +55,8 @@ interface DashGridItem extends GridsterItemConfig {
     Icon,
     Button,
     Tooltip,
+    SketchArrow,
+    SketchUnderline,
   ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
@@ -57,33 +65,47 @@ interface DashGridItem extends GridsterItemConfig {
 export class Dashboard {
   protected readonly store = inject(WorkspacesStore);
   private readonly dialog = inject(Dialog);
+  private readonly overlay = inject(Overlay);
   private readonly confirm = inject(ConfirmService);
-
-  protected readonly templates = WORKSPACE_TEMPLATES;
 
   protected readonly items = signal<DashGridItem[]>([]);
   protected readonly editingWorkspaceId = signal<string | null>(null);
   protected readonly maximizedId = signal<string | null>(null);
+  /** Только что добавленный виджет — рамка мигает акцентом. */
+  protected readonly highlightId = signal<string | null>(null);
+  private highlightTimer = 0;
 
   private readonly renameInput = viewChild<ElementRef<HTMLInputElement>>('renameInput');
+  private readonly gridArea = viewChild<ElementRef<HTMLElement>>('gridArea');
 
   private renderedWorkspaceId = '';
   private suppressLayoutSave = false;
 
-  /** Options — сигнал: смена ссылки объявляет gridster о новых опциях. */
-  protected readonly gridsterOptions = signal<GridsterConfig>(this.buildOptions(false));
+  /**
+   * Высота строки сетки в px. Считается от высоты холста так, чтобы стартовые
+   * 24 строки заполняли экран, и дальше не меняется: новые виджеты уходят
+   * вниз под прокрутку, а не сжимают соседей (режим Fit делал именно это,
+   * и контент виджетов резался по высоте).
+   */
+  private readonly rowHeight = signal(32);
+  private gridResize: ResizeObserver | null = null;
 
-  private buildOptions(locked: boolean): GridsterConfig {
+  /** Options — сигнал: смена ссылки объявляет gridster о новых опциях. */
+  protected readonly gridsterOptions = signal<GridsterConfig>(this.buildOptions(false, 32));
+
+  private buildOptions(locked: boolean, rowHeight: number): GridsterConfig {
     return {
-      gridType: GridType.Fit,
+      gridType: GridType.VerticalFixed,
+      fixedRowHeight: rowHeight,
       compactType: 'none',
-      margin: 6,
+      margin: GRID_MARGIN,
       outerMargin: true,
       displayGrid: DisplayGrid.OnDragAndResize,
       minCols: GRID_COLS,
       maxCols: GRID_COLS,
       minRows: GRID_ROWS,
-      maxRows: GRID_ROWS * 2,
+      maxRows: 400,
+      scrollToNewItems: true,
       pushItems: true,
       disablePushOnDrag: true,
       disablePushOnResize: false,
@@ -101,6 +123,27 @@ export class Dashboard {
 
   constructor() {
     effect(() => this.applyWorkspace());
+    effect(() =>
+      this.gridsterOptions.set(this.buildOptions(this.store.layoutLocked(), this.rowHeight())),
+    );
+    afterNextRender(() => this.observeGridArea());
+    inject(DestroyRef).onDestroy(() => {
+      this.gridResize?.disconnect();
+      window.clearTimeout(this.highlightTimer);
+    });
+  }
+
+  /** Строка = (высота холста − отступы) / 24, но не меньше 26 px (ниже контент плиток режется). */
+  private observeGridArea(): void {
+    const el = this.gridArea()?.nativeElement;
+    if (!el) return;
+    const measure = () => {
+      const usable = el.clientHeight - GRID_MARGIN * (GRID_ROWS + 1);
+      this.rowHeight.set(Math.max(26, Math.floor(usable / GRID_ROWS)));
+    };
+    measure();
+    this.gridResize = new ResizeObserver(measure);
+    this.gridResize.observe(el);
   }
 
   protected readonly maximizedWidget = () =>
@@ -110,12 +153,6 @@ export class Dashboard {
 
   private applyWorkspace(): void {
     const workspace = this.store.activeWorkspace();
-    const locked = this.store.layoutLocked();
-
-    const draggableEnabled = this.gridsterOptions().draggable?.enabled ?? true;
-    if (draggableEnabled === locked) {
-      this.gridsterOptions.set(this.buildOptions(locked));
-    }
 
     const items = this.items();
     const sameSet =
@@ -135,9 +172,7 @@ export class Dashboard {
     this.renderedWorkspaceId = workspace.id;
     this.maximizedId.set(null);
     this.suppressLayoutSave = true;
-    this.items.set(
-      workspace.widgets.map((w) => ({ x: w.x, y: w.y, cols: w.cols, rows: w.rows, widget: w })),
-    );
+    this.items.set(workspace.widgets.map(toGridItem));
     this.suppressLayoutSave = false;
   }
 
@@ -188,10 +223,6 @@ export class Dashboard {
     this.store.remove(id);
   }
 
-  protected applyTemplate(template: WorkspaceTemplate): void {
-    this.store.addFromTemplate(template);
-  }
-
   protected async clearActive(): Promise<void> {
     const ok = await this.confirm.ask({
       title: 'Очистить пространство?',
@@ -204,11 +235,23 @@ export class Dashboard {
 
   // ── Виджеты ───────────────────────────────────────────────────────────────
 
-  protected openGallery(): void {
-    this.dialog.open(WidgetGallery, {
-      panelClass: ['tj-dialog-panel', 'tj-dialog-panel--wide'],
-      backdropClass: 'tj-dialog-backdrop',
+  /** Панель добавления — выезжает справа, лист остаётся виден. */
+  protected openAddPanel(): void {
+    const data: AddWidgetPanelData = { onAdded: (id) => this.flashWidget(id) };
+    this.dialog.open(AddWidgetPanel, {
+      data,
+      panelClass: 'tj-drawer-panel',
+      backdropClass: 'tj-drawer-backdrop',
+      positionStrategy: this.overlay.position().global().right('0').top('0'),
+      width: '420px',
+      height: '100vh',
     });
+  }
+
+  private flashWidget(instanceId: string): void {
+    window.clearTimeout(this.highlightTimer);
+    this.highlightId.set(instanceId);
+    this.highlightTimer = window.setTimeout(() => this.highlightId.set(null), 1800);
   }
 
   protected async configureWidget(widget: WidgetInstance): Promise<void> {
@@ -248,4 +291,19 @@ export class Dashboard {
   }
 
   protected trackItem = (_: number, item: DashGridItem): string => item.widget.instanceId;
+}
+
+/** Экземпляр → конфиг gridster; минимальный размер — из реестра, чтобы
+ *  виджет нельзя было ужать до нечитаемого. */
+function toGridItem(w: WidgetInstance): DashGridItem {
+  const def = widgetDefFor(w);
+  return {
+    x: w.x,
+    y: w.y,
+    cols: w.cols,
+    rows: w.rows,
+    minItemCols: def?.minCols,
+    minItemRows: def?.minRows,
+    widget: w,
+  };
 }

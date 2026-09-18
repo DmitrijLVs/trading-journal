@@ -18,12 +18,11 @@ export const routes: Routes = [
         path: 'journal',
         loadComponent: () => import('./features/journal/journal').then((m) => m.Journal),
       },
+      // Счета живут во вкладке настроек; старый адрес ведёт туда же.
+      { path: 'accounts', redirectTo: 'settings/accounts' },
+      { path: 'settings', pathMatch: 'full', redirectTo: 'settings/profile' },
       {
-        path: 'accounts',
-        loadComponent: () => import('./features/accounts/accounts-page').then((m) => m.AccountsPage),
-      },
-      {
-        path: 'settings',
+        path: 'settings/:tab',
         loadComponent: () => import('./features/accounts/settings').then((m) => m.Settings),
       },
       { path: '**', redirectTo: 'dashboard' },

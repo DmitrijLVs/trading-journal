@@ -1,24 +1,57 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { TradesStore } from '../trades/trades-store';
 import { calculatePnl, calculateRMultiple } from '../trades/data/trade.model';
 import { Button } from '../../shared/ui/button';
 import { Icon } from '../../shared/ui/icon';
+import { IconName } from '../../shared/ui/icons';
+import { AccountsPanel } from './accounts-panel';
 import { Select, SelectOption } from '../../shared/ui/select';
+import { Segmented, SegmentOption } from '../../shared/ui/segmented';
+import { THEME_LABELS, ThemeName, ThemeStore } from '../../core/state/theme-store';
 import { Toggle } from '../../shared/ui/toggle';
 import { ToastService } from '../../shared/ui/toast';
 import { ConfirmService } from '../../shared/ui/confirm-dialog';
+import { SketchFrame } from '../../shared/ui/sketch/sketch-frame';
+import { SketchUnderline } from '../../shared/ui/sketch/sketch-underline';
+
+type SettingsTab = 'profile' | 'accounts' | 'display' | 'data';
+
+interface TabDef {
+  id: SettingsTab;
+  label: string;
+  icon: IconName;
+}
+
+const TABS: readonly TabDef[] = [
+  { id: 'profile', label: 'Профиль', icon: 'user' },
+  { id: 'accounts', label: 'Счета', icon: 'wallet' },
+  { id: 'display', label: 'Отображение', icon: 'sun' },
+  { id: 'data', label: 'Данные', icon: 'download' },
+];
 
 @Component({
   selector: 'app-settings',
-  imports: [Button, Icon, Select, Toggle],
+  imports: [SketchFrame, SketchUnderline, RouterLink, AccountsPanel, Button, Icon, Select, Toggle, Segmented],
   templateUrl: './settings.html',
   styleUrl: './settings.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
+/** Настройки — вкладки по маршруту /settings/:tab (счета переехали сюда). */
 export class Settings {
   private readonly tradesStore = inject(TradesStore);
   private readonly toast = inject(ToastService);
   private readonly confirm = inject(ConfirmService);
+  protected readonly themeStore = inject(ThemeStore);
+
+  /** Параметр маршрута :tab (withComponentInputBinding). */
+  readonly tab = input<string>();
+
+  protected readonly tabs = TABS;
+  protected readonly activeTab = computed<SettingsTab>(() => {
+    const id = this.tab();
+    return TABS.some((t) => t.id === id) ? (id as SettingsTab) : 'profile';
+  });
 
   protected readonly name = signal('Дмитрий');
   protected readonly email = signal('motores7@gmail.com');
@@ -39,6 +72,14 @@ export class Settings {
     { value: 'usdt', label: 'USDT' },
     { value: 'eur', label: 'EUR (€)' },
   ];
+
+  protected readonly themeOptions: SegmentOption[] = (
+    Object.keys(THEME_LABELS) as ThemeName[]
+  ).map((value) => ({ value, label: THEME_LABELS[value] }));
+
+  protected setTheme(value: string): void {
+    if (value === 'graphite' || value === 'paper') this.themeStore.setTheme(value);
+  }
 
   protected saveProfile(): void {
     this.toast.success('Профиль сохранён');

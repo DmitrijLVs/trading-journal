@@ -38,15 +38,21 @@
   width: 28px;
   height: 28px;
   border-radius: $radius-md;
-  background: linear-gradient(135deg, var(--accent-emphasis), #054da7);
-  color: #fff;
+  background: linear-gradient(
+    135deg,
+    var(--accent-emphasis),
+    color-mix(in srgb, var(--accent-emphasis) 65%, black)
+  );
+  color: var(--fg-on-emphasis);
   box-shadow: $inner-highlight;
 }
 
 .brand-name {
-  font-size: $text-lg;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  // Название — рукописная подпись на обложке.
+  font-family: $font-hand;
+  font-size: 21px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
 }
 
 .nav {
@@ -101,18 +107,17 @@
     color: var(--fg-default);
 
     app-icon { color: var(--accent-fg); }
-
-    &::before {
-      content: '';
-      position: absolute;
-      left: -$space-2;
-      top: 7px;
-      bottom: 7px;
-      width: 3px;
-      border-radius: 0 3px 3px 0;
-      background: var(--accent-fg);
-    }
   }
+}
+
+// Активный пункт подчёркнут «от руки» (SketchUnderline).
+.nav-ink {
+  --sketch-stroke: var(--accent-fg);
+  position: absolute;
+  left: 39px;
+  right: $space-3;
+  bottom: 3px;
+  height: 5px;
 }
 
 .sidebar-foot {
@@ -150,8 +155,9 @@
 }
 
 .user-name {
-  font-size: $text-sm;
-  font-weight: 600;
+  font-family: $font-hand;
+  font-size: 15px;
+  font-weight: 400;
 }
 
 .user-plan {
@@ -176,7 +182,7 @@
   flex: none;
   padding: 0 $space-5;
   border-bottom: 1px solid var(--border-muted);
-  background: rgba(13, 17, 23, 0.85);
+  background: color-mix(in srgb, var(--canvas-default) 85%, transparent);
   backdrop-filter: saturate(160%) blur(12px);
   position: relative;
   z-index: $z-sticky;

@@ -1,12 +1,9 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { WidgetInstance } from './data/workspace.model';
+import { WidgetStatPnl } from './widgets/stat-tiles';
+import { WidgetSummary } from './widgets/widget-summary';
 import {
-  WidgetStatPnl,
-  WidgetStatProfitFactor,
-  WidgetStatStreak,
-  WidgetStatWinrate,
-} from './widgets/stat-tiles';
-import {
+  WidgetCumulativeProfit,
   WidgetDailyPnl,
   WidgetDistribution,
   WidgetDrawdown,
@@ -24,10 +21,9 @@ import { WidgetBestWorst, WidgetOpenPositions, WidgetRecentTrades } from './widg
   selector: 'app-widget-host',
   imports: [
     WidgetStatPnl,
-    WidgetStatWinrate,
-    WidgetStatProfitFactor,
-    WidgetStatStreak,
+    WidgetSummary,
     WidgetEquityCurve,
+    WidgetCumulativeProfit,
     WidgetDailyPnl,
     WidgetDrawdown,
     WidgetDistribution,
@@ -43,10 +39,9 @@ import { WidgetBestWorst, WidgetOpenPositions, WidgetRecentTrades } from './widg
   template: `
     @switch (widget().type) {
       @case ('stat-pnl') { <app-widget-stat-pnl [settings]="widget().settings" /> }
-      @case ('stat-winrate') { <app-widget-stat-winrate [settings]="widget().settings" /> }
-      @case ('stat-profit-factor') { <app-widget-stat-profit-factor [settings]="widget().settings" /> }
-      @case ('stat-streak') { <app-widget-stat-streak [settings]="widget().settings" /> }
+      @case ('summary') { <app-widget-summary [settings]="widget().settings" /> }
       @case ('equity-curve') { <app-widget-equity-curve [settings]="widget().settings" /> }
+      @case ('cumulative-profit') { <app-widget-cumulative-profit [settings]="widget().settings" /> }
       @case ('daily-pnl') { <app-widget-daily-pnl [settings]="widget().settings" /> }
       @case ('drawdown') { <app-widget-drawdown [settings]="widget().settings" /> }
       @case ('distribution') { <app-widget-distribution [settings]="widget().settings" /> }

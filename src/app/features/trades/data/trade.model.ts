@@ -28,7 +28,6 @@ export interface Trade {
   strategy: string;
   timeframe: string;
   setupGrade: SetupGrade | null;
-  mood: Mood | null;
   mistakes: string[];
   tags: string[];
   notes: string;

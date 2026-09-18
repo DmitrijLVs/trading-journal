@@ -44,10 +44,11 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
     if (method === 'GET') return respond(db.trades.map((t) => ({ ...t })), 380);
     if (method === 'POST') return respond(db.createTrade(req.body as TradeDraft), 420);
   }
-  const candlesMatch = url.match(/^\/api\/trades\/([^/]+)\/candles$/);
+  const candlesMatch = url.match(/^\/api\/trades\/([^/?]+)\/candles(?:\?(.*))?$/);
   if (candlesMatch && method === 'GET') {
     const trade = db.trades.find((t) => t.id === candlesMatch[1]);
-    return trade ? respond(generateTradeCandles(trade), 340) : notFound();
+    const tf = new URLSearchParams(candlesMatch[2] ?? '').get('tf');
+    return trade ? respond(generateTradeCandles(trade, tf), 340) : notFound();
   }
   const tradeMatch = url.match(/^\/api\/trades\/([^/]+)$/);
   if (tradeMatch) {

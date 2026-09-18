@@ -14,18 +14,11 @@ const PAGE_SIZE = 30;
   selector: 'app-journal',
   imports: [JournalDayCard, Segmented, EmptyState, Skeleton],
   template: `
-    <section class="tj-page narrow">
-      <header class="tj-page-head">
-        <div>
-          <h1>Журнал</h1>
-          <p class="tj-page-sub">
-            {{ store.days().length }} торговых дней ·
-            {{ notedCount() }} с заметками
-          </p>
-        </div>
-        <span class="spacer"></span>
+    <section class="tj-page">
+      <div class="toolbar">
+        <span class="stat">{{ store.days().length }} торговых дней · {{ notedCount() }} с заметками</span>
         <app-segmented [options]="filterOptions" [(value)]="filterValue" />
-      </header>
+      </div>
 
       @if (store.isLoading() && store.days().length === 0) {
         <div class="loading">
@@ -56,7 +49,18 @@ const PAGE_SIZE = 30;
   styles: `
     @use 'styles/index' as *;
 
-    .narrow { max-width: 920px; }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: $space-3;
+      margin-bottom: $space-4;
+    }
+
+    .stat {
+      color: var(--fg-muted);
+      font-size: $text-sm;
+    }
 
     .days {
       display: flex;

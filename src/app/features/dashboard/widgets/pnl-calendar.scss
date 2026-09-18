@@ -43,8 +43,9 @@
   background: none;
   border: none;
   color: var(--fg-default);
-  font-size: $text-sm;
-  font-weight: 600;
+  font-family: $font-hand;
+  font-size: 15px;
+  font-weight: 400;
   cursor: pointer;
   padding: 2px $space-2;
   border-radius: $radius-sm;
@@ -83,7 +84,8 @@
 
 .weekdays .wd {
   text-align: center;
-  font-size: $text-xs;
+  font-family: $font-hand;
+  font-size: 12px;
   color: var(--fg-subtle);
   padding-bottom: 1px;
 }
@@ -98,13 +100,13 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  justify-content: space-between;
   border-radius: 5px;
   border: 1px solid var(--border-muted);
   background: var(--canvas-inset);
   padding: 3px 5px;
   min-height: 0;
   overflow: hidden;
+  container-type: size;
   transition: transform $duration-fast $ease-out, border-color $duration-fast $ease-apple;
 
   &:not(.empty):hover {
@@ -118,15 +120,28 @@
     background: transparent;
   }
 
-  // Интенсивность — через color-mix с прозрачностью от --i.
+  // Интенсивность: подложка от --i плюс штриховка (SketchHachure).
   &.pos {
-    background: color-mix(in srgb, var(--success-fg) calc(var(--i) * 26%), var(--canvas-inset));
+    --sketch-fill: color-mix(in srgb, var(--success-fg) 32%, transparent);
+    background: color-mix(in srgb, var(--success-fg) calc(var(--i) * 9%), var(--canvas-inset));
     border-color: color-mix(in srgb, var(--success-fg) calc(var(--i) * 38%), var(--border-muted));
   }
 
   &.neg {
-    background: color-mix(in srgb, var(--danger-fg) calc(var(--i) * 26%), var(--canvas-inset));
+    --sketch-fill: color-mix(in srgb, var(--danger-fg) 32%, transparent);
+    background: color-mix(in srgb, var(--danger-fg) calc(var(--i) * 9%), var(--canvas-inset));
     border-color: color-mix(in srgb, var(--danger-fg) calc(var(--i) * 38%), var(--border-muted));
+  }
+
+  // Прошедший день без торгов — серый; будущие остаются тёмными.
+  &.idle {
+    --sketch-fill: color-mix(in srgb, var(--fg-muted) 40%, transparent);
+    background: color-mix(in srgb, var(--fg-muted) 7%, var(--canvas-inset));
+    border-color: var(--border-default);
+
+    .d {
+      color: var(--fg-subtle);
+    }
   }
 
   &.today {
@@ -135,25 +150,97 @@
   }
 }
 
-.d {
-  font-size: $text-xs;
-  color: var(--fg-subtle);
+// Ячейка как страница гроссбуха: день и счётчик сделок сверху на открытом
+// поле, итог и расшифровка — на непрозрачном «бланке» снизу, чтобы текст не
+// спорил со штриховкой. В мелкой ячейке расшифровка уходит в тултип.
+
+.top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px;
   line-height: 1.1;
 }
 
-.p {
-  font-family: $font-mono;
+.d {
   font-size: $text-xs;
-  font-weight: 600;
-  color: var(--fg-default);
-  line-height: 1.1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: var(--fg-muted);
+  text-shadow: 0 0 4px var(--canvas-inset);
 }
 
 .c {
-  font-size: 9px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg-default);
+  text-shadow: 0 0 4px var(--canvas-inset);
+}
+
+.plate {
+  display: flex;
+  flex-direction: column;
+  margin: auto -3px -1px;
+  padding: 2px 3px 3px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--canvas-subtle) 94%, transparent);
+}
+
+.c,
+.p,
+.row b {
+  font-family: $font-mono;
+}
+
+// Подписи — рукописные, как и везде в проекте.
+.c i,
+.row i {
+  font-family: $font-hand;
+  font-style: normal;
+  font-size: 10px;
   color: var(--fg-subtle);
-  line-height: 1.1;
+}
+
+.c i {
+  font-size: 10px;
+}
+
+.p {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--fg-default);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &.pos { color: var(--success-fg); }
+  &.neg { color: var(--danger-fg); }
+}
+
+// Подпись слева, значение справа — как в приходной книге.
+.row {
+  display: none;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px;
+  line-height: 1.35;
+  white-space: nowrap;
+
+  b {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--fg-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+@container (min-width: 46px) and (min-height: 44px) {
+  .row.vol { display: flex; }
+}
+
+@container (min-width: 46px) and (min-height: 58px) {
+  .row.fee { display: flex; }
 }

@@ -7,10 +7,13 @@ import {
   WidgetInstance,
   WidgetSettings,
   Workspace,
+  isKnownWidgetType,
+  widgetDefFor,
 } from './data/workspace.model';
-import { WORKSPACE_TEMPLATES, WorkspaceTemplate, instantiateWidget } from './data/workspace-templates';
+import { DEFAULT_WORKSPACE_NAME, defaultWidgets, newWidgetId } from './data/default-workspace';
 
-const STORAGE_KEY = 'tj.dashboard.v1';
+// v2: без шаблонов и трёх убранных стат-плиток; старое хранилище не мигрируем.
+const STORAGE_KEY = 'tj.dashboard.v2';
 
 /**
  * Рабочие пространства дашборда: раскладка живёт в localStorage
@@ -56,24 +59,6 @@ export class WorkspacesStore {
     }));
   }
 
-  addFromTemplate(template: WorkspaceTemplate): void {
-    const ws: Workspace = {
-      id: newId('ws'),
-      name: template.name,
-      widgets: template.widgets.map(instantiateWidget),
-    };
-    this._state.update((s) => ({
-      ...s,
-      workspaces: [...s.workspaces, ws],
-      activeWorkspaceId: ws.id,
-    }));
-  }
-
-  /** Применить шаблон к текущему пространству (заменяет содержимое). */
-  applyTemplate(template: WorkspaceTemplate): void {
-    this.updateActive((ws) => ({ ...ws, widgets: template.widgets.map(instantiateWidget) }));
-  }
-
   rename(id: string, name: string): void {
     const trimmed = name.trim();
     if (!trimmed) return;
@@ -87,7 +72,7 @@ export class WorkspacesStore {
     this._state.update((s) => {
       const workspaces = s.workspaces.filter((ws) => ws.id !== id);
       if (workspaces.length === 0) {
-        const fallback: Workspace = { id: newId('ws'), name: 'Пространство 1', widgets: [] };
+        const fallback: Workspace = { id: newId('ws'), name: 'Лист 1', widgets: [] };
         return { ...s, workspaces: [fallback], activeWorkspaceId: fallback.id };
       }
       return {
@@ -106,7 +91,7 @@ export class WorkspacesStore {
       const copy: Workspace = {
         id: newId('ws'),
         name: `${source.name} (копия)`,
-        widgets: source.widgets.map((w) => ({ ...w, instanceId: newId('w'), settings: { ...w.settings } })),
+        widgets: source.widgets.map((w) => ({ ...w, instanceId: newWidgetId(), settings: { ...w.settings } })),
       };
       return { ...s, workspaces: [...s.workspaces, copy], activeWorkspaceId: copy.id };
     });
@@ -122,11 +107,13 @@ export class WorkspacesStore {
 
   // ── Виджеты ──────────────────────────────────────────────────────────────
 
-  addWidget(def: WidgetDef): void {
+  /** Добавляет виджет на первое свободное место; возвращает id экземпляра. */
+  addWidget(def: WidgetDef): string {
+    const instanceId = newWidgetId();
     this.updateActive((ws) => {
       const spot = findSpot(ws.widgets, def.cols, def.rows);
       const widget: WidgetInstance = {
-        instanceId: newId('w'),
+        instanceId,
         type: def.type,
         x: spot.x,
         y: spot.y,
@@ -136,6 +123,7 @@ export class WorkspacesStore {
       };
       return { ...ws, widgets: [...ws.widgets, widget] };
     });
+    return instanceId;
   }
 
   removeWidget(instanceId: string): void {
@@ -152,7 +140,7 @@ export class WorkspacesStore {
       const spot = findSpot(ws.widgets, source.cols, source.rows);
       const copy: WidgetInstance = {
         ...source,
-        instanceId: newId('w'),
+        instanceId: newWidgetId(),
         x: spot.x,
         y: spot.y,
         settings: { ...source.settings },
@@ -191,7 +179,7 @@ export class WorkspacesStore {
   private nextName(): string {
     const names = new Set(this.workspaces().map((ws) => ws.name));
     for (let i = 1; ; i++) {
-      const candidate = `Пространство ${i}`;
+      const candidate = `Лист ${i}`;
       if (!names.has(candidate)) return candidate;
     }
   }
@@ -219,24 +207,38 @@ function restore(): DashboardState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      const state = JSON.parse(raw) as DashboardState;
-      if (state.workspaces?.length && state.activeWorkspaceId) return state;
+      const state = sanitize(JSON.parse(raw) as DashboardState);
+      if (state.workspaces.length && state.activeWorkspaceId) return state;
     }
   } catch {
     // повреждённое хранилище — пересоздаём дефолт
   }
-  // Первый запуск: два готовых пространства, чтобы дашборд сразу жил.
+  // Первый запуск: один лист со стартовой раскладкой.
   const overview: Workspace = {
     id: newId('ws'),
-    name: 'Обзор',
-    widgets: WORKSPACE_TEMPLATES[0].widgets.map(instantiateWidget),
+    name: DEFAULT_WORKSPACE_NAME,
+    widgets: defaultWidgets(),
   };
-  const risk: Workspace = {
-    id: newId('ws'),
-    name: 'Риск',
-    widgets: WORKSPACE_TEMPLATES[1].widgets.map(instantiateWidget),
-  };
-  return { workspaces: [overview, risk], activeWorkspaceId: overview.id, layoutLocked: false };
+  return { workspaces: [overview], activeWorkspaceId: overview.id, layoutLocked: false };
+}
+
+/** Выбрасывает виджеты неизвестных типов и не даёт им быть меньше минимума. */
+function sanitize(state: DashboardState): DashboardState {
+  const workspaces = (state.workspaces ?? []).map((ws) => ({
+    ...ws,
+    widgets: (ws.widgets ?? [])
+      .filter((w) => isKnownWidgetType(w.type))
+      .map((w) => {
+        const def = widgetDefFor(w);
+        return def
+          ? { ...w, cols: Math.max(w.cols, def.minCols), rows: Math.max(w.rows, def.minRows) }
+          : w;
+      }),
+  }));
+  const activeWorkspaceId = workspaces.some((ws) => ws.id === state.activeWorkspaceId)
+    ? state.activeWorkspaceId
+    : (workspaces[0]?.id ?? '');
+  return { workspaces, activeWorkspaceId, layoutLocked: Boolean(state.layoutLocked) };
 }
 
 export { GRID_COLS, GRID_ROWS };

@@ -21,6 +21,7 @@
     "angular-gridster2": "^21.0.1",
     "echarts": "^6.1.0",
     "night-vision": "file:local_modules/night-vision-0.4.0.tgz",
+    "roughjs": "^4.6.6",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

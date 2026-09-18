@@ -15,6 +15,7 @@ import { PnlValue } from '../../shared/ui/pnl-value';
 import { Select, SelectOption } from '../../shared/ui/select';
 import { Toggle } from '../../shared/ui/toggle';
 import { ToastService } from '../../shared/ui/toast';
+import { SketchFrame } from '../../shared/ui/sketch/sketch-frame';
 
 const WEEKDAYS = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
 const MONTHS_GEN = [
@@ -25,7 +26,7 @@ const MONTHS_GEN = [
 /** Карточка торгового дня: результат, сделки, заметка с настроением. */
 @Component({
   selector: 'app-journal-day-card',
-  imports: [RouterLink, Icon, Button, PnlValue, Select, Toggle],
+  imports: [SketchFrame, RouterLink, Icon, Button, PnlValue, Select, Toggle],
   templateUrl: './journal-day-card.html',
   styleUrl: './journal-day-card.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

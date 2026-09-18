@@ -25,11 +25,14 @@
           } @else {
             <span class="tab-name">{{ ws.name }}</span>
             <span class="tab-count">{{ ws.widgets.length }}</span>
+            @if (ws.id === store.activeWorkspaceId()) {
+              <i class="tab-ink" appSketchUnderline [sketchSeed]="ws.id" [sketchInset]="0"></i>
+            }
             @if (store.workspaces().length > 1) {
               <button
                 type="button"
                 class="tab-close"
-                aria-label="Закрыть пространство"
+                aria-label="Закрыть лист"
                 (click)="removeWorkspace(ws.id, $event)"
               >
                 <app-icon name="x" style="--icon-size: 11px" />
@@ -39,12 +42,7 @@
         </div>
       }
 
-      <button
-        type="button"
-        class="tab-add"
-        appTooltip="Новое пространство"
-        [cdkMenuTriggerFor]="newWorkspaceMenu"
-      >
+      <button type="button" class="tab-add" appTooltip="Новый лист" (click)="store.addWorkspace()">
         <app-icon name="plus" style="--icon-size: 14px" />
       </button>
     </div>
@@ -66,13 +64,13 @@
         variant="ghost"
         size="sm"
         [iconOnly]="true"
-        appTooltip="Действия с пространством"
+        appTooltip="Действия с листом"
         [cdkMenuTriggerFor]="workspaceMenu"
       >
         <app-icon name="more-h" style="--icon-size: 15px" />
       </button>
 
-      <button app-button variant="subtle" size="sm" (click)="openGallery()">
+      <button app-button variant="subtle" size="sm" (click)="openAddPanel()">
         <app-icon name="plus" style="--icon-size: 13px" />
         Виджет
       </button>
@@ -80,7 +78,7 @@
   </div>
 
   <!-- ── Сетка ──────────────────────────────────────────────────────── -->
-  <div class="grid-area">
+  <div class="grid-area" #gridArea>
     @if (items().length > 0) {
       <gridster [options]="gridsterOptions()" class="grid">
         @for (item of items(); track item.widget.instanceId) {
@@ -88,6 +86,9 @@
             <app-widget-shell
               [widget]="item.widget"
               [locked]="store.layoutLocked()"
+              [sketchSeed]="item.widget.instanceId"
+              [sketchDelay]="$index * 70"
+              [highlight]="item.widget.instanceId === highlightId()"
               (configure)="configureWidget(item.widget)"
               (duplicate)="duplicateWidget(item.widget.instanceId)"
               (toggleMaximize)="toggleMaximize(item.widget.instanceId)"
@@ -101,16 +102,16 @@
     } @else {
       <div class="blank">
         <div class="blank-inner">
-          <h2>Пустое пространство</h2>
-          <p>Соберите свой дашборд из виджетов или начните с готового шаблона.</p>
+          <h2>Чистый лист</h2>
+          <p>Соберите его из виджетов: показатели, графики, календарь, таблицы сделок.</p>
+          <div class="blank-hint" aria-hidden="true">
+            <app-sketch-arrow class="blank-arrow" [sketchDelay]="300" />
+            <span class="blank-note">начни отсюда</span>
+          </div>
           <div class="blank-actions">
-            <button app-button variant="primary" (click)="openGallery()">
+            <button app-button variant="primary" (click)="openAddPanel()">
               <app-icon name="plus" style="--icon-size: 14px" />
               Добавить виджет
-            </button>
-            <button app-button variant="outline" [cdkMenuTriggerFor]="templatesMenu">
-              <app-icon name="template" style="--icon-size: 14px" />
-              Шаблоны
             </button>
           </div>
         </div>
@@ -123,6 +124,7 @@
         <app-widget-shell
           [widget]="widget"
           [maximized]="true"
+          [sketchSeed]="widget.instanceId + ':max'"
           (configure)="configureWidget(widget)"
           (duplicate)="duplicateWidget(widget.instanceId)"
           (toggleMaximize)="toggleMaximize(widget.instanceId)"
@@ -135,35 +137,7 @@
   </div>
 </div>
 
-<!-- ── Меню ───────────────────────────────────────────────────────────── -->
-<ng-template #newWorkspaceMenu>
-  <div class="tj-menu" cdkMenu>
-    <button class="tj-menu-item" cdkMenuItem (click)="store.addWorkspace()">
-      <app-icon name="plus" style="--icon-size: 14px" />
-      Пустое пространство
-    </button>
-    <div class="tj-menu-separator"></div>
-    <div class="tj-menu-label">Из шаблона</div>
-    @for (template of templates; track template.id) {
-      <button class="tj-menu-item" cdkMenuItem (click)="applyTemplate(template)">
-        <app-icon name="template" style="--icon-size: 14px" />
-        {{ template.name }}
-      </button>
-    }
-  </div>
-</ng-template>
-
-<ng-template #templatesMenu>
-  <div class="tj-menu" cdkMenu>
-    @for (template of templates; track template.id) {
-      <button class="tj-menu-item" cdkMenuItem (click)="store.applyTemplate(template)">
-        <app-icon name="template" style="--icon-size: 14px" />
-        {{ template.name }}
-      </button>
-    }
-  </div>
-</ng-template>
-
+<!-- ── Меню листа ─────────────────────────────────────────────────── -->
 <ng-template #workspaceMenu>
   <div class="tj-menu" cdkMenu>
     <button class="tj-menu-item" cdkMenuItem (click)="startRename(store.activeWorkspaceId())">
@@ -175,17 +149,9 @@
       Дублировать
     </button>
     <div class="tj-menu-separator"></div>
-    <div class="tj-menu-label">Заменить шаблоном</div>
-    @for (template of templates; track template.id) {
-      <button class="tj-menu-item" cdkMenuItem (click)="store.applyTemplate(template)">
-        <app-icon name="template" style="--icon-size: 14px" />
-        {{ template.name }}
-      </button>
-    }
-    <div class="tj-menu-separator"></div>
     <button class="tj-menu-item danger" cdkMenuItem (click)="clearActive()">
       <app-icon name="trash" style="--icon-size: 14px" />
-      Очистить пространство
+      Очистить лист
     </button>
   </div>
 </ng-template>

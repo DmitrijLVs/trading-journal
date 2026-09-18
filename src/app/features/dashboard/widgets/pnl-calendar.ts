@@ -2,17 +2,28 @@ import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/c
 import { WidgetBase } from './widget-base';
 import { Icon } from '../../../shared/ui/icon';
 import { Tooltip } from '../../../shared/ui/tooltip';
-import { dailyPnl } from '../../analytics/data/metrics';
-import { formatCompact, formatMoney } from '../../trades/data/trade.model';
+import { SketchHachure } from '../../../shared/ui/sketch/sketch-hachure';
+import { calculatePnl, formatCompact, formatMoney, notional } from '../../trades/data/trade.model';
+
+interface DayStat {
+  pnl: number;
+  count: number;
+  volume: number;
+  fees: number;
+}
 
 interface CalendarCell {
   day: number;
   date: string;
   pnl: number | null;
   count: number;
+  volume: number;
+  fees: number;
   /** Интенсивность подсветки 0..1 относительно лучшего дня месяца. */
   intensity: number;
   isToday: boolean;
+  /** День уже прошёл (строго до сегодня) — без сделок он «пустой», серый. */
+  isPast: boolean;
 }
 
 const MONTHS = [
@@ -23,7 +34,7 @@ const MONTHS = [
 /** Месяц-теплокарта дневного P&L (как в tradermake / edgewonk). */
 @Component({
   selector: 'app-widget-pnl-calendar',
-  imports: [Icon, Tooltip],
+  imports: [Icon, Tooltip, SketchHachure],
   templateUrl: './pnl-calendar.html',
   styleUrl: './pnl-calendar.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -44,10 +55,18 @@ export class WidgetPnlCalendar extends WidgetBase {
     return `${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
   });
 
+  /** Закрытые сделки по дню закрытия: P&L, число, оборот, комиссии. */
   private readonly dayMap = computed(() => {
-    const map = new Map<string, { pnl: number; count: number }>();
-    for (const day of dailyPnl(this.trades())) {
-      map.set(day.date, { pnl: day.pnl, count: day.count });
+    const map = new Map<string, DayStat>();
+    for (const t of this.trades()) {
+      if (t.status !== 'closed') continue;
+      const key = t.closedAt.slice(0, 10);
+      const stat = map.get(key) ?? { pnl: 0, count: 0, volume: 0, fees: 0 };
+      stat.pnl += calculatePnl(t);
+      stat.count += 1;
+      stat.volume += notional(t);
+      stat.fees += t.fees + t.funding;
+      map.set(key, stat);
     }
     return map;
   });
@@ -77,8 +96,11 @@ export class WidgetPnlCalendar extends WidgetBase {
         date,
         pnl: stat?.pnl ?? null,
         count: stat?.count ?? 0,
+        volume: stat?.volume ?? 0,
+        fees: stat?.fees ?? 0,
         intensity: stat ? 0.25 + 0.75 * Math.min(1, Math.abs(stat.pnl) / monthMax) : 0,
         isToday: date === todayKey,
+        isPast: date < todayKey,
       });
     }
     return cells;
@@ -109,9 +131,28 @@ export class WidgetPnlCalendar extends WidgetBase {
     return (value > 0 ? '+' : value < 0 ? '−' : '') + formatCompact(Math.abs(value));
   }
 
+  /** Плотность штриховки: чем больше |P&L| относительно месяца, тем чаще штрихи;
+   *  прошедший день без сделок — редкие серые штрихи. */
+  protected hachureGap(cell: CalendarCell): number {
+    if (cell.pnl === null) return 9;
+    return Math.round(10 - 5 * cell.intensity);
+  }
+
+  protected isIdle(cell: CalendarCell): boolean {
+    return cell.pnl === null && cell.isPast;
+  }
+
   protected tooltipFor(cell: CalendarCell): string {
-    if (cell.pnl === null) return '';
-    return `${cell.date}: ${formatMoney(cell.pnl, { sign: true })} · ${cell.count} сд.`;
+    if (cell.pnl === null) return cell.isPast ? `${cell.date}: без сделок` : '';
+    return (
+      `${cell.date}: ${formatMoney(cell.pnl, { sign: true })} · ${cell.count} сд. · ` +
+      `оборот ${formatMoney(cell.volume)} · комиссии ${formatMoney(cell.fees)}`
+    );
+  }
+
+  /** Компактные деньги для нижней строки ячейки: $146K, $132. */
+  protected short(value: number): string {
+    return `$${formatCompact(value)}`;
   }
 
   protected money(value: number): string {

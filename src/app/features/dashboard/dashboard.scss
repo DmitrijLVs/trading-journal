@@ -18,7 +18,7 @@
   display: flex;
   align-items: center;
   gap: $space-3;
-  padding: $space-2 $space-4 0;
+  padding: $space-2 $space-4 $space-1;
   flex: none;
 }
 
@@ -35,17 +35,14 @@
 }
 
 .tab {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: $space-2;
-  height: 32px;
+  height: 34px;
   padding: 0 $space-3;
-  border-radius: $radius-md $radius-md 0 0;
-  border: 1px solid transparent;
-  border-bottom: none;
+  border-radius: $radius-md;
   color: var(--fg-muted);
-  font-size: $text-sm;
-  font-weight: 500;
   cursor: pointer;
   user-select: none;
   white-space: nowrap;
@@ -59,12 +56,26 @@
   }
 
   &.active {
-    background: var(--canvas-subtle);
-    border-color: var(--border-muted);
     color: var(--fg-default);
-
-    .tab-name { font-weight: 600; }
   }
+}
+
+// Имя вкладки — рукописное, как подпись на листе Excalidraw.
+.tab-name {
+  font-family: $font-hand;
+  font-size: 16px;
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+
+// Подчёркивание активной вкладки — рукописная линия (SketchUnderline).
+.tab-ink {
+  --sketch-stroke: var(--accent-fg);
+  position: absolute;
+  left: $space-3;
+  right: $space-3;
+  bottom: 2px;
+  height: 6px;
 }
 
 .tab-count {
@@ -147,8 +158,14 @@
   flex: 1;
   min-height: 0;
   position: relative;
-  border-top: 1px solid var(--border-muted);
-  margin-top: -1px;
+  // Точечная сетка холста, как в Excalidraw — едва заметная.
+  background-image: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--border-default) 80%, transparent) 1px,
+    transparent 1.5px
+  );
+  background-size: 22px 22px;
+  background-position: 11px 11px;
 }
 
 .grid {
@@ -166,8 +183,8 @@ gridster-item.cell {
     z-index: 10;
 
     app-widget-shell {
+      --sketch-stroke: var(--accent-fg);
       box-shadow: $shadow-lg;
-      border-color: var(--accent-muted);
     }
   }
 }
@@ -179,9 +196,9 @@ gridster-item.cell {
   animation: maximize-in $duration-base $ease-out;
 
   app-widget-shell {
+    --sketch-stroke: var(--fg-muted);
     height: 100%;
     box-shadow: $shadow-popover;
-    border-color: var(--border-default);
   }
 }
 
@@ -213,16 +230,42 @@ gridster-item.cell {
 
   h2 {
     margin: 0 0 $space-2;
-    font-size: $text-xl;
-    font-weight: 650;
+    font-family: $font-hand;
+    font-size: 26px;
+    font-weight: 400;
   }
 
   p {
-    margin: 0 0 $space-5;
+    margin: 0 0 $space-3;
     color: var(--fg-muted);
     font-size: $text-md;
     line-height: 1.5;
   }
+}
+
+// Рукописная подсказка: стрелка, указывающая на кнопку, и заметка рядом.
+.blank-hint {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: $space-2;
+  height: 60px;
+  margin-bottom: $space-1;
+  padding-left: $space-8;
+}
+
+.blank-arrow {
+  --sketch-stroke: var(--attention-fg);
+  width: 56px;
+  height: 56px;
+}
+
+.blank-note {
+  font-family: $font-hand;
+  font-size: 16px;
+  color: var(--attention-fg);
+  transform: rotate(-4deg);
+  margin-top: 2px;
 }
 
 .blank-actions {

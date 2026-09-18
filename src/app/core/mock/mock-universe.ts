@@ -133,6 +133,11 @@ export const JOURNAL_DAY_NOTES: readonly string[] = [
 ];
 
 /** Счета мок-пользователя. Балансы «на старте» — P&L считается из сделок. */
+/** ISO-время «N минут назад» — чтобы демо-счета выглядели живыми в любой день. */
+function minutesAgo(minutes: number): string {
+  return new Date(Date.now() - minutes * 60_000).toISOString();
+}
+
 export const MOCK_ACCOUNTS: readonly Account[] = [
   {
     id: 'acc-binance',
@@ -144,7 +149,7 @@ export const MOCK_ACCOUNTS: readonly Account[] = [
     createdAt: '2025-07-01T09:00:00Z',
     apiKeyMasked: 'q7Pd••••••••Xk2N',
     syncEnabled: true,
-    lastSyncAt: '2026-07-09T06:40:00Z',
+    lastSyncAt: minutesAgo(12),
   },
   {
     id: 'acc-bybit',
@@ -156,7 +161,7 @@ export const MOCK_ACCOUNTS: readonly Account[] = [
     createdAt: '2025-09-14T12:00:00Z',
     apiKeyMasked: 'Ab9x••••••••T5mQ',
     syncEnabled: true,
-    lastSyncAt: '2026-07-09T06:40:00Z',
+    lastSyncAt: minutesAgo(12),
   },
   {
     id: 'acc-okx',
@@ -168,7 +173,7 @@ export const MOCK_ACCOUNTS: readonly Account[] = [
     createdAt: '2025-11-02T15:30:00Z',
     apiKeyMasked: 'f31c••••••••9dLp',
     syncEnabled: false,
-    lastSyncAt: '2026-06-28T18:12:00Z',
+    lastSyncAt: minutesAgo(11 * 24 * 60),
   },
 ];
 

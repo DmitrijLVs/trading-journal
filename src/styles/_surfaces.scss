@@ -9,32 +9,12 @@
   margin: 0 auto;
 }
 
-.tj-page-head {
-  display: flex;
-  align-items: center;
-  gap: $space-3;
-  margin-bottom: $space-5;
-
-  h1 {
-    margin: 0;
-    font-size: $text-2xl;
-    font-weight: 650;
-    letter-spacing: -0.015em;
-  }
-
-  .tj-page-sub {
-    margin: $space-1 0 0;
-    color: var(--fg-muted);
-    font-size: $text-sm;
-  }
-
-  .spacer {
-    flex: 1;
-  }
-}
-
 .tj-card {
-  @include elevated;
+  // Рамка — рукописная (SketchFrame по селектору .tj-card); CSS-границы нет.
+  --sketch-stroke: var(--border-strong);
+  position: relative;
+  background: var(--canvas-subtle);
+  box-shadow: $inner-highlight, $shadow-sm;
   border-radius: $radius-lg;
 }
 
@@ -131,6 +111,24 @@
   border-radius: $radius-lg;
 }
 
+// Уголок ресайза: вместо серого треугольника gridster — два карандашных
+// штриха, видны только при наведении на виджет.
+gridster-item .gridster-item-resizable-handler.handle-se {
+  width: 16px;
+  height: 16px;
+  right: 4px;
+  bottom: 4px;
+  border: none;
+  background-color: var(--fg-subtle);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M14.5 6.5 6.8 14.2'/%3E%3Cpath d='M14.3 11.4 11.6 14.1'/%3E%3C/svg%3E") center / contain no-repeat;
+  opacity: 0;
+  transition: opacity $duration-fast $ease-apple;
+}
+
+gridster-item:hover .gridster-item-resizable-handler.handle-se {
+  opacity: 0.8;
+}
+
 // Линии сетки при drag/resize: дефолт gridster — ярко-белые, приглушаем.
 // Специфичность выше, чем у встроенных стилей (encapsulation: None).
 gridster.display-grid .gridster-column {
@@ -155,4 +153,10 @@ gridster.display-grid .gridster-row {
 
   &.long { color: var(--success-fg); }
   &.short { color: var(--danger-fg); }
+}
+
+// night-vision: встроенную легенду (символ, имена оверлеев) не показываем —
+// символ, таймфрейм и результат рисует тулбар графика сделки.
+.nvjs-legend {
+  display: none !important;
 }

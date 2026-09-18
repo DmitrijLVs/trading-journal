@@ -1,0 +1,11 @@
+// Локальные шрифты. Excalifont — рукописный шрифт Excalidraw (OFL-1.1),
+// используется только для акцентов: подписи, заголовки виджетов, заметки.
+// Цифры и таблицы остаются в Inter / JetBrains Mono.
+
+@font-face {
+  font-family: 'Excalifont';
+  src: url('/fonts/Excalifont-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}

@@ -2,6 +2,7 @@ import { DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { Icon } from './icon';
 import { Button } from './button';
+import { SketchUnderline } from './sketch/sketch-underline';
 
 /**
  * Каркас диалога: шапка с заголовком и крестиком, контент и футер
@@ -9,9 +10,9 @@ import { Button } from './button';
  */
 @Component({
   selector: 'app-dialog-shell',
-  imports: [Icon, Button],
+  imports: [Icon, Button, SketchUnderline],
   template: `
-    <header class="head">
+    <header class="head" appSketchUnderline sketchSeed="dialog-head" [sketchInset]="20" [sketchStrokeWidth]="1">
       <div class="titles">
         <h2>{{ title() }}</h2>
         @if (subtitle()) {
@@ -39,11 +40,12 @@ import { Button } from './button';
     }
 
     .head {
+      --sketch-stroke: var(--border-default);
+      position: relative;
       display: flex;
       align-items: flex-start;
       gap: $space-3;
       padding: $space-4 $space-5;
-      border-bottom: 1px solid var(--border-muted);
     }
 
     .titles {
@@ -52,8 +54,10 @@ import { Button } from './button';
 
       h2 {
         margin: 0;
-        font-size: $text-lg;
-        font-weight: 600;
+        font-family: $font-hand;
+        font-size: 22px;
+        font-weight: 400;
+        line-height: 1.15;
       }
 
       p {

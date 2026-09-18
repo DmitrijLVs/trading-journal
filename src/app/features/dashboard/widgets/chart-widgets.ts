@@ -3,7 +3,7 @@ import type { EChartsCoreOption } from 'echarts/core';
 import { WidgetBase } from './widget-base';
 import { EChart } from '../../../shared/charts/echart';
 import { EmptyState } from '../../../shared/ui/empty-state';
-import { CHART, baseGrid, baseTooltip } from '../../../shared/charts/chart-theme';
+import { CHART, alpha, baseGrid, baseTooltip, mix } from '../../../shared/charts/chart-theme';
 import {
   GroupStat,
   WEEKDAY_LABELS,
@@ -22,6 +22,7 @@ import {
   durationMs,
   formatCompact,
   formatMoney,
+  formatPercent,
 } from '../../trades/data/trade.model';
 import { GroupKey } from '../data/workspace.model';
 
@@ -82,8 +83,8 @@ export class WidgetEquityCurve extends WidgetBase {
               type: 'linear',
               x: 0, y: 0, x2: 0, y2: 1,
               colorStops: [
-                { offset: 0, color: 'rgba(10, 132, 255, 0.22)' },
-                { offset: 1, color: 'rgba(10, 132, 255, 0)' },
+                { offset: 0, color: alpha(CHART.accent, 0.22) },
+                { offset: 1, color: alpha(CHART.accent, 0) },
               ],
             },
           },
@@ -107,6 +108,85 @@ export class WidgetEquityCurve extends WidgetBase {
               },
             ]
           : []),
+      ],
+    };
+  });
+}
+
+// ── Аккумулятивный профит ────────────────────────────────────────────────────
+
+/**
+ * Накопленный результат нарастающим итогом: по умолчанию в процентах от
+ * капитала на начало периода (прирост к депозиту), в настройках — в деньгах.
+ * Цвет кривой — по знаку итога, ноль подчёркнут пунктиром.
+ */
+@Component({
+  selector: 'app-widget-cumulative-profit',
+  imports: [EChart, EmptyState],
+  template: CHART_WIDGET_TEMPLATE,
+  styles: CHART_WIDGET_STYLE,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class WidgetCumulativeProfit extends WidgetBase {
+  private readonly curve = computed(() => equityCurve(this.trades()));
+  protected readonly hasData = computed(() => this.curve().length > 1);
+
+  /** Проценты, если попросили и есть от чего считать; иначе деньги. */
+  private readonly asPercent = computed(
+    () => (this.settings().valueMode ?? 'percent') === 'percent' && this.baseBalance() > 0,
+  );
+
+  protected readonly options = computed<EChartsCoreOption>(() => {
+    const points = this.curve();
+    const base = this.baseBalance();
+    const percent = this.asPercent();
+    const scale = percent ? 100 / base : 1;
+    const data = points.map((p) => [p.time, round2(p.equity * scale)]);
+    const last = points[points.length - 1]?.equity ?? 0;
+    const color = last >= 0 ? CHART.pos : CHART.neg;
+    const fmt = (value: number) =>
+      percent ? formatPercent(value, { sign: true }) : formatMoney(value, { sign: true });
+
+    return {
+      tooltip: {
+        ...baseTooltip(),
+        trigger: 'axis',
+        axisPointer: { type: 'cross', label: { backgroundColor: CHART.overlay } },
+        valueFormatter: (v: unknown) => fmt(Number(v)),
+      },
+      grid: baseGrid(),
+      xAxis: { type: 'time' },
+      yAxis: {
+        type: 'value',
+        axisLabel: {
+          formatter: (v: number) => (percent ? `${v.toFixed(0)}%` : formatCompact(v)),
+        },
+      },
+      series: [
+        {
+          name: percent ? 'Прирост к депозиту' : 'Накопленный профит',
+          type: 'line',
+          data,
+          showSymbol: false,
+          lineStyle: { width: 2, color },
+          areaStyle: {
+            color: {
+              type: 'linear',
+              x: 0, y: 0, x2: 0, y2: 1,
+              colorStops: [
+                { offset: 0, color: alpha(color, 0.28) },
+                { offset: 1, color: alpha(color, 0) },
+              ],
+            },
+          },
+          markLine: {
+            silent: true,
+            symbol: 'none',
+            label: { show: false },
+            lineStyle: { color: CHART.border, type: 'dashed' },
+            data: [{ yAxis: 0 }],
+          },
+        },
       ],
     };
   });
@@ -476,7 +556,9 @@ export class WidgetHeatmapHours extends WidgetBase {
         itemWidth: 10,
         textStyle: { color: CHART.fgSubtle, fontSize: 9 },
         // Дивергентная шкала: полюса P&L с нейтральной серединой.
-        inRange: { color: [CHART.neg, '#452023', CHART.grid, '#1d3a26', CHART.pos] },
+        inRange: {
+          color: [CHART.neg, mix(CHART.neg, CHART.grid, 0.7), CHART.grid, mix(CHART.pos, CHART.grid, 0.7), CHART.pos],
+        },
         formatter: (v: number) => formatCompact(v),
       },
       series: [

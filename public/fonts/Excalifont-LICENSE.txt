@@ -1,0 +1,4 @@
+Excalifont — рукописный шрифт Excalidraw (https://plus.excalidraw.com/excalifont).
+Источник файла: https://excalidraw.nyc3.cdn.digitaloceanspaces.com/fonts/Excalifont-Regular.woff2
+Лицензия: SIL Open Font License 1.1 (OFL-1.1) — https://openfontlicense.org
+Поддерживает латиницу, кириллицу и греческий.

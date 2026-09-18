@@ -3,7 +3,7 @@
 @use 'tokens' as *;
 
 // Apple-style keyboard focus ring.
-@mixin focus-ring($color: $accent-fg, $offset: 2px) {
+@mixin focus-ring($color: var(--accent-fg), $offset: 2px) {
   &:focus-visible {
     outline: 2px solid $color;
     outline-offset: $offset;
@@ -12,23 +12,23 @@
 
 // macOS/iOS vibrancy — frosted-glass surface.
 // Pass a tint to keep the layer readable over varied backdrops.
-@mixin frosted($tint: rgba(22, 27, 34, 0.72)) {
+@mixin frosted($tint: color-mix(in srgb, var(--canvas-subtle) 72%, transparent)) {
   background: $tint;
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
 }
 
 // Raised surface with a subtle inner highlight (Apple card feel).
-@mixin elevated($bg: $canvas-subtle) {
+@mixin elevated($bg: var(--canvas-subtle)) {
   background: $bg;
-  border: 1px solid $border-muted;
+  border: 1px solid var(--border-muted);
   box-shadow: $inner-highlight, $shadow-sm;
 }
 
 // Thin, themed scrollbar (WebKit only — Firefox uses scrollbar-color).
 @mixin styled-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #{$border-default} transparent;
+  scrollbar-color: var(--border-default) transparent;
 
   &::-webkit-scrollbar {
     width: 10px;
@@ -38,11 +38,11 @@
     background: transparent;
   }
   &::-webkit-scrollbar-thumb {
-    background: $border-default;
+    background: var(--border-default);
     border-radius: $radius-full;
-    border: 2px solid $canvas-default;
+    border: 2px solid var(--canvas-default);
   }
   &::-webkit-scrollbar-thumb:hover {
-    background: $border-strong;
+    background: var(--border-strong);
   }
 }

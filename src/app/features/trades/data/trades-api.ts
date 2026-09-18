@@ -14,11 +14,11 @@ export class TradesApi {
     return httpResource<Trade[]>(() => this.baseUrl);
   }
 
-  /** Свечи вокруг сделки для графика. */
-  candles(tradeId: Signal<string | null>) {
+  /** Свечи вокруг сделки для графика на выбранном таймфрейме. */
+  candles(tradeId: Signal<string | null>, timeframe: Signal<string>) {
     return httpResource<TradeChartData>(() => {
       const id = tradeId();
-      return id ? `${this.baseUrl}/${id}/candles` : undefined;
+      return id ? `${this.baseUrl}/${id}/candles?tf=${timeframe()}` : undefined;
     });
   }
 

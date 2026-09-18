@@ -14,6 +14,7 @@ import { SparkLine } from '../../shared/ui/spark-line';
 import { Toggle } from '../../shared/ui/toggle';
 import { ConfirmService } from '../../shared/ui/confirm-dialog';
 import { ToastService } from '../../shared/ui/toast';
+import { SketchFrame } from '../../shared/ui/sketch/sketch-frame';
 
 interface AccountCard {
   account: Account;
@@ -25,14 +26,15 @@ interface AccountCard {
   color: string;
 }
 
+/** Подключённые счета — вкладка «Счета» в настройках. */
 @Component({
-  selector: 'app-accounts-page',
-  imports: [Icon, Button, Badge, PnlValue, SparkLine, Toggle],
-  templateUrl: './accounts-page.html',
-  styleUrl: './accounts-page.scss',
+  selector: 'app-accounts-panel',
+  imports: [SketchFrame, Icon, Button, Badge, PnlValue, SparkLine, Toggle],
+  templateUrl: './accounts-panel.html',
+  styleUrl: './accounts-panel.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AccountsPage {
+export class AccountsPanel {
   protected readonly store = inject(AccountsStore);
   private readonly tradesStore = inject(TradesStore);
   private readonly dialog = inject(Dialog);

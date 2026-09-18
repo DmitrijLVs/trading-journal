@@ -4,18 +4,73 @@
   display: block;
 }
 
-.narrow {
-  max-width: 760px;
-}
+// ── Вкладки (те же, что листы дашборда) ─────────────────────────────────────
 
-.sections {
+.tabs {
   display: flex;
-  flex-direction: column;
-  gap: $space-4;
+  align-items: center;
+  gap: 2px;
+  margin: 0 0 $space-4;
+  border-bottom: 1px solid var(--border-muted);
 }
 
+.tab {
+  --sketch-stroke: var(--accent-fg);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  height: 38px;
+  padding: 0 $space-3;
+  border-radius: $radius-md $radius-md 0 0;
+  color: var(--fg-muted);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background $duration-fast $ease-apple, color $duration-fast $ease-apple;
+
+  app-icon {
+    color: var(--fg-subtle);
+  }
+
+  &:hover {
+    background: var(--canvas-overlay);
+    color: var(--fg-default);
+  }
+
+  &.active {
+    color: var(--fg-default);
+
+    app-icon {
+      color: var(--accent-fg);
+    }
+  }
+}
+
+.tab-name {
+  font-family: $font-hand;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.tab-ink {
+  position: absolute;
+  left: $space-3;
+  right: $space-3;
+  bottom: 1px;
+  height: 6px;
+}
+
+// ── Секции ──────────────────────────────────────────────────────────────────
+
+// Формы не растягиваем на всю ширину контейнера — контейнер общий для всех
+// страниц, а карточки настроек читаются лучше в ограниченной ширине.
 .section {
+  max-width: 820px;
   padding: $space-4 $space-5;
+
+  & + .section {
+    margin-top: $space-4;
+  }
 
   h2 {
     display: flex;
@@ -64,6 +119,12 @@ app-select {
   border-top: 1px solid var(--border-muted);
   cursor: pointer;
 
+  &.first {
+    border-top: none;
+    padding-top: 0;
+    cursor: default;
+  }
+
   .t {
     display: block;
     font-size: $text-sm;
@@ -104,4 +165,16 @@ app-select {
     margin-top: 1px;
     max-width: 420px;
   }
+}
+
+.theme-picker {
+  width: 180px;
+  flex: none;
+}
+
+// Заголовки секций — рукописные.
+.tj-card.section > h2 {
+  font-family: $font-hand;
+  font-size: 19px;
+  font-weight: 400;
 }

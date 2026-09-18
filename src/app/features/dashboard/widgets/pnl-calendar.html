@@ -30,13 +30,28 @@
           [class.pos]="cell.pnl !== null && cell.pnl > 0"
           [class.neg]="cell.pnl !== null && cell.pnl < 0"
           [class.today]="cell.isToday"
+          [class.idle]="isIdle(cell)"
           [style.--i]="cell.intensity"
           [appTooltip]="tooltipFor(cell)"
+          [appSketchHachure]="(cell.pnl !== null && cell.pnl !== 0) || isIdle(cell)"
+          [hachureGap]="hachureGap(cell)"
+          [hachureSeed]="cell.date"
+          [hachureWeight]="isIdle(cell) ? 0.6 : 0.8"
         >
-          <span class="d">{{ cell.day }}</span>
+          <span class="top">
+            <span class="d">{{ cell.day }}</span>
+            @if (cell.count > 0) {
+              <span class="c">{{ cell.count }}<i>сд</i></span>
+            }
+          </span>
           @if (cell.pnl !== null) {
-            <span class="p">{{ compact(cell.pnl) }}</span>
-            <span class="c">{{ cell.count }}</span>
+            <span class="plate">
+              <span class="p" [class.pos]="cell.pnl > 0" [class.neg]="cell.pnl < 0">
+                {{ compact(cell.pnl) }}
+              </span>
+              <span class="row vol"><i>об</i><b>{{ short(cell.volume) }}</b></span>
+              <span class="row fee"><i>ком</i><b>{{ short(cell.fees) }}</b></span>
+            </span>
           }
         </div>
       } @else {

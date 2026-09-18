@@ -5,6 +5,7 @@ import { ToastOutlet } from '../ui/toast';
 import { AccountSwitcher } from './account-switcher';
 import { PeriodPicker } from './period-picker';
 import { IconName } from '../ui/icons';
+import { SketchUnderline } from '../ui/sketch/sketch-underline';
 
 interface NavItem {
   path: string;
@@ -14,7 +15,16 @@ interface NavItem {
 
 @Component({
   selector: 'app-shell',
-  imports: [RouterLink, RouterLinkActive, RouterOutlet, Icon, ToastOutlet, AccountSwitcher, PeriodPicker],
+  imports: [
+    RouterLink,
+    RouterLinkActive,
+    RouterOutlet,
+    Icon,
+    ToastOutlet,
+    AccountSwitcher,
+    PeriodPicker,
+    SketchUnderline,
+  ],
   templateUrl: './shell.html',
   styleUrl: './shell.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -27,7 +37,6 @@ export class Shell {
   ];
 
   protected readonly systemNav: readonly NavItem[] = [
-    { path: '/accounts', label: 'Счета', icon: 'wallet' },
     { path: '/settings', label: 'Настройки', icon: 'settings' },
   ];
 }

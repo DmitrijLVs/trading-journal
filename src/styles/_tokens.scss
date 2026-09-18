@@ -1,45 +1,50 @@
 // Design tokens — source of truth.
-// Palette: GitHub Primer (canvas + borders + fg) blended with Apple system
-// colors (semantic accents, motion, typography).
-// Dark mode only for now.
+// Palette «Графит»: тёплый уголь вместо сине-чёрного GitHub, «чернила» цвета
+// старой бумаги, приглушённые маркерные акценты — чтобы рукописные штрихи
+// (rough.js) читались как карандаш на тёмном крафте, а не как неон.
+// Светлая тема «Бумага» переопределяет цвета в _theme.scss (data-theme='paper').
 
-// ─── Canvas / surfaces (GitHub Primer dark) ────────────────────────────────
-$canvas-default: #0d1117; // page background
-$canvas-subtle:  #161b22; // cards, sidebar
-$canvas-overlay: #1c2128; // popovers, hover surfaces
-$canvas-inset:   #010409; // code, deep wells
+// ─── Canvas / surfaces ─────────────────────────────────────────────────────
+$canvas-default: #191816; // page background — тёплый уголь
+$canvas-subtle:  #201f1c; // cards, sidebar
+$canvas-overlay: #2a2925; // popovers, hover surfaces
+$canvas-inset:   #121110; // code, deep wells
 
 // ─── Borders ───────────────────────────────────────────────────────────────
-$border-muted:   #21262d; // hairlines inside surfaces
-$border-default: #30363d; // standard separators
-$border-strong:  #484f58; // emphasised dividers, focus outlines
+$border-muted:   #2b2a26; // hairlines inside surfaces
+$border-default: #3a3832; // standard separators
+$border-strong: #302b21; // emphasised dividers, focus outlines, штрих рамок
 
 // ─── Foreground ────────────────────────────────────────────────────────────
-$fg-default:     #e6edf3; // body text
-$fg-muted:       #7d8590; // secondary text
-$fg-subtle:      #6e7681; // tertiary / captions
-$fg-on-emphasis: #ffffff; // text on filled accents
+$fg-default:     #ebe6da; // body text — off-white старой бумаги
+$fg-muted:       #a49f93; // secondary text
+$fg-subtle:      #7e796e; // tertiary / captions
+$fg-on-emphasis: #1b1a17; // тёмные чернила на карандашно-жёлтой кнопке
 
-// ─── Semantic colors — Apple system palette (dark) ─────────────────────────
-$accent-fg:        #0a84ff; // system blue
-$accent-emphasis:  #0969da; // GitHub blue for filled CTAs
-$accent-subtle:    rgba(10, 132, 255, 0.15);
-$accent-muted:     rgba(10, 132, 255, 0.4);
+// ─── Semantic colors — маркеры, приглушённые под тёплый фон ────────────────
+// Акцент — цвет простого карандаша: тусклая жёлтая охра. Подчёркивания,
+// активные состояния, кнопки. Не спорит с зелёным/красным P&L.
+$accent-fg:        #d3a94a;
+$accent-emphasis:  #c89b39; // filled CTAs — текст тёмный ($fg-on-emphasis)
+$accent-subtle:    rgba(211, 169, 74, 0.15);
+$accent-muted:     rgba(211, 169, 74, 0.4);
 
-$success-fg:       #3fb950; // GitHub Primer success-fg (dark)
-$success-subtle:   rgba(63, 185, 80, 0.10);
-$success-muted:    rgba(63, 185, 80, 0.28);
+$success-fg:       #74c07a;
+$success-subtle:   rgba(116, 192, 122, 0.10);
+$success-muted:    rgba(116, 192, 122, 0.28);
 
-$danger-fg:        #f85149; // GitHub Primer danger-fg (dark)
-$danger-subtle:    rgba(248, 81, 73, 0.10);
-$danger-muted:     rgba(248, 81, 73, 0.28);
+$danger-fg:        #e6705f; // коралл вместо неонового красного
+$danger-subtle:    rgba(230, 112, 95, 0.10);
+$danger-muted:     rgba(230, 112, 95, 0.28);
 
-$attention-fg:     #ff9f0a; // system orange
-$attention-subtle: rgba(255, 159, 10, 0.12);
-$attention-muted:  rgba(255, 159, 10, 0.36);
+$attention-fg:     #e0813f; // оранжевый — подсказки, стрелки, «не по плану»
+$attention-subtle: rgba(224, 129, 63, 0.12);
+$attention-muted:  rgba(224, 129, 63, 0.36);
 
-$done-fg:          #bf5af2; // system purple
-$done-subtle:      rgba(191, 90, 242, 0.15);
+$done-fg:          #b592e0; // лаванда
+$done-subtle:      rgba(181, 146, 224, 0.15);
+
+$teal-fg:          #5cbfc9; // 4-я категориальная серия графиков
 
 // ─── Typography ────────────────────────────────────────────────────────────
 $font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
@@ -47,6 +52,8 @@ $font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
             'Apple Color Emoji', 'Segoe UI Emoji';
 $font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco,
             Consolas, 'Liberation Mono', 'Courier New', monospace;
+// Рукописный акцент (Excalidraw). Только для подписей и заголовков — не для цифр.
+$font-hand: 'Excalifont', 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', cursive;
 
 $text-xs:   0.6875rem; // 11px — caption, labels
 $text-sm:   0.8125rem; // 13px — footnote

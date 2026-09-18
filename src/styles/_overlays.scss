@@ -23,7 +23,7 @@
 
 // ── Диалоги (CDK Dialog) ────────────────────────────────────────────────────
 .tj-dialog-backdrop {
-  background: rgba(1, 4, 9, 0.6);
+  background: color-mix(in srgb, var(--canvas-inset) 60%, transparent);
   backdrop-filter: blur(3px);
   animation: tj-fade-in $duration-base $ease-apple;
 }
@@ -52,6 +52,31 @@
   from {
     opacity: 0;
     transform: translateY(10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+// ── Выезжающая панель (CDK Dialog у правого края) ───────────────────────────
+.tj-drawer-backdrop {
+  background: color-mix(in srgb, var(--canvas-inset) 30%, transparent);
+  animation: tj-fade-in $duration-base $ease-apple;
+}
+
+.tj-drawer-panel {
+  background: var(--canvas-subtle);
+  border-left: 1px solid var(--border-default);
+  box-shadow: $shadow-popover;
+  animation: tj-drawer-in $duration-slow $ease-out;
+  overflow: hidden;
+}
+
+@keyframes tj-drawer-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
   }
   to {
     opacity: 1;

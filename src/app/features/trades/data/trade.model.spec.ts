@@ -32,7 +32,6 @@ function makeTrade(overrides: Partial<Trade> = {}): Trade {
     strategy: 'Тест',
     timeframe: '15m',
     setupGrade: null,
-    mood: null,
     mistakes: [],
     tags: [],
     notes: '',

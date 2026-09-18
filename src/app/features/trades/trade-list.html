@@ -1,14 +1,4 @@
 <section class="tj-page">
-  <header class="tj-page-head">
-    <div>
-      <h1>Сделки</h1>
-      <p class="tj-page-sub">
-        {{ summary().tradeCount }} закрытых · {{ summary().openCount }} открытых ·
-        винрейт {{ (summary().winRate * 100).toFixed(1) }}%
-      </p>
-    </div>
-  </header>
-
   <!-- ── Фильтры ─────────────────────────────────────────────────────── -->
   <div class="filters">
     <div class="search">
@@ -64,15 +54,6 @@
       [values]="store.tableFilters().tags ?? []"
       (valuesChange)="setTags($event)"
     />
-    <app-select
-      [options]="gradeOptions"
-      placeholder="Сетап"
-      [multi]="true"
-      [clearable]="true"
-      size="sm"
-      [values]="store.tableFilters().setupGrades ?? []"
-      (valuesChange)="setGrades($event)"
-    />
 
     @if (store.hasActiveTableFilters()) {
       <button app-button variant="ghost" size="sm" (click)="reset()">
@@ -83,7 +64,7 @@
   </div>
 
   <!-- ── Таблица ─────────────────────────────────────────────────────── -->
-  <div class="table-card tj-card">
+  <div class="table-wrap" #tableWrap>
     @if (store.isLoading() && !store.hasLoaded()) {
       <div class="loading">
         @for (i of [1, 2, 3, 4, 5, 6, 7, 8]; track i) {
@@ -92,7 +73,7 @@
       </div>
     } @else if (visibleRows().length > 0) {
       <div class="table-scroll">
-        <table class="tj-table">
+        <table class="tj-table trades">
           <thead>
             <tr>
               <th>
@@ -139,7 +120,12 @@
           </thead>
           <tbody>
             @for (row of visibleRows(); track row.trade.id) {
-              <tr class="clickable" (click)="openTrade(row.trade)">
+              <tr
+                class="clickable"
+                [class.is-open]="expandedId() === row.trade.id"
+                [id]="'trade-' + row.trade.id"
+                (click)="toggle(row.trade)"
+              >
                 <td class="muted">{{ fmtDateTime(row.trade.openedAt) }}</td>
                 <td class="sym">{{ row.trade.symbol }}</td>
                 <td>
@@ -192,6 +178,13 @@
                   }
                 </td>
               </tr>
+              @if (expandedId() === row.trade.id) {
+                <tr class="expand-row">
+                  <td colspan="12">
+                    <app-trade-expand [trade]="row.trade" (closed)="expandedId.set(null)" />
+                  </td>
+                </tr>
+              }
             }
           </tbody>
           <tfoot>
@@ -212,13 +205,43 @@
         </table>
       </div>
 
-      @if (hasMore()) {
-        <div class="load-more">
-          <button app-button variant="outline" size="sm" (click)="showMore()">
-            Показать ещё ({{ sortedRows().length - visibleRows().length }})
+      <!-- ── Пагинация ───────────────────────────────────────────────── -->
+      <div class="pager">
+        <span class="pager-range">{{ rangeLabel() }}</span>
+        <nav class="pager-pages" aria-label="Страницы">
+          <button type="button" class="pg nav" [disabled]="page() === 1" aria-label="Назад" (click)="goTo(page() - 1)">
+            <app-icon name="chevron-left" style="--icon-size: 14px" />
           </button>
-        </div>
-      }
+          @for (item of pageItems(); track $index) {
+            @if (item === null) {
+              <span class="pg-gap">…</span>
+            } @else {
+              <button
+                type="button"
+                class="pg"
+                [class.active]="item === page()"
+                [attr.aria-current]="item === page() ? 'page' : null"
+                (click)="goTo(item)"
+              >
+                {{ item }}
+                @if (item === page()) {
+                  <i class="pg-ink" appSketchUnderline [sketchSeed]="'page-' + item" [sketchInset]="0"></i>
+                }
+              </button>
+            }
+          }
+          <button type="button" class="pg nav" [disabled]="page() === pageCount()" aria-label="Вперёд" (click)="goTo(page() + 1)">
+            <app-icon name="chevron-right" style="--icon-size: 14px" />
+          </button>
+        </nav>
+        <app-select
+          class="pager-size"
+          size="sm"
+          [options]="pageSizeOptions"
+          [value]="'' + pageSize()"
+          (valueChange)="setPageSize($event)"
+        />
+      </div>
     } @else {
       <app-empty-state
         icon="filter"

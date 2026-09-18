@@ -76,7 +76,7 @@ export class ToastService {
       cursor: pointer;
       pointer-events: auto;
       animation: toast-in $duration-base $ease-out;
-      @include frosted(rgba(28, 33, 40, 0.9));
+      @include frosted(color-mix(in srgb, var(--canvas-overlay) 90%, transparent));
 
       &.success app-icon { color: var(--success-fg); }
       &.error app-icon { color: var(--danger-fg); }
