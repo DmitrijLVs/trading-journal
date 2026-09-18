@@ -102,10 +102,10 @@
 :root[data-theme='paper'] {
   color-scheme: light;
 
-  --canvas-default: #f3efe6;
-  --canvas-subtle:  #fbf9f3;
+  --canvas-default: #efeae0;
+  --canvas-subtle:  #fdfcf8;
   --canvas-overlay: #ffffff;
-  --canvas-inset:   #ebe6da;
+  --canvas-inset:   #e8e2d4;
 
   --border-muted:   #e3ddcf;
   --border-default: #d2cbba;
@@ -139,8 +139,8 @@
 
   --teal-fg:     #1f9fb0;
 
-  --shadow-sm:       0 1px 0 rgba(60, 50, 30, 0.08);
-  --shadow-md:       0 4px 12px rgba(60, 50, 30, 0.12);
+  --shadow-sm:       0 1px 2px rgba(60, 50, 30, 0.1);
+  --shadow-md:       0 1px 2px rgba(60, 50, 30, 0.08), 0 8px 20px rgba(60, 50, 30, 0.1);
   --shadow-lg:       0 12px 32px rgba(60, 50, 30, 0.16);
   --shadow-popover:  0 16px 48px rgba(60, 50, 30, 0.2);
   --inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.6);

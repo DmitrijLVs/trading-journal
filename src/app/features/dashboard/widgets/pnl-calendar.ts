@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/c
 import { WidgetBase } from './widget-base';
 import { Icon } from '../../../shared/ui/icon';
 import { Tooltip } from '../../../shared/ui/tooltip';
-import { SketchHachure } from '../../../shared/ui/sketch/sketch-hachure';
 import { calculatePnl, formatCompact, formatMoney, notional } from '../../trades/data/trade.model';
 
 interface DayStat {
@@ -34,7 +33,7 @@ const MONTHS = [
 /** Месяц-теплокарта дневного P&L (как в tradermake / edgewonk). */
 @Component({
   selector: 'app-widget-pnl-calendar',
-  imports: [Icon, Tooltip, SketchHachure],
+  imports: [Icon, Tooltip],
   templateUrl: './pnl-calendar.html',
   styleUrl: './pnl-calendar.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -129,13 +128,6 @@ export class WidgetPnlCalendar extends WidgetBase {
 
   protected compact(value: number): string {
     return (value > 0 ? '+' : value < 0 ? '−' : '') + formatCompact(Math.abs(value));
-  }
-
-  /** Плотность штриховки: чем больше |P&L| относительно месяца, тем чаще штрихи;
-   *  прошедший день без сделок — редкие серые штрихи. */
-  protected hachureGap(cell: CalendarCell): number {
-    if (cell.pnl === null) return 9;
-    return Math.round(10 - 5 * cell.intensity);
   }
 
   protected isIdle(cell: CalendarCell): boolean {

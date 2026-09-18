@@ -141,11 +141,10 @@ interface PanelItem {
       position: relative;
       display: inline-block;
       margin: 0;
-      padding-bottom: 4px;
-      font-family: $font-hand;
-      font-size: 24px;
-      font-weight: 400;
-      line-height: 1.1;
+      padding-bottom: 5px;
+      font-size: $text-xl;
+      font-weight: 650;
+      line-height: 1.2;
     }
 
     .sub {
@@ -211,9 +210,9 @@ interface PanelItem {
       background: none;
       border: none;
       border-radius: $radius-md;
-      padding: 4px $space-2 6px;
-      font-family: $font-hand;
-      font-size: 15px;
+      padding: 5px $space-2 7px;
+      font-size: $text-sm;
+      font-weight: 500;
       color: var(--fg-muted);
       cursor: pointer;
       white-space: nowrap;
@@ -280,9 +279,9 @@ interface PanelItem {
     }
 
     .name {
-      font-family: $font-hand;
-      font-size: 16px;
-      line-height: 1.15;
+      font-size: $text-md;
+      font-weight: 600;
+      line-height: 1.25;
     }
 
     .desc {
@@ -301,8 +300,8 @@ interface PanelItem {
 
     .count {
       color: var(--accent-fg);
-      font-family: $font-hand;
-      font-size: 12px;
+      font-family: $font-sans;
+      font-size: $text-xs;
     }
 
     .plus {
@@ -323,7 +322,6 @@ interface PanelItem {
       margin: $space-6 $space-3;
       text-align: center;
       color: var(--fg-muted);
-      font-family: $font-hand;
     }
 
     .foot {

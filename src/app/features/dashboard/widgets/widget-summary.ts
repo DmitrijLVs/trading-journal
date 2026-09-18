@@ -77,7 +77,7 @@ import { RingSegment, SketchRing } from '../../../shared/ui/sketch/sketch-ring';
       font-family: $font-mono;
       font-variant-numeric: tabular-nums;
       font-weight: 650;
-      font-size: clamp(14px, 19cqh, 22px);
+      font-size: clamp(18px, 22cqh, 28px);
       letter-spacing: -0.02em;
       line-height: 1.15;
       color: var(--fg-default);
@@ -95,9 +95,8 @@ import { RingSegment, SketchRing } from '../../../shared/ui/sketch/sketch-ring';
     .k {
       grid-column: 1;
       grid-row: 2;
-      font-family: $font-hand;
-      font-size: 13px;
-      line-height: 1.2;
+      font-size: $text-sm;
+      line-height: 1.3;
       color: var(--fg-muted);
       white-space: nowrap;
     }

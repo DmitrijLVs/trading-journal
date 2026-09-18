@@ -7,15 +7,14 @@ import {
   input,
   viewChild,
 } from '@angular/core';
-import rough from 'roughjs';
-import type { Options } from 'roughjs/bin/core';
 import { ICONS, IconDef, IconName } from './icons';
-import { seedFrom } from './sketch/sketch-seed';
+
+const SVG_NS = 'http://www.w3.org/2000/svg';
 
 /**
- * Иконка «пером»: геометрия из реестра ICONS рисуется rough.js с едва
- * заметной дрожью — тот же почерк, что у рамок и подчёркиваний. Seed из имени,
- * поэтому одна и та же иконка везде выглядит одинаково.
+ * Иконка из реестра ICONS: чистый штрих в сетке 24×24. Дрожь пера на 16 px
+ * читалась как шум, поэтому геометрия рисуется ровно; «от руки» осталось
+ * только там, где это осмысленно (подписи, заметки, пустые состояния).
  */
 @Component({
   selector: 'app-icon',
@@ -24,6 +23,8 @@ import { seedFrom } from './sketch/sketch-seed';
       #svg
       viewBox="0 0 24 24"
       fill="none"
+      stroke="currentColor"
+      stroke-width="1.7"
       stroke-linecap="round"
       stroke-linejoin="round"
       aria-hidden="true"
@@ -66,39 +67,18 @@ export class Icon {
 
   private draw(): void {
     const svg = this.svg().nativeElement;
-    const name = this.name();
-    const def: IconDef = ICONS[name];
-    const rc = rough.svg(svg);
-    const seed = seedFrom(`icon-${name}`);
-    // Дрожь маленькая в единицах viewBox (24): на 16 px это доли пикселя —
-    // читается как перо, а не как шум.
-    const stroke: Options = {
-      stroke: 'currentColor',
-      strokeWidth: 1.7,
-      roughness: 0.7,
-      bowing: 0.8,
-      maxRandomnessOffset: 0.55,
-      disableMultiStroke: true,
-      preserveVertices: true,
-      curveFitting: 0.96,
-      seed,
+    const def: IconDef = ICONS[this.name()];
+    const node = (tag: string, attrs: Record<string, string | number>): SVGElement => {
+      const el = document.createElementNS(SVG_NS, tag);
+      for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, String(v));
+      return el;
     };
 
     svg.replaceChildren();
-    (def.p ?? []).forEach((d, i) => svg.append(rc.path(d, { ...stroke, seed: seed + i })));
-    (def.c ?? []).forEach(([cx, cy, r], i) =>
-      svg.append(rc.circle(cx, cy, r * 2, { ...stroke, seed: seed + 20 + i })),
-    );
-    (def.d ?? []).forEach(([cx, cy], i) =>
-      svg.append(
-        rc.circle(cx, cy, 2.6, {
-          ...stroke,
-          stroke: 'none',
-          fill: 'currentColor',
-          fillStyle: 'solid',
-          seed: seed + 40 + i,
-        }),
-      ),
-    );
+    for (const d of def.p ?? []) svg.append(node('path', { d }));
+    for (const [cx, cy, r] of def.c ?? []) svg.append(node('circle', { cx, cy, r }));
+    for (const [cx, cy] of def.d ?? []) {
+      svg.append(node('circle', { cx, cy, r: 1.3, fill: 'currentColor', stroke: 'none' }));
+    }
   }
 }

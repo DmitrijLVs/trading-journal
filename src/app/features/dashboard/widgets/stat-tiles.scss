@@ -22,7 +22,7 @@
 .growth {
   font-family: $font-mono;
   font-variant-numeric: tabular-nums;
-  font-size: clamp(12px, 13cqh, 15px);
+  font-size: clamp(13px, 14cqh, 17px);
   font-weight: 600;
   color: var(--fg-muted);
   white-space: nowrap;
@@ -32,7 +32,7 @@
 }
 
 .value {
-  font-size: clamp(18px, 26cqh, 28px);
+  font-size: clamp(26px, 30cqh, 40px);
   font-weight: 650;
   font-family: $font-mono;
   font-variant-numeric: tabular-nums;
@@ -49,15 +49,13 @@
   align-items: baseline;
   gap: $space-2;
   color: var(--fg-muted);
-  // Подписи к цифрам — рукописные; сами цифры (.mono) остаются моноширинными.
-  font-family: $font-hand;
-  font-size: 13.5px;
-  line-height: 1.25;
+  font-size: $text-sm;
+  line-height: 1.35;
   white-space: nowrap;
 
   .mono {
     font-family: $font-mono;
-    font-size: $text-xs;
+    font-size: $text-sm;
   }
 
   .pos { color: var(--success-fg); }

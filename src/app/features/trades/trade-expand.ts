@@ -39,7 +39,6 @@ import { Skeleton } from '../../shared/ui/skeleton';
 import { ToastService } from '../../shared/ui/toast';
 import { ConfirmService } from '../../shared/ui/confirm-dialog';
 import { Tooltip } from '../../shared/ui/tooltip';
-import { SketchFrame } from '../../shared/ui/sketch/sketch-frame';
 
 /**
  * Разбор сделки внутри таблицы: раскрывается под строкой. Слева график
@@ -48,7 +47,7 @@ import { SketchFrame } from '../../shared/ui/sketch/sketch-frame';
  */
 @Component({
   selector: 'app-trade-expand',
-  imports: [SketchFrame, TradeChart, Icon, Button, Badge, PnlValue, Select, Skeleton, Tooltip],
+  imports: [TradeChart, Icon, Button, Badge, PnlValue, Select, Skeleton, Tooltip],
   templateUrl: './trade-expand.html',
   styleUrl: './trade-expand.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

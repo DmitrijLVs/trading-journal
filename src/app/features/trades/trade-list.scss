@@ -16,7 +16,7 @@
   display: flex;
   align-items: center;
   gap: $space-2;
-  height: 28px;
+  height: 36px;
   flex: 1 1 340px;
   max-width: 560px;
   padding: 0 $space-3;
@@ -47,6 +47,17 @@
 // Таблица без карточки: лежит прямо на странице, рамок нет — только линии строк.
 .table-wrap {
   scroll-margin-top: $space-4;
+  container-type: inline-size;
+}
+
+// Узкий экран — второстепенные колонки уходят; и стратегия, и теги видны
+// в раскрытом разборе сделки.
+@container (max-width: 1240px) {
+  .col-tags { display: none; }
+}
+
+@container (max-width: 1080px) {
+  .col-strategy { display: none; }
 }
 
 .table-scroll {
@@ -114,17 +125,15 @@
 }
 
 .tag {
-  // Теги пишет пользователь — рукописные.
   display: inline-block;
-  font-family: $font-hand;
-  font-size: 13px;
+  font-size: $text-xs;
   color: var(--fg-muted);
   background: var(--canvas-overlay);
   border: 1px solid var(--border-muted);
   border-radius: $radius-full;
-  padding: 0 $space-2;
+  padding: 1px $space-2;
   margin-right: 3px;
-  line-height: 17px;
+  line-height: 18px;
 
   &.more {
     color: var(--fg-subtle);

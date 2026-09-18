@@ -114,8 +114,8 @@
                   Время <span class="arrow">{{ sortArrow('duration') }}</span>
                 </span>
               </th>
-              <th>Стратегия</th>
-              <th>Теги</th>
+              <th class="col-strategy">Стратегия</th>
+              <th class="col-tags">Теги</th>
             </tr>
           </thead>
           <tbody>
@@ -168,8 +168,8 @@
                   }
                 </td>
                 <td class="num muted">{{ fmtDuration(row.trade) }}</td>
-                <td class="muted">{{ row.trade.strategy }}</td>
-                <td class="tags-cell">
+                <td class="muted col-strategy">{{ row.trade.strategy }}</td>
+                <td class="tags-cell col-tags">
                   @for (tag of row.trade.tags.slice(0, 2); track tag) {
                     <span class="tag">{{ tag }}</span>
                   }
@@ -199,7 +199,9 @@
               <td class="num muted">
                 {{ summary().avgR === null ? '—' : (summary().avgR!.toFixed(2) + 'R') }}
               </td>
-              <td colspan="3"></td>
+              <td></td>
+              <td class="col-strategy"></td>
+              <td class="col-tags"></td>
             </tr>
           </tfoot>
         </table>

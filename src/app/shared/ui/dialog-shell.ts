@@ -2,7 +2,6 @@ import { DialogRef } from '@angular/cdk/dialog';
 import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { Icon } from './icon';
 import { Button } from './button';
-import { SketchUnderline } from './sketch/sketch-underline';
 
 /**
  * Каркас диалога: шапка с заголовком и крестиком, контент и футер
@@ -10,9 +9,9 @@ import { SketchUnderline } from './sketch/sketch-underline';
  */
 @Component({
   selector: 'app-dialog-shell',
-  imports: [Icon, Button, SketchUnderline],
+  imports: [Icon, Button],
   template: `
-    <header class="head" appSketchUnderline sketchSeed="dialog-head" [sketchInset]="20" [sketchStrokeWidth]="1">
+    <header class="head">
       <div class="titles">
         <h2>{{ title() }}</h2>
         @if (subtitle()) {
@@ -40,12 +39,11 @@ import { SketchUnderline } from './sketch/sketch-underline';
     }
 
     .head {
-      --sketch-stroke: var(--border-default);
-      position: relative;
       display: flex;
       align-items: flex-start;
       gap: $space-3;
       padding: $space-4 $space-5;
+      border-bottom: 1px solid var(--border-muted);
     }
 
     .titles {
@@ -54,10 +52,9 @@ import { SketchUnderline } from './sketch/sketch-underline';
 
       h2 {
         margin: 0;
-        font-family: $font-hand;
-        font-size: 22px;
-        font-weight: 400;
-        line-height: 1.15;
+        font-size: $text-xl;
+        font-weight: 650;
+        line-height: 1.2;
       }
 
       p {

@@ -86,8 +86,6 @@
             <app-widget-shell
               [widget]="item.widget"
               [locked]="store.layoutLocked()"
-              [sketchSeed]="item.widget.instanceId"
-              [sketchDelay]="$index * 70"
               [highlight]="item.widget.instanceId === highlightId()"
               (configure)="configureWidget(item.widget)"
               (duplicate)="duplicateWidget(item.widget.instanceId)"
@@ -124,7 +122,6 @@
         <app-widget-shell
           [widget]="widget"
           [maximized]="true"
-          [sketchSeed]="widget.instanceId + ':max'"
           (configure)="configureWidget(widget)"
           (duplicate)="duplicateWidget(widget.instanceId)"
           (toggleMaximize)="toggleMaximize(widget.instanceId)"

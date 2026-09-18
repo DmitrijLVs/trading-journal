@@ -2,7 +2,7 @@
 @let r = result();
 @let p = plan();
 @let e = execution();
-<div class="expand" appSketchFrame [sketchSeed]="'expand-' + t.id" [sketchRadius]="12">
+<div class="expand">
   <!-- График -->
   <div class="chart">
     @if (chartData(); as data) {
@@ -107,10 +107,10 @@
       @if (t.mistakes.length > 0 || t.tags.length > 0) {
         <div class="chips">
           @for (m of t.mistakes; track m) {
-            <span app-badge tone="danger" hand>{{ m }}</span>
+            <span app-badge tone="danger">{{ m }}</span>
           }
           @for (tag of t.tags; track tag) {
-            <span app-badge tone="neutral" hand>{{ tag }}</span>
+            <span app-badge tone="neutral">{{ tag }}</span>
           }
         </div>
       }

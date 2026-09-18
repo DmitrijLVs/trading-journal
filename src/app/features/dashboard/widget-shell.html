@@ -1,12 +1,4 @@
-<header
-  class="head"
-  [class.widget-drag-handle]="!locked() && !maximized()"
-  appSketchUnderline
-  [sketchSeed]="widget().instanceId + ':head'"
-  [sketchStrokeWidth]="1"
-  [sketchRoughness]="0.9"
-  [sketchInset]="6"
->
+<header class="head" [class.widget-drag-handle]="!locked() && !maximized()">
   <span class="grip">
     <app-icon name="grip" style="--icon-size: 12px" />
   </span>

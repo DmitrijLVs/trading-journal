@@ -60,12 +60,10 @@
   }
 }
 
-// Имя вкладки — рукописное, как подпись на листе Excalidraw.
 .tab-name {
-  font-family: $font-hand;
-  font-size: 16px;
+  font-size: $text-md;
+  font-weight: 500;
   line-height: 1;
-  letter-spacing: 0.01em;
 }
 
 // Подчёркивание активной вкладки — рукописная линия (SketchUnderline).
@@ -164,8 +162,8 @@
     color-mix(in srgb, var(--border-default) 80%, transparent) 1px,
     transparent 1.5px
   );
-  background-size: 22px 22px;
-  background-position: 11px 11px;
+  background-size: 26px 26px;
+  background-position: 13px 13px;
 }
 
 .grid {
@@ -231,7 +229,7 @@ gridster-item.cell {
   h2 {
     margin: 0 0 $space-2;
     font-family: $font-hand;
-    font-size: 26px;
+    font-size: 28px;
     font-weight: 400;
   }
 

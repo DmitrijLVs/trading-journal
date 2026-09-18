@@ -33,10 +33,6 @@
           [class.idle]="isIdle(cell)"
           [style.--i]="cell.intensity"
           [appTooltip]="tooltipFor(cell)"
-          [appSketchHachure]="(cell.pnl !== null && cell.pnl !== 0) || isIdle(cell)"
-          [hachureGap]="hachureGap(cell)"
-          [hachureSeed]="cell.date"
-          [hachureWeight]="isIdle(cell) ? 0.6 : 0.8"
         >
           <span class="top">
             <span class="d">{{ cell.day }}</span>

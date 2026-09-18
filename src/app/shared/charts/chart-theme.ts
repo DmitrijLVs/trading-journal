@@ -111,7 +111,7 @@ export function registerChartTheme(): void {
     valueAxis: axisDefaults(),
     timeAxis: axisDefaults(),
     legend: {
-      textStyle: { color: CHART.fgMuted, fontSize: 11 },
+      textStyle: { color: CHART.fgMuted, fontSize: 12 },
       icon: 'circle',
       itemWidth: 8,
       itemHeight: 8,
@@ -121,10 +121,10 @@ export function registerChartTheme(): void {
 
 function axisDefaults(): Record<string, unknown> {
   return {
-    axisLine: { lineStyle: { color: CHART.border } },
+    axisLine: { show: false },
     axisTick: { show: false },
-    axisLabel: { color: CHART.fgSubtle, fontSize: 10, fontFamily: CHART.mono },
-    splitLine: { lineStyle: { color: CHART.grid, type: [2, 3] } },
+    axisLabel: { color: CHART.fgMuted, fontSize: 12, fontFamily: CHART.mono, margin: 12 },
+    splitLine: { lineStyle: { color: CHART.grid, width: 1 } },
     splitArea: { show: false },
   };
 }
@@ -136,15 +136,15 @@ export function baseTooltip(): Record<string, unknown> {
     borderColor: CHART.border,
     borderWidth: 1,
     padding: [6, 10],
-    textStyle: { color: CHART.fg, fontSize: 11, fontFamily: CHART.mono },
-    extraCssText: 'box-shadow: 0 8px 24px rgba(0,0,0,.5); border-radius: 8px;',
+    textStyle: { color: CHART.fg, fontSize: 13, fontFamily: CHART.mono },
+    extraCssText: 'box-shadow: 0 8px 24px rgba(0,0,0,.5); border-radius: 10px;',
     confine: true,
   };
 }
 
 /** Компактная сетка виджета. */
 export function baseGrid(overrides: Record<string, unknown> = {}): Record<string, unknown> {
-  return { left: 8, right: 12, top: 14, bottom: 4, containLabel: true, ...overrides };
+  return { left: 10, right: 16, top: 18, bottom: 6, containLabel: true, ...overrides };
 }
 
 export { echarts };

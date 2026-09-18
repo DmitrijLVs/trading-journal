@@ -17,10 +17,10 @@ export const DEFAULT_WORKSPACE_NAME = 'Обзор';
  * результат, разрез по инструментам и свежие сделки.
  */
 const DEFAULT_LAYOUT: readonly LayoutSlot[] = [
-  { id: 'stat-pnl', x: 0, y: 0, cols: 6, rows: 5 },
-  { id: 'summary', x: 6, y: 0, cols: 8, rows: 5 },
+  { id: 'stat-pnl', x: 0, y: 0, cols: 6, rows: 6 },
+  { id: 'summary', x: 6, y: 0, cols: 8, rows: 6 },
   { id: 'pnl-calendar', x: 14, y: 0, cols: 10, rows: 14 },
-  { id: 'equity-curve', x: 0, y: 5, cols: 14, rows: 9 },
+  { id: 'equity-curve', x: 0, y: 6, cols: 14, rows: 8 },
   { id: 'daily-pnl', x: 0, y: 14, cols: 8, rows: 10 },
   { id: 'dist-symbol', x: 8, y: 14, cols: 8, rows: 10 },
   { id: 'recent-trades', x: 16, y: 14, cols: 8, rows: 10 },

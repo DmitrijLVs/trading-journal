@@ -12,7 +12,6 @@ import { THEME_LABELS, ThemeName, ThemeStore } from '../../core/state/theme-stor
 import { Toggle } from '../../shared/ui/toggle';
 import { ToastService } from '../../shared/ui/toast';
 import { ConfirmService } from '../../shared/ui/confirm-dialog';
-import { SketchFrame } from '../../shared/ui/sketch/sketch-frame';
 import { SketchUnderline } from '../../shared/ui/sketch/sketch-underline';
 
 type SettingsTab = 'profile' | 'accounts' | 'display' | 'data';
@@ -32,7 +31,7 @@ const TABS: readonly TabDef[] = [
 
 @Component({
   selector: 'app-settings',
-  imports: [SketchFrame, SketchUnderline, RouterLink, AccountsPanel, Button, Icon, Select, Toggle, Segmented],
+  imports: [SketchUnderline, RouterLink, AccountsPanel, Button, Icon, Select, Toggle, Segmented],
   templateUrl: './settings.html',
   styleUrl: './settings.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

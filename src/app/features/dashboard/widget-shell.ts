@@ -3,20 +3,14 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { WidgetInstance, defaultWidgetTitle } from './data/workspace.model';
 import { PERIOD_LABELS } from '../../core/state/period-store';
 import { Icon } from '../../shared/ui/icon';
-import { SketchFrame } from '../../shared/ui/sketch/sketch-frame';
-import { SketchUnderline } from '../../shared/ui/sketch/sketch-underline';
 
 /**
  * Оболочка виджета: шапка-ручка для перетаскивания, бейдж локального
  * периода, меню действий. Контент — через проекцию.
- *
- * Рамка — рукописная (SketchFrame как host-директива): родитель передаёт
- * `sketchSeed` (id экземпляра) и `sketchDelay` для каскадного появления.
  */
 @Component({
   selector: 'app-widget-shell',
-  imports: [CdkMenu, CdkMenuItem, CdkMenuTrigger, Icon, SketchUnderline],
-  hostDirectives: [{ directive: SketchFrame, inputs: ['sketchSeed', 'sketchDelay'] }],
+  imports: [CdkMenu, CdkMenuItem, CdkMenuTrigger, Icon],
   host: { '[class.is-new]': 'highlight()' },
   templateUrl: './widget-shell.html',
   styleUrl: './widget-shell.scss',

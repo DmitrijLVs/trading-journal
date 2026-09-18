@@ -14,7 +14,6 @@ import { SparkLine } from '../../shared/ui/spark-line';
 import { Toggle } from '../../shared/ui/toggle';
 import { ConfirmService } from '../../shared/ui/confirm-dialog';
 import { ToastService } from '../../shared/ui/toast';
-import { SketchFrame } from '../../shared/ui/sketch/sketch-frame';
 
 interface AccountCard {
   account: Account;
@@ -29,7 +28,7 @@ interface AccountCard {
 /** Подключённые счета — вкладка «Счета» в настройках. */
 @Component({
   selector: 'app-accounts-panel',
-  imports: [SketchFrame, Icon, Button, Badge, PnlValue, SparkLine, Toggle],
+  imports: [Icon, Button, Badge, PnlValue, SparkLine, Toggle],
   templateUrl: './accounts-panel.html',
   styleUrl: './accounts-panel.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

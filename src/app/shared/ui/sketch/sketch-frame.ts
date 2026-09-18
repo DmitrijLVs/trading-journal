@@ -36,10 +36,10 @@ let autoSeedSequence = 0;
  * Цвет — через `--sketch-stroke` на host (currentColor у svg), поэтому
  * hover/drag-состояния переключаются обычным CSS.
  *
- * Вешается явно (`appSketchFrame`) или автоматически на любой `.tj-card`
- * в компоненте, который импортировал директиву.
+ * Вешается явно (`appSketchFrame`). Карточки используют обычную CSS-границу:
+ * рукописный штрих оставлен только там, где он несёт смысл.
  */
-@Directive({ selector: '[appSketchFrame], .tj-card' })
+@Directive({ selector: '[appSketchFrame]' })
 export class SketchFrame {
   /** Строка-seed: один элемент — одна и та же «дрожь» между перерисовками.
    *  Пусто — у каждого экземпляра свой автоматический seed. */

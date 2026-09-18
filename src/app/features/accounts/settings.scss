@@ -47,8 +47,8 @@
 }
 
 .tab-name {
-  font-family: $font-hand;
-  font-size: 16px;
+  font-size: $text-md;
+  font-weight: 500;
   line-height: 1;
 }
 
@@ -172,9 +172,7 @@ app-select {
   flex: none;
 }
 
-// Заголовки секций — рукописные.
 .tj-card.section > h2 {
-  font-family: $font-hand;
-  font-size: 19px;
-  font-weight: 400;
+  font-size: $text-lg;
+  font-weight: 650;
 }

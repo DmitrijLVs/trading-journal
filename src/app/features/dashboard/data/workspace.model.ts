@@ -123,9 +123,9 @@ export const WIDGET_REGISTRY: readonly WidgetDef[] = [
     preview: 'tile',
     category: 'stats',
     cols: 6,
-    rows: 5,
+    rows: 6,
     minCols: 4,
-    minRows: 4,
+    minRows: 5,
   },
   {
     id: 'summary',
@@ -136,9 +136,9 @@ export const WIDGET_REGISTRY: readonly WidgetDef[] = [
     preview: 'summary',
     category: 'stats',
     cols: 8,
-    rows: 5,
+    rows: 6,
     minCols: 6,
-    minRows: 4,
+    minRows: 5,
   },
   // ── Графики ──
   {

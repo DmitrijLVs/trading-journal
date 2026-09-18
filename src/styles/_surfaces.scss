@@ -10,12 +10,11 @@
 }
 
 .tj-card {
-  // Рамка — рукописная (SketchFrame по селектору .tj-card); CSS-границы нет.
-  --sketch-stroke: var(--border-strong);
   position: relative;
   background: var(--canvas-subtle);
-  box-shadow: $inner-highlight, $shadow-sm;
-  border-radius: $radius-lg;
+  border: 1px solid var(--border-muted);
+  border-radius: $radius-xl;
+  box-shadow: $shadow-md;
 }
 
 // ── Таблица данных ──────────────────────────────────────────────────────────
@@ -24,25 +23,25 @@
   border-collapse: collapse;
   font-size: $text-sm;
 
+  // Шапка без капса и разрядки: tracked-out ALL CAPS — самый узнаваемый
+  // признак старого интерфейса.
   th {
     position: sticky;
     top: 0;
     z-index: 2;
-    background: var(--canvas-subtle);
+    background: var(--canvas-default);
     color: var(--fg-muted);
-    font-size: $text-xs;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
+    font-size: $text-sm;
+    font-weight: 500;
     text-align: left;
-    padding: $space-2 $space-3;
+    padding: $space-2 $space-3 $space-3;
     border-bottom: 1px solid var(--border-default);
     white-space: nowrap;
     user-select: none;
   }
 
   td {
-    padding: $space-2 $space-3;
+    padding: 13px $space-3;
     border-bottom: 1px solid var(--border-muted);
     color: var(--fg-default);
     white-space: nowrap;
@@ -53,7 +52,7 @@
     transition: background $duration-instant $ease-apple;
 
     &:hover {
-      background: rgba(255, 255, 255, 0.025);
+      background: var(--canvas-subtle);
     }
 
     &.clickable {
@@ -108,7 +107,7 @@
 .gridster-preview {
   background: var(--accent-subtle) !important;
   border: 1px dashed var(--accent-muted);
-  border-radius: $radius-lg;
+  border-radius: $radius-xl;
 }
 
 // Уголок ресайза: вместо серого треугольника gridster — два карандашных
@@ -148,8 +147,6 @@ gridster.display-grid .gridster-row {
   gap: 4px;
   font-size: $text-xs;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
 
   &.long { color: var(--success-fg); }
   &.short { color: var(--danger-fg); }

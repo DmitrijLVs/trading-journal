@@ -34,7 +34,7 @@ import { ConfirmService } from '../../shared/ui/confirm-dialog';
 import { SketchArrow } from '../../shared/ui/sketch/sketch-arrow';
 import { SketchUnderline } from '../../shared/ui/sketch/sketch-underline';
 
-const GRID_MARGIN = 6;
+const GRID_MARGIN = 10;
 
 /** Gridster мутирует x/y/cols/rows прямо на элементах — работаем с локальными
  *  копиями, позиции возвращаются в стор через itemChangeCallback. */
