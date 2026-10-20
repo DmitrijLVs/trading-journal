@@ -1,0 +1,13 @@
+// chart-engine: графики с `theme: 'css'` берут цвета из --nv-* на своём
+// элементе. Переменные смотрят на токены темы, поэтому «Графит» ↔ «Бумага»
+// перекрашивает свечи без пересоздания графика.
+:root {
+  --nv-background: var(--canvas-subtle);
+  --nv-up: var(--success-fg);
+  --nv-down: var(--danger-fg);
+  --nv-grid: var(--border-muted);
+  --nv-text: var(--fg-muted);
+  --nv-axis-line: var(--border-default);
+  --nv-crosshair: var(--fg-subtle);
+  --nv-label-background: var(--border-default);
+}

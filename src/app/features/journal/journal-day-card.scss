@@ -56,27 +56,13 @@
   border-radius: $radius-md;
 }
 
-.mood {
-  margin-left: auto;
-  font-size: 17px;
-  line-height: 1;
-}
-
 .pnl {
   font-size: $text-lg;
   font-weight: 600;
-
-  .mood + & {
-    margin-left: 0;
-  }
 }
 
 .head .pnl:first-of-type {
   margin-left: auto;
-}
-
-.head .mood + .pnl {
-  margin-left: 0;
 }
 
 .chevron {

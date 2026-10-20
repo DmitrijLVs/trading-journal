@@ -97,6 +97,12 @@ export const ICONS = {
   inbox: { p: ['M3 13l3-8h12l3 8v7H3z', 'M3 13h5l2 3h4l2-3h5'] },
   star: { p: ['M12 3l2.8 5.8 6.2.9-4.5 4.4 1 6.3L12 17.5l-5.5 2.9 1-6.3L3 9.7l6.2-.9z'] },
   template: { p: ['M3 3h18v18H3z', 'M3 9h18', 'M9 9v12'] },
+
+  // ── Рисование на графике ──
+  cursor: { p: ['M6 3.5v15l4.2-4 2.8 6.2 2.6-1.2-2.8-6h5.7z'] },
+  ruler: { p: ['M3 16.5 16.5 3 21 7.5 7.5 21z', 'M7 12.5l2 2', 'M10 9.5l2 2', 'M13 6.5l2 2'] },
+  level: { p: ['M3 12h12', 'M15 8.5h6v7h-6z'], d: [[6, 12]] },
+  fib: { p: ['M4 5h16', 'M4 12h16', 'M4 19h16', 'M6 19 18 5'] },
 } as const satisfies Record<string, IconDef>;
 
 export type IconName = keyof typeof ICONS;

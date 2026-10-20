@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, signal } f
 import { RouterLink } from '@angular/router';
 import { JournalDay, JournalStore } from './journal-store';
 import {
-  MOOD_EMOJI,
   MOOD_LABELS,
   Mood,
   calculatePnl,
@@ -44,7 +43,7 @@ export class JournalDayCard {
 
   protected readonly moodOptions: SelectOption[] = (Object.keys(MOOD_LABELS) as Mood[]).map((m) => ({
     value: m,
-    label: `${MOOD_EMOJI[m]} ${MOOD_LABELS[m]}`,
+    label: MOOD_LABELS[m],
   }));
 
   protected readonly title = computed(() => {
@@ -57,9 +56,9 @@ export class JournalDayCard {
     return day.trades.length === 0 ? 0 : (day.wins / day.trades.length) * 100;
   });
 
-  protected readonly moodEmoji = computed(() => {
+  protected readonly moodLabel = computed(() => {
     const mood = this.day().entry?.mood;
-    return mood ? MOOD_EMOJI[mood] : null;
+    return mood ? MOOD_LABELS[mood] : null;
   });
 
   protected readonly rows = computed(() =>

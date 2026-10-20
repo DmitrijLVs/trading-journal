@@ -56,14 +56,6 @@ export const MOOD_LABELS: Record<Mood, string> = {
   tilt: 'Тильт',
 };
 
-export const MOOD_EMOJI: Record<Mood, string> = {
-  confident: '😎',
-  calm: '😌',
-  neutral: '😐',
-  anxious: '😟',
-  tilt: '🤬',
-};
-
 export const MARKET_LABELS: Record<MarketType, string> = {
   futures: 'Фьючерсы',
   spot: 'Спот',

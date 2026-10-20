@@ -23,16 +23,20 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "*.worker.js",
+                "input": "node_modules/@nv/data/dist/worker",
+                "output": "worker"
               }
             ],
             "styles": [
               "src/styles.scss"
             ],
-            "loader": {
-              ".navy": "text"
-            },
             "stylePreprocessorOptions": {
-              "includePaths": ["src"]
+              "includePaths": [
+                "src"
+              ]
             }
           },
           "configurations": {
@@ -69,7 +73,17 @@
               "buildTarget": "trading-journal:build:development"
             }
           },
-          "defaultConfiguration": "development"
+          "defaultConfiguration": "development",
+          "options": {
+            "prebundle": {
+              "exclude": [
+                "@nv/core",
+                "@nv/data",
+                "@nv/gpu",
+                "@nv/tools"
+              ]
+            }
+          }
         },
         "test": {
           "builder": "@angular/build:unit-test"

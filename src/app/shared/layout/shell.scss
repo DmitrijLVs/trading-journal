@@ -32,19 +32,12 @@
 }
 
 .brand-mark {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: $radius-md;
-  background: linear-gradient(
-    135deg,
-    var(--accent-emphasis),
-    color-mix(in srgb, var(--accent-emphasis) 65%, black)
-  );
-  color: var(--fg-on-emphasis);
-  box-shadow: $inner-highlight;
+  // Логотип — круглый тёмный бейдж; обводка отделяет его от тёмного сайдбара.
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--border-muted);
 }
 
 .brand-name {

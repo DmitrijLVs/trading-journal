@@ -3,7 +3,7 @@
   <!-- График -->
   <div class="chart">
     @if (chartData(); as data) {
-      <app-trade-chart [trade]="t" [chartData]="data" [(timeframe)]="timeframe" />
+      <app-trade-chart [trade]="t" [chartData]="data" [exchange]="exchange()" [(timeframe)]="timeframe" />
     } @else {
       <app-skeleton height="100%" />
     }

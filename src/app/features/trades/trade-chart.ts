@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   afterNextRender,
   computed,
   effect,
@@ -9,50 +10,45 @@ import {
   input,
   model,
   signal,
+  untracked,
+  viewChild,
 } from '@angular/core';
-import { NightVision } from 'night-vision';
-import JOURNAL_SCRIPT from './trade-journal.navy';
-import { Trade, calculatePnlPercent, priceDecimals } from './data/trade.model';
-import { CHART_TIMEFRAMES, TradeChartData, TradeFill } from '../../core/mock/mock-candles';
-import { alpha, cssVar, currentThemeTick } from '../../shared/charts/chart-theme';
+import { MarketExchange, TIMEFRAMES, TIMEFRAME_MS, Timeframe } from '../../core/market/market.model';
+import { Trade, calculatePnlPercent } from './data/trade.model';
+import { TradeChartData, TradeFill, candleIndexAt, tradeFills } from './data/trade-chart.model';
+import { TradeChartFeed } from './trade-chart-feed';
+import { TradeLayer, TradePalette, tradeMarkup } from './trade-layer';
+import { cssVar, currentThemeTick } from '../../shared/charts/chart-theme';
+import { ChartDrawingsStore } from '../../shared/nv-chart/chart-drawings-store';
+import { NvCandleChart } from '../../shared/nv-chart/nv-candle-chart';
+import { candleMeta } from '../../shared/nv-chart/nv-candles';
+import { BarRange } from '../../shared/nv-chart/nv-chart.types';
+import { DRAWING_TOOLS, DRAWING_TOOL_NAMES } from '../../shared/nv-chart/nv-drawing-tools';
+import { NvRuntime } from '../../shared/nv-chart/nv-runtime';
 import { Icon } from '../../shared/ui/icon';
+import { Tooltip } from '../../shared/ui/tooltip';
 
-/** Цвета графика — читаются из токенов темы (:root), как и echarts. */
-const COLORS = {
-  get back() { return cssVar('--canvas-subtle', '#161b22'); },
-  get grid() { return cssVar('--border-muted', '#21262d'); },
-  get text() { return cssVar('--fg-muted', '#7d8590'); },
-  get textHL() { return cssVar('--fg-default', '#e6edf3'); },
-  get cross() { return cssVar('--fg-subtle', '#6e7681'); },
-  get candleUp() { return cssVar('--success-fg', '#3fb950'); },
-  get candleDw() { return cssVar('--danger-fg', '#f85149'); },
-  get wickUp() { return this.candleUp; },
-  get wickDw() { return this.candleDw; },
-  get volUp() { return alpha(this.candleUp, 0.3); },
-  get volDw() { return alpha(this.candleDw, 0.3); },
-  get llValue() { return cssVar('--accent-fg', '#0a84ff'); },
-  get canvas() { return cssVar('--canvas-default', '#0d1117'); },
-};
-
-/** Сколько свечей воздуха справа от последней. */
+/** Сколько свечей воздуха справа от последней у открытой сделки. */
 const RIGHT_PAD_CANDLES = 8;
 
 /**
- * Свечной график сделки на night-vision: тулбар с символом, таймфреймами
- * и результатом; на свечах — исполнения (шевроны на каждом), ступенчатые
- * средние входа/выхода и пилюля результата (скрипт TradeJournal).
+ * Свечной график сделки на chart-engine: тулбар с символом, таймфреймами,
+ * инструментами рисования и результатом; на свечах — исполнения, средние
+ * входа/выхода и пилюля результата. Свечи — с биржи: история подгружается
+ * при прокрутке, текущая свеча обновляется потоком, пока график открыт.
  */
 @Component({
   selector: 'app-trade-chart',
-  imports: [Icon],
+  imports: [Icon, Tooltip],
+  providers: [TradeChartFeed],
   template: `
     <div class="bar">
       <span class="sym">{{ trade().symbol }}</span>
-      <div class="tfs" role="tablist" aria-label="Таймфрейм">
+      <div class="seg" role="tablist" aria-label="Таймфрейм">
         @for (tf of timeframes; track tf) {
           <button
             type="button"
-            class="tf"
+            class="seg-btn tf"
             role="tab"
             [class.active]="tf === timeframe()"
             [attr.aria-selected]="tf === timeframe()"
@@ -62,17 +58,58 @@ const RIGHT_PAD_CANDLES = 8;
           </button>
         }
       </div>
+      <div class="seg" role="toolbar" aria-label="Рисование">
+        <button
+          type="button"
+          class="seg-btn"
+          appTooltip="Курсор · Esc"
+          aria-label="Курсор"
+          [class.active]="activeTool() === null"
+          (click)="selectTool(null)"
+        >
+          <app-icon name="cursor" style="--icon-size: 14px" />
+        </button>
+        @for (tool of tools; track tool.name) {
+          <button
+            type="button"
+            class="seg-btn"
+            [appTooltip]="tool.label + ' · ' + tool.hint"
+            [attr.aria-label]="tool.label"
+            [attr.aria-pressed]="activeTool() === tool.name"
+            [class.active]="activeTool() === tool.name"
+            (click)="selectTool(tool.name)"
+          >
+            <app-icon [name]="tool.icon" style="--icon-size: 14px" />
+          </button>
+        }
+        <button
+          type="button"
+          class="seg-btn"
+          appTooltip="Удалить рисунки"
+          aria-label="Удалить рисунки"
+          [disabled]="drawingCount() === 0"
+          (click)="clearDrawings()"
+        >
+          <app-icon name="trash" style="--icon-size: 14px" />
+        </button>
+      </div>
       <span class="spacer"></span>
+      @if (feed.loading()) {
+        <span class="status">загрузка…</span>
+      }
+      @if (feed.live()) {
+        <span class="live" appTooltip="Текущая свеча обновляется с биржи"><i></i><b>LIVE</b></span>
+      }
       <span class="side" [class.long]="trade().side === 'long'" [class.short]="trade().side === 'short'">
         <app-icon [name]="trade().side" style="--icon-size: 13px" />
-        {{ trade().side === 'long' ? 'LONG' : 'SHORT' }}
+        <b>{{ trade().side === 'long' ? 'LONG' : 'SHORT' }}</b>
         @if (pnlLabel(); as label) {
           <span class="dot">·</span>
           <span class="pnl" [class.pos]="isProfit()" [class.neg]="!isProfit()">{{ label }}</span>
         }
       </span>
     </div>
-    <div [id]="chartId" class="chart"></div>
+    <div #host class="chart"></div>
   `,
   styles: `
     @use 'styles/index' as *;
@@ -82,6 +119,7 @@ const RIGHT_PAD_CANDLES = 8;
       flex-direction: column;
       height: 100%;
       min-height: 320px;
+      container-type: inline-size;
     }
 
     .bar {
@@ -91,6 +129,15 @@ const RIGHT_PAD_CANDLES = 8;
       height: 32px;
       padding: 0 $space-2;
       flex: none;
+      white-space: nowrap;
+    }
+
+    // Узкий график (рядом с таблицей): подписи LIVE и направления — только значками.
+    @container (max-width: 720px) {
+      .bar { gap: $space-2; }
+      .live b,
+      .side b,
+      .side .dot { display: none; }
     }
 
     .sym {
@@ -99,7 +146,7 @@ const RIGHT_PAD_CANDLES = 8;
       letter-spacing: -0.01em;
     }
 
-    .tfs {
+    .seg {
       display: flex;
       gap: 2px;
       padding: 2px;
@@ -107,19 +154,23 @@ const RIGHT_PAD_CANDLES = 8;
       border-radius: $radius-md;
     }
 
-    .tf {
+    .seg-btn {
       appearance: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 22px;
+      height: 20px;
       background: none;
       border: none;
       border-radius: $radius-sm;
-      padding: 2px 7px;
-      font-family: $font-mono;
-      font-size: $text-xs;
+      padding: 0 5px;
       color: var(--fg-muted);
       cursor: pointer;
       transition: background $duration-fast $ease-apple, color $duration-fast $ease-apple;
 
-      &:hover { color: var(--fg-default); }
+      &:hover:not(:disabled) { color: var(--fg-default); }
+      &:disabled { opacity: 0.4; cursor: default; }
 
       &.active {
         background: var(--canvas-overlay);
@@ -127,7 +178,46 @@ const RIGHT_PAD_CANDLES = 8;
       }
     }
 
+    .tf {
+      padding: 0 7px;
+      font-family: $font-mono;
+      font-size: $text-xs;
+    }
+
     .spacer { flex: 1; }
+
+    .status {
+      font-size: $text-xs;
+      color: var(--fg-subtle);
+    }
+
+    .live {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-family: $font-mono;
+      font-size: $text-xs;
+      letter-spacing: 0.06em;
+      color: var(--fg-muted);
+
+      b { font-weight: 600; }
+
+      i {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--success-fg);
+        animation: live-pulse 2s ease-in-out infinite;
+      }
+    }
+
+    @keyframes live-pulse {
+      50% { opacity: 0.35; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .live i { animation: none; }
+    }
 
     .side {
       display: inline-flex;
@@ -140,6 +230,8 @@ const RIGHT_PAD_CANDLES = 8;
 
       &.long { color: var(--success-fg); }
       &.short { color: var(--danger-fg); }
+
+      b { font-weight: inherit; }
     }
 
     .dot { color: var(--fg-subtle); }
@@ -147,6 +239,7 @@ const RIGHT_PAD_CANDLES = 8;
     .pnl.neg { color: var(--danger-fg); }
 
     .chart {
+      position: relative;
       flex: 1;
       min-height: 0;
       width: 100%;
@@ -155,17 +248,24 @@ const RIGHT_PAD_CANDLES = 8;
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TradeChart {
-  private static sequence = 0;
-
   private readonly destroyRef = inject(DestroyRef);
+  private readonly runtime = inject(NvRuntime);
+  private readonly drawingsStore = inject(ChartDrawingsStore);
+  private readonly host = viewChild.required<ElementRef<HTMLElement>>('host');
+  private readonly view = new NvCandleChart(this.runtime);
+  protected readonly feed = inject(TradeChartFeed);
 
   readonly trade = input.required<Trade>();
   readonly chartData = input.required<TradeChartData>();
+  /** Биржа счёта сделки — с неё свечи и поток. */
+  readonly exchange = input<MarketExchange>('binance');
   /** Таймфрейм — двусторонний: родитель перезапрашивает свечи. */
-  readonly timeframe = model<string>('15m');
+  readonly timeframe = model<Timeframe>('15m');
 
-  protected readonly timeframes = CHART_TIMEFRAMES;
-  protected readonly chartId = `nv-trade-${(TradeChart.sequence += 1)}`;
+  protected readonly timeframes = TIMEFRAMES;
+  protected readonly tools = DRAWING_TOOLS;
+  protected readonly activeTool = this.runtime.activeTool;
+  protected readonly drawingCount = signal(0);
 
   protected readonly isProfit = computed(() => calculatePnlPercent(this.trade()) >= 0);
   protected readonly pnlLabel = computed(() => {
@@ -176,157 +276,147 @@ export class TradeChart {
   });
 
   private readonly ready = signal(false);
-  private chart: NightVision | null = null;
-  private chartStep = 0;
-  private renderedTick = currentThemeTick();
+  private readonly layer = new TradeLayer();
+  private shown: TradeChartData | null = null;
+  private symbol = '';
+  private restoring = false;
+  private readonly unsubscribers: (() => void)[] = [];
 
   constructor() {
-    afterNextRender(() => this.ready.set(true));
+    afterNextRender(() => void this.mountChart());
+
+    effect(() => {
+      const data = this.chartData();
+      if (this.ready()) untracked(() => this.showCandles(data));
+    });
 
     effect(() => {
       const trade = this.trade();
       const data = this.chartData();
-      const tick = currentThemeTick();
-      if (!this.ready()) return;
-      if (this.chart && tick !== this.renderedTick) {
-        // Палитра night-vision задаётся при создании — пересоздаём график.
-        this.chart.destroy();
-        this.chart = null;
-      }
-      this.renderedTick = tick;
-      if (this.chart) {
-        this.refresh(trade, data);
-      } else {
-        this.create(trade, data);
-      }
+      const palette = this.palette();
+      if (this.ready()) untracked(() => this.paintTrade(trade, data, palette));
     });
 
-    this.destroyRef.onDestroy(() => {
-      this.chart?.destroy();
-      this.chart = null;
+    effect(() => {
+      currentThemeTick();
+      if (this.ready()) this.view.chart?.refreshTheme();
     });
+
+    effect(() => {
+      const live = this.feed.live();
+      if (this.ready()) this.view.chart?.setOptions({ candleTimer: live });
+    });
+
+    this.destroyRef.onDestroy(() => this.teardown());
   }
 
-  private create(trade: Trade, data: TradeChartData): void {
-    this.chart = new NightVision(this.chartId, {
-      id: this.chartId,
-      autoResize: true,
-      colors: COLORS,
-      scripts: [JOURNAL_SCRIPT],
-      config: {
-        TOOLBAR: 0,
-        DEFAULT_LEN: data.candles.length,
-        SBMIN: 60,
-        SBMAX: Infinity,
-        BOTBAR: 28,
-        ZOOM_Y_SENS: 0,
-      },
-      data: { panes: [{ overlays: this.overlays(trade, data) }] },
-    });
-    this.chartStep = candleStep(data);
-    const range = viewRange(data);
-    if (range) this.chart.range = range;
+  protected selectTool(name: string | null): void {
+    this.runtime.setTool(name !== null && this.activeTool() === name ? null : name);
   }
 
-  private refresh(trade: Trade, data: TradeChartData): void {
-    if (!this.chart) return;
-    const overlays = this.chart.data.panes[0].overlays as unknown as Record<string, unknown>[];
-    const next = this.overlays(trade, data);
-    for (let i = 0; i < overlays.length; i += 1) {
-      overlays[i]['data'] = next[i]['data'];
-      if (next[i]['settings']) overlays[i]['settings'] = next[i]['settings'];
-      const nextProps = next[i]['props'] as Record<string, unknown> | undefined;
-      if (nextProps) {
-        const props = (overlays[i]['props'] ?? {}) as Record<string, unknown>;
-        Object.assign(props, nextProps);
-        overlays[i]['props'] = props;
-      }
+  protected clearDrawings(): void {
+    const chart = this.view.chart;
+    if (!chart) return;
+    this.view.tools?.clear(chart, { undoable: true });
+    this.saveDrawings();
+  }
+
+  private async mountChart(): Promise<void> {
+    const mounted = await this.view.mount(
+      this.host().nativeElement,
+      { candleTimer: false },
+      { history: () => this.feed.loadHistory(), forward: () => this.feed.loadForward() },
+    );
+    const chart = this.view.chart;
+    const tools = this.view.tools;
+    if (!mounted || !chart || !tools) return;
+    tools.setChartTools(chart, DRAWING_TOOL_NAMES);
+    this.view.scene?.add(this.layer);
+    for (const event of ['created', 'updated', 'removed'] as const) {
+      this.unsubscribers.push(
+        tools.on(event, (e) => {
+          if (e.chart === chart) this.saveDrawings();
+        }),
+      );
     }
-    // Смена таймфрейма меняет шаг свечей — нужен полный пересчёт.
-    const step = candleStep(data);
-    const rescan = step !== this.chartStep;
-    this.chartStep = step;
-    this.chart.update(rescan ? 'full' : 'data');
-    const range = viewRange(data);
-    if (range) this.chart.range = range;
+    this.ready.set(true);
   }
 
-  private overlays(trade: Trade, data: TradeChartData): Record<string, unknown>[] {
-    const isLong = trade.side === 'long';
-    const isProfit = calculatePnlPercent(trade) >= 0;
-    const fills = data.fills?.length ? data.fills : fallbackFills(trade, data);
-    const entrySide: TradeFill['side'] = isLong ? 'buy' : 'sell';
-    const entryFills = fills.filter((f) => f.side === entrySide);
-    const exitFills = fills.filter((f) => f.side !== entrySide);
+  private showCandles(data: TradeChartData): void {
+    if (data === this.shown) return;
+    this.shown = data;
+    const trade = this.trade();
+    const meta = candleMeta(data.priceDecimals, TIMEFRAME_MS[data.timeframe]);
+    const open = trade.status === 'open';
+    this.view.reset(data.candles, meta, focusRange(data, tradeFills(trade, data), open));
+    this.feed.start(this.view, { exchange: this.exchange(), symbol: trade.symbol }, data.timeframe, data.candles);
+    if (trade.symbol !== this.symbol) {
+      this.symbol = trade.symbol;
+      this.restoreDrawings();
+    }
+  }
 
-    return [
-      {
-        name: trade.symbol,
-        type: 'Candles',
-        main: true,
-        data: data.candles,
-        settings: { precision: priceDecimals(trade.entryPrice) },
-        props: { showValueTracker: false, priceLine: false },
-      },
-      {
-        name: 'Сделка',
-        type: 'TradeJournal',
-        data: data.candles,
-        props: {
-          entryLine: runningAverage(entryFills),
-          exitLine: runningAverage(exitFills),
-          markers: fills.map((f) => [f.index, f.side === 'buy' ? 1 : -1, f.price]),
-          entryColor: isLong ? COLORS.candleUp : COLORS.candleDw,
-          exitColor: isLong ? COLORS.candleDw : COLORS.candleUp,
-          buyColor: COLORS.candleUp,
-          sellColor: COLORS.candleDw,
-          pnlColor: isProfit ? COLORS.candleUp : COLORS.candleDw,
-          onColor: COLORS.canvas,
-          backColor: COLORS.back,
-          exitPrice: trade.status === 'closed' ? trade.exitPrice : 0,
-          pnlLabel: this.pnlLabel(),
-        },
-      },
-    ];
+  private paintTrade(trade: Trade, data: TradeChartData, palette: TradePalette): void {
+    this.layer.set(tradeMarkup(trade, tradeFills(trade, data), this.pnlLabel()), palette);
+    this.view.scene?.refresh();
+  }
+
+  /** Рисунки символа из хранилища — на любом таймфрейме и любой его сделке. */
+  private restoreDrawings(): void {
+    const chart = this.view.chart;
+    const tools = this.view.tools;
+    if (!chart || !tools) return;
+    this.restoring = true;
+    try {
+      tools.clear(chart);
+      for (const drawing of this.drawingsStore.load(this.symbol)) {
+        try {
+          tools.add(chart, drawing);
+        } catch {
+          // рисунок неизвестного движку инструмента — пропускаем
+        }
+      }
+    } finally {
+      this.restoring = false;
+    }
+    this.drawingCount.set(tools.list(chart).length);
+  }
+
+  private saveDrawings(): void {
+    const chart = this.view.chart;
+    const tools = this.view.tools;
+    if (!chart || !tools || this.restoring) return;
+    const drawings = tools.list(chart);
+    this.drawingsStore.save(this.symbol, drawings);
+    this.drawingCount.set(drawings.length);
+  }
+
+  /** Цвета разметки — из токенов темы (cssVar отслеживает её смену). */
+  private palette(): TradePalette {
+    return {
+      up: cssVar('--success-fg', '#3fb950'),
+      down: cssVar('--danger-fg', '#f85149'),
+      back: cssVar('--canvas-subtle', '#161b22'),
+      onColor: cssVar('--canvas-default', '#0d1117'),
+    };
+  }
+
+  private teardown(): void {
+    for (const unsubscribe of this.unsubscribers) unsubscribe();
+    this.feed.stop();
+    this.view.destroy();
   }
 }
 
-function candleStep(data: TradeChartData): number {
-  const c = data.candles;
-  return c.length < 2 ? 0 : c[1][0] - c[0][0];
-}
-
-function viewRange(data: TradeChartData): number[] | null {
-  const step = candleStep(data);
-  if (!step) return null;
-  const c = data.candles;
-  return [c[0][0] - step * 0.5, c[c.length - 1][0] + step * RIGHT_PAD_CANDLES];
-}
-
-/** Бегущая средневзвешенная по исполнениям: [[индекс свечи, средняя цена], …]. */
-function runningAverage(fills: readonly TradeFill[]): number[][] {
-  let qty = 0;
-  let cost = 0;
-  return fills.map((f) => {
-    qty += f.qty;
-    cost += f.qty * f.price;
-    return [f.index, cost / qty];
-  });
-}
-
-/** Данные без исполнений (реальный бэкенд без fills): одно на вход, одно на выход. */
-function fallbackFills(trade: Trade, data: TradeChartData): TradeFill[] {
-  const entrySide: TradeFill['side'] = trade.side === 'long' ? 'buy' : 'sell';
-  const fills: TradeFill[] = [
-    { index: data.entryIndex, side: entrySide, price: trade.entryPrice, qty: trade.quantity },
-  ];
-  if (data.exitIndex >= 0 && trade.status === 'closed') {
-    fills.push({
-      index: data.exitIndex,
-      side: entrySide === 'buy' ? 'sell' : 'buy',
-      price: trade.exitPrice,
-      qty: trade.quantity,
-    });
-  }
-  return fills;
+/** Вид на сделку: от входа до выхода с запасом по краям; у открытой — до последней свечи. */
+function focusRange(data: TradeChartData, fills: readonly TradeFill[], open: boolean): BarRange {
+  const candles = data.candles;
+  const last = candles.length - 1;
+  if (fills.length === 0) return { from: last - 120, to: last + RIGHT_PAD_CANDLES };
+  const entry = candleIndexAt(candles, fills[0].time);
+  const exit = open ? last : candleIndexAt(candles, fills[fills.length - 1].time);
+  const span = exit - entry;
+  const from = entry - Math.max(40, Math.round(span * 0.5));
+  const to = Math.max(exit + Math.max(16, Math.round(span * 0.3)), from + 60);
+  return { from, to: Math.min(to, last + RIGHT_PAD_CANDLES) };
 }

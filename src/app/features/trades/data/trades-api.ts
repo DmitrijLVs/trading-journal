@@ -2,7 +2,7 @@ import { HttpClient, httpResource } from '@angular/common/http';
 import { Injectable, Signal, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { Trade } from './trade.model';
-import { TradeChartData } from '../../../core/mock/mock-candles';
+import { TradeChartData } from './trade-chart.model';
 
 @Injectable({ providedIn: 'root' })
 export class TradesApi {
@@ -14,8 +14,8 @@ export class TradesApi {
     return httpResource<Trade[]>(() => this.baseUrl);
   }
 
-  /** Свечи вокруг сделки для графика на выбранном таймфрейме. */
-  candles(tradeId: Signal<string | null>, timeframe: Signal<string>) {
+  /** Первое окно графика сделки (свечи вокруг неё и исполнения) на таймфрейме. */
+  chart(tradeId: Signal<string | null>, timeframe: Signal<string>) {
     return httpResource<TradeChartData>(() => {
       const id = tradeId();
       return id ? `${this.baseUrl}/${id}/candles?tf=${timeframe()}` : undefined;

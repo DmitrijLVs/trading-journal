@@ -33,7 +33,8 @@ import {
 } from './data/trade.model';
 import { AccountsStore } from '../accounts/accounts-store';
 import { MISTAKES } from '../../core/mock/mock-universe';
-import { TradeChartData, resolveTimeframe } from '../../core/mock/mock-candles';
+import { TradeChartData, resolveTimeframe } from './data/trade-chart.model';
+import { Timeframe, marketExchangeOf } from '../../core/market/market.model';
 import { TradeChart } from './trade-chart';
 import { Icon } from '../../shared/ui/icon';
 import { Button } from '../../shared/ui/button';
@@ -81,17 +82,20 @@ export class TradeExpand {
   readonly closed = output<void>();
 
   /** Счёт сделки — название биржи вместо технического id. */
-  protected readonly accountName = computed(
-    () => this.accountsStore.accounts().find((a) => a.id === this.trade().accountId)?.name ?? '—',
+  private readonly account = computed(() =>
+    this.accountsStore.accounts().find((a) => a.id === this.trade().accountId),
   );
+  protected readonly accountName = computed(() => this.account()?.name ?? '—');
+  /** Свечи графика — с биржи счёта сделки. */
+  protected readonly exchange = computed(() => marketExchangeOf(this.account()?.exchange ?? 'binance'));
 
   protected readonly marketLabel = computed(() => MARKET_LABELS[this.trade().market]);
 
   /** Таймфрейм графика: стартует с таймфрейма сделки, переключается в тулбаре. */
-  protected readonly timeframe = linkedSignal<string>(() => resolveTimeframe(this.trade()));
+  protected readonly timeframe = linkedSignal<Timeframe>(() => resolveTimeframe(this.trade()));
 
   private readonly candlesId = computed<string | null>(() => this.trade().id);
-  private readonly candlesResource = this.api.candles(this.candlesId, this.timeframe);
+  private readonly candlesResource = this.api.chart(this.candlesId, this.timeframe);
   /** Последние загруженные свечи — при смене ТФ график не пропадает на время запроса. */
   protected readonly chartData = signal<TradeChartData | null>(null);
 

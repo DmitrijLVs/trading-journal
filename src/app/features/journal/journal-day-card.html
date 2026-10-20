@@ -5,15 +5,14 @@
       <span class="title">{{ title() }}</span>
       <span class="meta">
         {{ day().trades.length }} сд. · винрейт {{ winRate().toFixed(0) }}%
+        @if (moodLabel(); as mood) {
+          · {{ mood }}
+        }
         @if (day().entry?.followedPlan === false) {
           <span class="off-plan">не по плану</span>
         }
       </span>
     </div>
-
-    @if (moodEmoji(); as emoji) {
-      <span class="mood" [title]="'Состояние дня'">{{ emoji }}</span>
-    }
 
     <app-pnl class="pnl" [value]="day().pnl" />
     <app-icon class="chevron" [name]="expanded() ? 'chevron-up' : 'chevron-down'" style="--icon-size: 15px" />

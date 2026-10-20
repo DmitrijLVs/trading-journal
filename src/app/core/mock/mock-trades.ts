@@ -1,6 +1,7 @@
 import { SetupGrade, Trade, TradeSide } from '../../features/trades/data/trade.model';
 import { JournalEntry } from '../../features/journal/data/journal.model';
-import { SeededRng, hashSeed } from './seeded-rng';
+import { SeededRng } from './seeded-rng';
+import { DAY_MS, HISTORY_END, HISTORY_START, TODAY, marketPrice, symbolPriceAt } from './mock-market';
 import {
   ACCOUNT_WEIGHTS,
   JOURNAL_DAY_NOTES,
@@ -10,34 +11,9 @@ import {
   OPEN_NOTES,
   STYLES,
   SYMBOLS,
-  SymbolMeta,
   TAGS,
   WIN_NOTES,
 } from './mock-universe';
-
-const DAY_MS = 86_400_000;
-
-/** Сегодняшняя UTC-полночь — история всегда «живая» и доходит до вчера. */
-const TODAY = (() => {
-  const now = new Date();
-  return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-})();
-
-/** Год торговли: последняя закрытая сделка — вчера, открытые — сегодня. */
-const HISTORY_END = TODAY - DAY_MS;
-const HISTORY_START = HISTORY_END - 365 * DAY_MS;
-
-/**
- * Правдоподобная цена инструмента в момент времени: базовая цена ×
- * годовой дрейф × две синусоиды (циклы рынка) — детерминированно.
- */
-export function symbolPriceAt(meta: SymbolMeta, timeMs: number): number {
-  const f = (timeMs - HISTORY_START) / (HISTORY_END - HISTORY_START);
-  const phase = (hashSeed(meta.symbol) % 628) / 100;
-  const wobble =
-    0.16 * Math.sin(f * Math.PI * 2 * 2.3 + phase) + 0.07 * Math.sin(f * Math.PI * 2 * 7.1 + phase * 2);
-  return meta.basePrice * Math.exp(meta.yearDrift * f + wobble);
-}
 
 export function roundPrice(price: number): number {
   const abs = Math.abs(price);
@@ -127,7 +103,11 @@ function generateTrade(rng: SeededRng, dayStart: number, winRate: number): Trade
   ] as const);
   const openedMs = dayStart + hour * 3_600_000 + rng.int(0, 59) * 60_000 + rng.int(0, 59) * 1000;
   const durationMin = Math.round(rng.range(styleMeta.durationMin, styleMeta.durationMax));
-  const closedMs = openedMs + durationMin * 60_000;
+  // Сделки последних дней не закрываются «в будущем» — только до полуночи.
+  const closedMs = Math.max(
+    openedMs + 60_000,
+    Math.min(openedMs + durationMin * 60_000, TODAY - 60_000),
+  );
 
   const entry = roundPrice(symbolPriceAt(symbolMeta, openedMs) * rng.range(0.995, 1.005));
   const slPct = rng.range(styleMeta.slPctMin, styleMeta.slPctMax);
@@ -211,7 +191,8 @@ function generateOpenTrade(rng: SeededRng, openedMs: number): Trade {
   const symbolMeta = rng.weighted(SYMBOLS.slice(0, 5).map((s) => [s, s.weight] as const));
   const side: TradeSide = rng.bool(0.6) ? 'long' : 'short';
   const dir = side === 'long' ? 1 : -1;
-  const entry = roundPrice(symbolPriceAt(symbolMeta, openedMs));
+  // Открытая позиция — по текущему рынку: её вход виден на живой свече графика.
+  const entry = roundPrice(marketPrice(symbolMeta.symbol, openedMs));
   const slPct = rng.range(0.8, 2.2);
   const slDist = (entry * slPct) / 100;
   const riskUsd = Math.round(rng.range(120, 420));

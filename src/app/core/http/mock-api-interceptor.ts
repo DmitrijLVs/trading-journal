@@ -48,7 +48,7 @@ export const mockApiInterceptor: HttpInterceptorFn = (req, next) => {
   if (candlesMatch && method === 'GET') {
     const trade = db.trades.find((t) => t.id === candlesMatch[1]);
     const tf = new URLSearchParams(candlesMatch[2] ?? '').get('tf');
-    return trade ? respond(generateTradeCandles(trade, tf), 340) : notFound();
+    return trade ? respond(generateTradeCandles(trade, tf, Date.now()), 340) : notFound();
   }
   const tradeMatch = url.match(/^\/api\/trades\/([^/]+)$/);
   if (tradeMatch) {

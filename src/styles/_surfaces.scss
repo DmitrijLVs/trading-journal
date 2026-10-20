@@ -151,9 +151,3 @@ gridster.display-grid .gridster-row {
   &.long { color: var(--success-fg); }
   &.short { color: var(--danger-fg); }
 }
-
-// night-vision: встроенную легенду (символ, имена оверлеев) не показываем —
-// символ, таймфрейм и результат рисует тулбар графика сделки.
-.nvjs-legend {
-  display: none !important;
-}

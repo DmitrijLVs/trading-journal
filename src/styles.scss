@@ -8,6 +8,7 @@
 @use 'styles/forms';
 @use 'styles/surfaces';
 @use 'styles/sketch';
+@use 'styles/nv-chart';
 
 // CDK overlay prerequisites (структурные стили, без @angular/cdk scss).
 @use '@angular/cdk/overlay-prebuilt.css';
