@@ -61,8 +61,41 @@
         Сбросить
       </button>
     }
+
+    <app-segmented
+      class="view-switch"
+      [options]="viewOptions"
+      [value]="viewMode()"
+      (valueChange)="setViewMode($event)"
+    />
   </div>
 
+  <!-- ── Режим «График»: разбор слева, навигация по сделкам справа ──── -->
+  @if (viewMode() === 'split') {
+    <div class="split">
+      <section class="split-main">
+        @if (selectedRow(); as row) {
+          <app-trade-expand [trade]="row.trade" layout="column" embedded />
+        } @else {
+          <app-empty-state
+            icon="chart-line"
+            title="Сделок нет"
+            description="Измените фильтры или период анализа."
+          />
+        }
+      </section>
+
+      <app-trade-nav
+        [rows]="visibleRows()"
+        [selectedId]="selectedId()"
+        [page]="page()"
+        [pageCount]="pageCount()"
+        [rangeLabel]="rangeLabel()"
+        (select)="select($event)"
+        (goTo)="goTo($event)"
+      />
+    </div>
+  } @else {
   <!-- ── Таблица ─────────────────────────────────────────────────────── -->
   <div class="table-wrap" #tableWrap>
     @if (store.isLoading() && !store.hasLoaded()) {
@@ -256,4 +289,5 @@
       </app-empty-state>
     }
   </div>
+  }
 </section>

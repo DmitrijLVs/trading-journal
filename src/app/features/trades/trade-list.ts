@@ -13,6 +13,7 @@ import {
 } from '@angular/core';
 import { TradesStore } from './trades-store';
 import { TradeExpand } from './trade-expand';
+import { TradeNav, TradeRow } from './trade-nav';
 import {
   Trade,
   TradeSide,
@@ -31,6 +32,7 @@ import { summarize } from '../analytics/data/metrics';
 import { Icon } from '../../shared/ui/icon';
 import { Button } from '../../shared/ui/button';
 import { Select, SelectOption } from '../../shared/ui/select';
+import { Segmented, SegmentOption } from '../../shared/ui/segmented';
 import { PnlValue } from '../../shared/ui/pnl-value';
 import { EmptyState } from '../../shared/ui/empty-state';
 import { Skeleton } from '../../shared/ui/skeleton';
@@ -38,20 +40,35 @@ import { SketchUnderline } from '../../shared/ui/sketch/sketch-underline';
 
 type SortKey = 'openedAt' | 'symbol' | 'notional' | 'pnl' | 'pnlPct' | 'r' | 'duration';
 
-interface TradeRow {
-  trade: Trade;
-  pnl: number;
-  pnlPct: number;
-  r: number | null;
-  notional: number;
-}
-
 const PAGE_SIZES = [25, 50, 100] as const;
+const VIEW_KEY = 'tj.trades.view';
+
+/** 'table' — таблица с раскрытием строки, 'split' — график слева, список справа. */
+type ViewMode = 'table' | 'split';
+
+function readStoredView(): ViewMode {
+  try {
+    return localStorage.getItem(VIEW_KEY) === 'split' ? 'split' : 'table';
+  } catch {
+    return 'table';
+  }
+}
 
 /** Список сделок с фильтрами, пагинацией и разбором, раскрывающимся под строкой. */
 @Component({
   selector: 'app-trade-list',
-  imports: [SketchUnderline, TradeExpand, Icon, Button, Select, PnlValue, EmptyState, Skeleton],
+  imports: [
+    SketchUnderline,
+    TradeExpand,
+    TradeNav,
+    Icon,
+    Button,
+    Select,
+    Segmented,
+    PnlValue,
+    EmptyState,
+    Skeleton,
+  ],
   templateUrl: './trade-list.html',
   styleUrl: './trade-list.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -70,6 +87,12 @@ export class TradeList {
   protected readonly page = signal(1);
   protected readonly pageSize = signal<number>(50);
   protected readonly expandedId = signal<string | null>(null);
+  protected readonly viewMode = signal<ViewMode>(readStoredView());
+
+  protected readonly viewOptions: SegmentOption[] = [
+    { value: 'table', label: 'Таблица' },
+    { value: 'split', label: 'График' },
+  ];
 
   protected readonly pageSizeOptions: SelectOption[] = PAGE_SIZES.map((n) => ({
     value: String(n),
@@ -149,7 +172,24 @@ export class TradeList {
 
   protected readonly summary = computed(() => summarize(this.store.tableTrades()));
 
+  /** В режиме «График» всегда что-то выбрано: явный выбор или первая строка. */
+  protected readonly selectedRow = computed<TradeRow | null>(() => {
+    const rows = this.visibleRows();
+    if (rows.length === 0) return null;
+    return rows.find((r) => r.trade.id === this.expandedId()) ?? rows[0];
+  });
+
+  protected readonly selectedId = computed(() => this.selectedRow()?.trade.id ?? null);
+
   constructor() {
+    effect(() => {
+      const mode = this.viewMode();
+      try {
+        localStorage.setItem(VIEW_KEY, mode);
+      } catch {
+        // приватный режим — выбор живёт только в сессии
+      }
+    });
     // Держим страницу в допустимых границах при смене фильтров/размера.
     effect(() => {
       const count = this.pageCount();
@@ -240,11 +280,21 @@ export class TradeList {
     this.expandedId.update((id) => (id === trade.id ? null : trade.id));
   }
 
+  protected select(trade: Trade): void {
+    this.expandedId.set(trade.id);
+  }
+
+  protected setViewMode(mode: string): void {
+    if (mode === 'table' || mode === 'split') this.viewMode.set(mode);
+  }
+
+
+
   protected goTo(page: number): void {
     const next = Math.min(Math.max(1, page), this.pageCount());
     if (next === this.page()) return;
     this.page.set(next);
-    this.expandedId.set(null);
+    if (this.viewMode() === 'table') this.expandedId.set(null);
     this.tableEl()?.nativeElement.scrollIntoView({ block: 'start', behavior: 'smooth' });
   }
 

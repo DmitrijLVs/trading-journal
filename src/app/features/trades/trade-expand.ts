@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  booleanAttribute,
   computed,
   effect,
   inject,
@@ -12,6 +13,7 @@ import {
 import { TradesStore } from './trades-store';
 import { TradesApi } from './data/trades-api';
 import {
+  MARKET_LABELS,
   SESSION_LABELS,
   Trade,
   calculatePnl,
@@ -21,45 +23,69 @@ import {
   formatDateTime,
   formatDuration,
   formatMoney,
+  formatPercent,
   formatPrice,
+  formatR,
   notional,
   plannedRiskReward,
   plannedRiskUsd,
   tradingSession,
 } from './data/trade.model';
+import { AccountsStore } from '../accounts/accounts-store';
 import { MISTAKES } from '../../core/mock/mock-universe';
 import { TradeChartData, resolveTimeframe } from '../../core/mock/mock-candles';
 import { TradeChart } from './trade-chart';
 import { Icon } from '../../shared/ui/icon';
 import { Button } from '../../shared/ui/button';
 import { Badge } from '../../shared/ui/badge';
-import { PnlValue } from '../../shared/ui/pnl-value';
 import { Select, SelectOption } from '../../shared/ui/select';
 import { Skeleton } from '../../shared/ui/skeleton';
 import { ToastService } from '../../shared/ui/toast';
 import { ConfirmService } from '../../shared/ui/confirm-dialog';
 import { Tooltip } from '../../shared/ui/tooltip';
 
+/** Ячейка таблицы фактов: подпись, значение и смысловой цвет. */
+interface Fact {
+  k: string;
+  v: string;
+  tone?: 'pos' | 'neg' | 'win' | 'loss';
+}
+
 /**
- * Разбор сделки внутри таблицы: раскрывается под строкой. Слева график
- * с разметкой входа/выхода/SL/TP, справа факты и поля анализа
- * (заметка, состояние, ошибки, теги) — редактируются на месте.
+ * Разбор сделки: график с разметкой исполнений и факты с полями анализа.
+ *
+ * `layout` — 'row' (график слева, факты справа) для раскрытой строки таблицы,
+ * 'column' (график сверху, факты колонками под ним) для режима «График».
+ * `embedded` — без карточки и отступов, когда компонент лежит в своей панели.
  */
 @Component({
   selector: 'app-trade-expand',
-  imports: [TradeChart, Icon, Button, Badge, PnlValue, Select, Skeleton, Tooltip],
+  imports: [TradeChart, Icon, Button, Badge, Select, Skeleton, Tooltip],
   templateUrl: './trade-expand.html',
   styleUrl: './trade-expand.scss',
+  host: { '[class]': "'is-' + layout()", '[class.is-embedded]': 'embedded()' },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TradeExpand {
   private readonly store = inject(TradesStore);
+  private readonly accountsStore = inject(AccountsStore);
   private readonly api = inject(TradesApi);
   private readonly toast = inject(ToastService);
   private readonly confirm = inject(ConfirmService);
 
   readonly trade = input.required<Trade>();
+  /** 'row' — рядом с таблицей, 'column' — в режиме «График». */
+  readonly layout = input<'row' | 'column'>('row');
+  /** Внутри собственной панели: без карточки, отступов и кнопки «свернуть». */
+  readonly embedded = input(false, { transform: booleanAttribute });
   readonly closed = output<void>();
+
+  /** Счёт сделки — название биржи вместо технического id. */
+  protected readonly accountName = computed(
+    () => this.accountsStore.accounts().find((a) => a.id === this.trade().accountId)?.name ?? '—',
+  );
+
+  protected readonly marketLabel = computed(() => MARKET_LABELS[this.trade().market]);
 
   /** Таймфрейм графика: стартует с таймфрейма сделки, переключается в тулбаре. */
   protected readonly timeframe = linkedSignal<string>(() => resolveTimeframe(this.trade()));
@@ -111,6 +137,48 @@ export class TradeExpand {
       session: SESSION_LABELS[tradingSession(t.openedAt)],
       duration: t.status === 'closed' ? formatDuration(t.openedAt, t.closedAt) : 'позиция открыта',
     };
+  });
+
+  /**
+   * Все цифры сделки одной плоской таблицей: так весь разбор помещается под
+   * графиком без прокрутки, а заголовки групп не тратят высоту.
+   */
+  protected readonly facts = computed<Fact[]>(() => {
+    const t = this.trade();
+    const r = this.result();
+    const p = this.plan();
+    const e = this.execution();
+    const closed = t.status === 'closed';
+    const sign = (v: number): Fact['tone'] => (v >= 0 ? 'pos' : 'neg');
+
+    return [
+      ...(closed
+        ? ([
+            { k: 'P&L', v: formatMoney(r.pnl, { sign: true }), tone: sign(r.pnl) },
+            { k: 'Движение', v: formatPercent(r.pnlPct, { sign: true }), tone: sign(r.pnlPct) },
+            { k: 'ROI', v: formatPercent(r.roi, { sign: true }), tone: sign(r.roi) },
+            { k: 'R', v: formatR(r.r), tone: r.r === null ? undefined : sign(r.r) },
+          ] as Fact[])
+        : []),
+      { k: 'Вход', v: formatPrice(t.entryPrice) },
+      closed
+        ? { k: 'Выход', v: formatPrice(t.exitPrice) }
+        : { k: 'Выход', v: 'в позиции' },
+      { k: 'Стоп', v: t.stopLoss === null ? '—' : formatPrice(t.stopLoss), tone: 'loss' },
+      { k: 'Тейк', v: t.takeProfit === null ? '—' : formatPrice(t.takeProfit), tone: 'win' },
+      { k: 'Риск', v: this.fmtMoney(p.risk) },
+      { k: 'План R:R', v: p.rr === null ? '—' : `1 : ${p.rr.toFixed(1)}` },
+      { k: 'Объём', v: `${t.quantity}` },
+      { k: 'Номинал', v: formatMoney(e.notional) },
+      { k: 'Маржа', v: formatMoney(e.margin) },
+      { k: 'Комиссии', v: formatMoney(t.fees) },
+      { k: 'Фандинг', v: t.funding === 0 ? '—' : formatMoney(t.funding, { sign: true }) },
+      { k: 'В позиции', v: e.duration },
+      { k: 'Сессия', v: e.session },
+      { k: 'ТФ', v: t.timeframe },
+      { k: 'Счёт', v: this.accountName() },
+      { k: 'Рынок', v: this.marketLabel() },
+    ];
   });
 
   constructor() {

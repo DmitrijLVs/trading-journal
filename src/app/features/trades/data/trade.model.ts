@@ -64,6 +64,11 @@ export const MOOD_EMOJI: Record<Mood, string> = {
   tilt: '🤬',
 };
 
+export const MARKET_LABELS: Record<MarketType, string> = {
+  futures: 'Фьючерсы',
+  spot: 'Спот',
+};
+
 export const SESSION_LABELS: Record<TradingSession, string> = {
   asia: 'Азия',
   london: 'Лондон',

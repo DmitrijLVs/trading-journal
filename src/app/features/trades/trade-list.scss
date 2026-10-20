@@ -24,11 +24,8 @@
   border: 1px solid var(--border-default);
   border-radius: $radius-md;
   color: var(--fg-subtle);
-  transition: border-color $duration-fast $ease-apple;
 
-  &:focus-within {
-    border-color: var(--accent-fg);
-  }
+  &:focus-within { border-color: var(--accent-fg); }
 
   input {
     flex: 1;
@@ -38,27 +35,41 @@
     color: var(--fg-default);
     font-size: $text-sm;
 
-    &::placeholder {
-      color: var(--fg-subtle);
-    }
+    &::placeholder { color: var(--fg-subtle); }
   }
 }
 
-// Таблица без карточки: лежит прямо на странице, рамок нет — только линии строк.
-.table-wrap {
-  scroll-margin-top: $space-4;
-  container-type: inline-size;
+.view-switch { margin-left: auto; width: 200px; flex: none; }
+
+// ── Режим «График»: разбор слева, список-навигация справа ─────────────────
+
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: $space-4;
+  height: calc(100vh - 168px);
+  min-height: 520px;
+
+  @media (max-width: 1100px) {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
 }
+
+.split-main {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+// Таблица без карточки: лежит прямо на странице, рамок нет — только линии строк.
+.table-wrap { scroll-margin-top: $space-4; container-type: inline-size; }
 
 // Узкий экран — второстепенные колонки уходят; и стратегия, и теги видны
 // в раскрытом разборе сделки.
-@container (max-width: 1240px) {
-  .col-tags { display: none; }
-}
-
-@container (max-width: 1080px) {
-  .col-strategy { display: none; }
-}
+@container (max-width: 1240px) { .col-tags { display: none; } }
+@container (max-width: 1080px) { .col-strategy { display: none; } }
 
 .table-scroll {
   overflow-x: auto;
@@ -66,29 +77,17 @@
 }
 
 .trades {
-  th {
-    background: var(--canvas-default);
-    top: 0;
-  }
+  th { background: var(--canvas-default); }
 
-  tbody tr.is-open > td {
-    background: var(--canvas-subtle);
-    border-bottom-color: transparent;
-  }
+  tbody tr.is-open > td { background: var(--canvas-subtle); border-bottom-color: transparent; }
 
   tr.expand-row > td {
     padding: 0;
     border-bottom: 1px solid var(--border-muted);
     white-space: normal;
-
-    &:hover {
-      background: transparent;
-    }
   }
 
-  tr.expand-row:hover {
-    background: transparent;
-  }
+  tr.expand-row:hover { background: transparent; }
 }
 
 .loading {
@@ -98,15 +97,12 @@
   padding: $space-4;
 }
 
-.sym {
-  font-weight: 600;
-}
+.sym { font-weight: 600; }
 
 .lev {
   color: var(--fg-subtle);
   font-weight: 500;
   font-family: $font-mono;
-  text-transform: none;
 }
 
 .open-badge {
@@ -117,12 +113,16 @@
   border-radius: $radius-full;
 }
 
+.pager-size { width: 170px; flex: none; }
+
 .tags-cell {
   white-space: nowrap;
   max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.tag.more { color: var(--fg-subtle); }
 
 .tag {
   display: inline-block;
@@ -134,10 +134,6 @@
   padding: 1px $space-2;
   margin-right: 3px;
   line-height: 18px;
-
-  &.more {
-    color: var(--fg-subtle);
-  }
 }
 
 tfoot td {
@@ -163,12 +159,9 @@ tfoot td {
   min-width: 120px;
 }
 
-.pager-pages {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  margin: 0 auto;
-}
+.pg-gap { color: var(--fg-subtle); padding: 0 4px; user-select: none; }
+
+.pager-pages { display: flex; align-items: center; gap: 2px; margin: 0 auto; }
 
 .pg {
   --sketch-stroke: var(--accent-fg);
@@ -187,39 +180,16 @@ tfoot td {
   font-family: $font-mono;
   font-size: $text-sm;
   cursor: pointer;
-  transition: background $duration-fast $ease-apple, color $duration-fast $ease-apple;
 
   &:hover:not(:disabled) {
     background: var(--canvas-overlay);
     color: var(--fg-default);
   }
 
-  &.active {
-    color: var(--fg-default);
-    font-weight: 600;
-  }
-
-  &:disabled {
-    opacity: 0.35;
-    cursor: default;
-  }
+  &.active { color: var(--fg-default); font-weight: 600; }
+  &:disabled { opacity: 0.35; cursor: default; }
 }
 
-.pg-ink {
-  position: absolute;
-  left: 6px;
-  right: 6px;
-  bottom: 3px;
-  height: 5px;
-}
+.pg-ink { position: absolute; left: 6px; right: 6px; bottom: 3px; height: 5px; }
 
-.pg-gap {
-  color: var(--fg-subtle);
-  padding: 0 4px;
-  user-select: none;
-}
 
-.pager-size {
-  width: 170px;
-  flex: none;
-}
