@@ -1,6 +1,5 @@
 import { Injectable, effect, inject } from '@angular/core';
 import { AuthStore } from '../auth/auth-store';
-import { apiSocketUrl } from '../http/api-context';
 
 /** Событие журнала пользователя (`/ws/events`): `fill`, `trade`, `sync`. */
 export interface JournalEvent {
@@ -67,9 +66,10 @@ export class EventsSocket {
 
   private open(): void {
     if (!this.wanted || this.socket || this.retryTimer || !this.auth.isAuthenticated()) return;
+    const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
     let socket: WebSocket;
     try {
-      socket = new WebSocket(apiSocketUrl('/ws/events'));
+      socket = new WebSocket(`${scheme}://${location.host}/ws/events`);
     } catch {
       this.scheduleRetry();
       return;
