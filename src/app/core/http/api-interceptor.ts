@@ -2,7 +2,7 @@ import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, from, switchMap, throwError } from 'rxjs';
 import { AuthStore } from '../auth/auth-store';
-import { SKIP_REFRESH, isApiUrl } from './api-context';
+import { SKIP_REFRESH, apiUrl, isApiUrl } from './api-context';
 
 /**
  * Запросы к API платформы: браузерный режим авторизации (`X-FROM: BROWSER`
@@ -13,7 +13,11 @@ import { SKIP_REFRESH, isApiUrl } from './api-context';
 export const apiInterceptor: HttpInterceptorFn = (req, next) => {
   if (!isApiUrl(req.url)) return next(req);
   const auth = inject(AuthStore);
-  const apiReq = req.clone({ withCredentials: true, setHeaders: { 'X-FROM': 'BROWSER' } });
+  const apiReq = req.clone({
+    url: apiUrl(req.url),
+    withCredentials: true,
+    setHeaders: { 'X-FROM': 'BROWSER' },
+  });
   if (req.context.get(SKIP_REFRESH)) return next(apiReq);
   return next(apiReq).pipe(
     catchError((error: unknown) => {
