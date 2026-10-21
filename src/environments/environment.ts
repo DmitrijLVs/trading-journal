@@ -4,5 +4,5 @@
  */
 export const environment = {
   /** Origin гейтвея платформы; '' — тот же хост, что и у приложения. */
-  apiOrigin: 'https://165.245.248.24',
+  apiOrigin: 'http://165.245.248.24',
 };
