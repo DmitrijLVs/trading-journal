@@ -1,4 +1,7 @@
-import { Injectable, computed, effect, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
+import { AuthStore } from '../../core/auth/auth-store';
+import { PERIOD_LABELS } from '../../core/state/period-store';
+import { LayoutsApi } from './data/layouts-api';
 import {
   DashboardState,
   GRID_COLS,
@@ -15,13 +18,22 @@ import { DEFAULT_WORKSPACE_NAME, defaultWidgets, newWidgetId } from './data/defa
 // v2: без шаблонов и трёх убранных стат-плиток; старое хранилище не мигрируем.
 const STORAGE_KEY = 'tj.dashboard.v2';
 
+/** Сохранение на сервер — не на каждый пиксель перетаскивания. */
+const SAVE_DEBOUNCE_MS = 1500;
+
 /**
- * Рабочие пространства дашборда: раскладка живёт в localStorage
- * (на реальном бэкенде — в профиле пользователя).
+ * Рабочие пространства дашборда. Раскладка — в профиле пользователя
+ * (`/config/widgets/overview`), localStorage — кэш для мгновенного старта.
  */
 @Injectable({ providedIn: 'root' })
 export class WorkspacesStore {
+  private readonly api = inject(LayoutsApi);
+  private readonly auth = inject(AuthStore);
   private readonly _state = signal<DashboardState>(restore());
+  /** То, что уже лежит на сервере: загруженное оттуда обратно не отправляем. */
+  private synced: string | null = null;
+  private loadedFor: string | null = null;
+  private saveTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly workspaces = computed(() => this._state().workspaces);
   readonly activeWorkspaceId = computed(() => this._state().activeWorkspaceId);
@@ -36,12 +48,49 @@ export class WorkspacesStore {
 
   constructor() {
     effect(() => {
+      const json = JSON.stringify(this._state());
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(this._state()));
+        localStorage.setItem(STORAGE_KEY, json);
       } catch {
         // приватный режим — не персистим
       }
+      untracked(() => this.scheduleSave(json));
     });
+    effect(() => {
+      const owner = this.auth.user()?.id ?? null;
+      if (owner && owner !== this.loadedFor) untracked(() => void this.loadFromServer(owner));
+    });
+  }
+
+  /** Раскладка из профиля; её ещё нет — отправляем туда текущую (локальную или стартовую). */
+  private async loadFromServer(owner: string): Promise<void> {
+    this.loadedFor = owner;
+    try {
+      const raw = await this.api.load('overview');
+      const state = raw ? sanitize(raw as DashboardState) : null;
+      if (state && state.workspaces.length && state.activeWorkspaceId) {
+        this.synced = JSON.stringify(state);
+        this._state.set(state);
+        return;
+      }
+      this.synced = null;
+      this.scheduleSave(JSON.stringify(this._state()));
+    } catch {
+      // профиль недоступен — работаем на локальной копии, сохраним при следующем изменении
+      this.loadedFor = null;
+    }
+  }
+
+  private scheduleSave(json: string): void {
+    if (!this.loadedFor || json === this.synced) return;
+    if (this.saveTimer) clearTimeout(this.saveTimer);
+    this.saveTimer = setTimeout(() => {
+      this.saveTimer = null;
+      void this.api.save('overview', JSON.parse(json)).then(
+        () => (this.synced = json),
+        () => undefined,
+      );
+    }, SAVE_DEBOUNCE_MS);
   }
 
   // ── Рабочие пространства ─────────────────────────────────────────────────
@@ -229,10 +278,17 @@ function sanitize(state: DashboardState): DashboardState {
     widgets: (ws.widgets ?? [])
       .filter((w) => isKnownWidgetType(w.type))
       .map((w) => {
-        const def = widgetDefFor(w);
-        return def
-          ? { ...w, cols: Math.max(w.cols, def.minCols), rows: Math.max(w.rows, def.minRows) }
-          : w;
+        // Пресеты «год» и «всё время» убраны (история — 183 дня): такие виджеты — на общий период.
+        const period = w.settings?.period;
+        const settings =
+          period && period !== 'global' && !(period in PERIOD_LABELS)
+            ? { ...w.settings, period: 'global' as const }
+            : (w.settings ?? {});
+        const def = widgetDefFor({ ...w, settings });
+        const sized = def
+          ? { cols: Math.max(w.cols, def.minCols), rows: Math.max(w.rows, def.minRows) }
+          : {};
+        return { ...w, settings, ...sized };
       }),
   }));
   const activeWorkspaceId = workspaces.some((ws) => ws.id === state.activeWorkspaceId)

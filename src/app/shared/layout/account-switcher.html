@@ -1,3 +1,12 @@
+@if (accountsStore.hasLoaded() && !accountsStore.hasAccounts()) {
+  <a class="trigger connect" routerLink="/dashboard">
+    <span class="avatar all"><app-icon name="link" style="--icon-size: 13px" /></span>
+    <span class="titles">
+      <span class="name">Подключить Binance</span>
+      <span class="balance">read-only API-ключ</span>
+    </span>
+  </a>
+} @else {
 <button
   type="button"
   class="trigger"
@@ -36,7 +45,6 @@
         <span class="name">Все счета</span>
         <span class="hint">Сводная аналитика</span>
       </span>
-      <span class="value">{{ format(totalBalance()) }}</span>
     </button>
 
     <div class="separator"></div>
@@ -52,18 +60,18 @@
           {{ row.mark }}
         </span>
         <span class="titles">
-          <span class="name">{{ row.account.name }}</span>
-          <span class="hint">{{ row.account.market === 'futures' ? 'Фьючерсы' : 'Спот' }}</span>
+          <span class="name">{{ row.account.label }}</span>
+          <span class="hint">{{ row.hint }}</span>
         </span>
-        <span class="value">{{ format(row.balance) }}</span>
       </button>
     }
 
     <div class="separator"></div>
 
-    <a class="row manage" routerLink="/settings/accounts" (click)="open.set(false)">
+    <a class="row manage" routerLink="/settings/exchange" (click)="open.set(false)">
       <span class="avatar all"><app-icon name="plus" style="--icon-size: 13px" /></span>
       <span class="titles"><span class="name">Управление счетами</span></span>
     </a>
   </div>
 </ng-template>
+}

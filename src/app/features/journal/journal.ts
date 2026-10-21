@@ -1,24 +1,33 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { JournalStore } from './journal-store';
 import { JournalDayCard } from './journal-day-card';
+import { AccountsStore } from '../accounts/accounts-store';
 import { Segmented } from '../../shared/ui/segmented';
 import { EmptyState } from '../../shared/ui/empty-state';
 import { Skeleton } from '../../shared/ui/skeleton';
-import { formatMoney } from '../trades/data/trade.model';
+import { Button } from '../../shared/ui/button';
+import { Soon } from '../../shared/ui/soon';
 
-type DayFilter = 'all' | 'profit' | 'loss' | 'noted';
+type DayFilter = 'all' | 'profit' | 'loss';
 
 const PAGE_SIZE = 30;
 
 @Component({
   selector: 'app-journal',
-  imports: [JournalDayCard, Segmented, EmptyState, Skeleton],
+  imports: [RouterLink, JournalDayCard, Segmented, EmptyState, Skeleton, Button, Soon],
   template: `
     <section class="tj-page">
       <div class="toolbar">
-        <span class="stat">{{ store.days().length }} торговых дней · {{ notedCount() }} с заметками</span>
+        <span class="stat">{{ store.days().length }} торговых дней</span>
         <app-segmented [options]="filterOptions" [(value)]="filterValue" />
       </div>
+
+      <app-soon
+        class="soon"
+        title="Заметки дня"
+        description="Итоги дня, настроение и «торговал ли по плану» появятся, когда их начнёт хранить платформа. Пока здесь результат и сделки каждого дня."
+      />
 
       @if (store.isLoading() && store.days().length === 0) {
         <div class="loading">
@@ -37,6 +46,14 @@ const PAGE_SIZE = 30;
             Показать ещё {{ remaining() }}
           </button>
         }
+      } @else if (accounts.hasLoaded() && !accounts.hasAccounts()) {
+        <app-empty-state
+          icon="link"
+          title="Здесь будут ваши торговые дни"
+          description="Подключите Binance read-only ключом — дни соберутся из сделок автоматически."
+        >
+          <a app-button variant="primary" size="sm" routerLink="/dashboard">Подключить Binance</a>
+        </app-empty-state>
       } @else {
         <app-empty-state
           icon="journal"
@@ -61,6 +78,8 @@ const PAGE_SIZE = 30;
       color: var(--fg-muted);
       font-size: $text-sm;
     }
+
+    .soon { margin-bottom: $space-4; }
 
     .days {
       display: flex;
@@ -99,6 +118,7 @@ const PAGE_SIZE = 30;
 })
 export class Journal {
   protected readonly store = inject(JournalStore);
+  protected readonly accounts = inject(AccountsStore);
 
   protected readonly filterValue = signal<string>('all');
   protected readonly visibleCount = signal(PAGE_SIZE);
@@ -107,12 +127,7 @@ export class Journal {
     { value: 'all', label: 'Все' },
     { value: 'profit', label: 'Плюсовые' },
     { value: 'loss', label: 'Минусовые' },
-    { value: 'noted', label: 'С заметкой' },
   ];
-
-  protected readonly notedCount = computed(
-    () => this.store.days().filter((d) => d.entry?.note).length,
-  );
 
   private readonly filteredDays = computed(() => {
     const filter = this.filterValue() as DayFilter;
@@ -122,8 +137,6 @@ export class Journal {
           return day.pnl > 1;
         case 'loss':
           return day.pnl < -1;
-        case 'noted':
-          return Boolean(day.entry?.note);
         default:
           return true;
       }
@@ -137,6 +150,4 @@ export class Journal {
   protected showMore(): void {
     this.visibleCount.update((v) => v + PAGE_SIZE);
   }
-
-  protected readonly fmtMoney = formatMoney;
 }

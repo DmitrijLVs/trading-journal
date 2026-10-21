@@ -8,7 +8,6 @@ export interface TradeRow {
   trade: Trade;
   pnl: number;
   pnlPct: number;
-  r: number | null;
   notional: number;
 }
 
@@ -37,21 +36,18 @@ export interface TradeRow {
             <span class="sym">{{ row.trade.symbol }}</span>
             <span class="tj-side" [class]="row.trade.side">
               <app-icon [name]="row.trade.side" style="--icon-size: 11px" />
-              {{ row.trade.side === 'long' ? 'L' : 'S' }}×{{ row.trade.leverage }}
+              {{ row.trade.side === 'long' ? 'L' : 'S' }}
             </span>
             <span class="grow"></span>
             @if (row.trade.status === 'closed') {
               <app-pnl class="pnl" [value]="row.pnl" />
+              <app-pnl class="pnl pct" [value]="row.pnlPct" kind="percent" />
             } @else {
               <span class="open">открыта</span>
             }
           </span>
           <span class="line meta">
-            <span class="tags">
-              @for (tag of row.trade.tags.slice(0, 2); track tag) {
-                <span class="tag">{{ tag }}</span>
-              }
-            </span>
+            <span class="tags"></span>
             <span class="date">{{ shortDate(row.trade.openedAt) }}</span>
           </span>
         </button>
@@ -148,6 +144,7 @@ export interface TradeRow {
     .grow { flex: 1; }
     .sym { font-size: $text-sm; font-weight: 600; }
     .pnl { font-family: $font-mono; font-size: $text-sm; }
+    .pct { display: inline-block; min-width: 56px; font-size: $text-xs; text-align: right; }
 
     .open {
       font-size: $text-xs;

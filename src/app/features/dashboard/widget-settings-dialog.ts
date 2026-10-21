@@ -12,11 +12,11 @@ import { Button } from '../../shared/ui/button';
 import { Select, SelectOption } from '../../shared/ui/select';
 import { Toggle } from '../../shared/ui/toggle';
 import { Segmented, SegmentOption } from '../../shared/ui/segmented';
-import { PERIOD_LABELS, PeriodPreset } from '../../core/state/period-store';
+import { PERIOD_LABELS, PERIOD_PRESETS } from '../../core/state/period-store';
 
 const PERIOD_OPTIONS: SelectOption[] = [
   { value: 'global', label: 'Глобальный период' },
-  ...(['7d', '30d', '90d', 'ytd', '1y', 'all'] as PeriodPreset[]).map((p) => ({
+  ...PERIOD_PRESETS.map((p) => ({
     value: p,
     label: PERIOD_LABELS[p],
   })),
@@ -24,10 +24,6 @@ const PERIOD_OPTIONS: SelectOption[] = [
 
 const GROUP_OPTIONS: SelectOption[] = [
   { value: 'symbol', label: 'Инструмент' },
-  { value: 'strategy', label: 'Стратегия' },
-  { value: 'tag', label: 'Тег' },
-  { value: 'mistake', label: 'Ошибка' },
-  { value: 'setup', label: 'Оценка сетапа' },
   { value: 'session', label: 'Сессия' },
   { value: 'weekday', label: 'День недели' },
   { value: 'hour', label: 'Час (UTC)' },
@@ -37,7 +33,6 @@ const METRIC_OPTIONS: SelectOption[] = [
   { value: 'pnl', label: 'P&L' },
   { value: 'count', label: 'Количество сделок' },
   { value: 'winrate', label: 'Винрейт' },
-  { value: 'avgR', label: 'Средний R' },
 ];
 
 /** Настройки экземпляра виджета: заголовок, период, разрез, метрика. */

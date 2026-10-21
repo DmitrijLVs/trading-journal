@@ -1,65 +1,48 @@
 export type TradeSide = 'long' | 'short';
 export type TradeStatus = 'open' | 'closed';
-export type MarketType = 'futures' | 'spot';
-export type SetupGrade = 'A+' | 'A' | 'B' | 'C';
-export type Mood = 'confident' | 'calm' | 'neutral' | 'anxious' | 'tilt';
 export type TradingSession = 'asia' | 'london' | 'newyork' | 'off';
 
+/**
+ * Сделка журнала — round trip позиции от нуля до нуля, собранная
+ * рекордером из исполнений биржи (`/journal/trades`). Всё — факты биржи:
+ * разбора (стратегия, теги, стоп, риск) API пока не хранит.
+ */
 export interface Trade {
   id: string;
   accountId: string;
   symbol: string;
-  market: MarketType;
   side: TradeSide;
-  leverage: number;
-  quantity: number;
-  entryPrice: number;
-  /** 0, пока позиция открыта. */
-  exitPrice: number;
-  stopLoss: number | null;
-  takeProfit: number | null;
-  /** Запланированный риск в валюте депозита. */
-  riskUsd: number | null;
   status: TradeStatus;
+  /** Позиция открыта до начала записанной истории: вход неизвестен. */
+  carriedIn: boolean;
   openedAt: string;
+  /** '' — позиция ещё открыта. */
   closedAt: string;
+  /** Наибольший объём позиции за сделку, в монетах. */
+  quantity: number;
+  /** Средняя цена входа; null — вход был до начала истории. */
+  entryPrice: number | null;
+  /** Средняя цена выхода; null — выходов ещё не было. */
+  exitPrice: number | null;
+  /** P&L биржи до комиссий и фандинга. */
+  realizedPnl: number;
+  /** Комиссия в стейблах — уже вычтена из нетто. */
   fees: number;
+  /** Комиссия в прочих активах (BNB) — в нетто не входит, пересчитать не по чем. */
+  feesOther: Readonly<Record<string, number>>;
+  /** Фандинг: плюс — получен, минус — уплачен. Уже учтён в нетто. */
   funding: number;
-  strategy: string;
-  timeframe: string;
-  setupGrade: SetupGrade | null;
-  mistakes: string[];
-  tags: string[];
-  notes: string;
+  /** Итог сделки: realized − комиссия + фандинг. */
+  netPnl: number;
+  fillsCount: number;
 }
 
-export type TradeDraft = Omit<Trade, 'id'>;
-
 export interface TradeFilters {
-  accountId?: string;
   symbols?: string[];
   side?: TradeSide;
   status?: TradeStatus;
-  strategies?: string[];
-  tags?: string[];
-  setupGrades?: SetupGrade[];
   search?: string;
-  dateFrom?: string;
-  dateTo?: string;
 }
-
-export const MOOD_LABELS: Record<Mood, string> = {
-  confident: 'Уверенность',
-  calm: 'Спокойствие',
-  neutral: 'Нейтрально',
-  anxious: 'Тревога',
-  tilt: 'Тильт',
-};
-
-export const MARKET_LABELS: Record<MarketType, string> = {
-  futures: 'Фьючерсы',
-  spot: 'Спот',
-};
 
 export const SESSION_LABELS: Record<TradingSession, string> = {
   asia: 'Азия',
@@ -70,58 +53,34 @@ export const SESSION_LABELS: Record<TradingSession, string> = {
 
 // ─── Расчёты по сделке ──────────────────────────────────────────────────────
 
-/** Валовый P&L без комиссий (0 для открытых). */
-export function calculateGrossPnl(trade: Trade): number {
-  if (trade.status !== 'closed') return 0;
-  const direction = trade.side === 'long' ? 1 : -1;
-  return (trade.exitPrice - trade.entryPrice) * trade.quantity * direction;
-}
-
-/** Чистый P&L: минус комиссии и фандинг. */
+/** Чистый результат закрытой сделки (у открытой — 0: итог ещё не известен). */
 export function calculatePnl(trade: Trade): number {
-  if (trade.status !== 'closed') return 0;
-  return calculateGrossPnl(trade) - trade.fees - trade.funding;
+  return trade.status === 'closed' ? trade.netPnl : 0;
 }
 
-/** Движение цены в % (без плеча). */
+/** Издержки сделки: комиссия минус полученный фандинг (плюс уплаченный). */
+export function tradeCosts(trade: Trade): number {
+  return trade.fees - trade.funding;
+}
+
+/** Движение цены от входа к выходу в % (без плеча); 0, если цены неизвестны. */
 export function calculatePnlPercent(trade: Trade): number {
-  if (trade.status !== 'closed' || trade.entryPrice === 0) return 0;
+  const { entryPrice, exitPrice } = trade;
+  if (trade.status !== 'closed' || !entryPrice || exitPrice === null) return 0;
   const direction = trade.side === 'long' ? 1 : -1;
-  return ((trade.exitPrice - trade.entryPrice) / trade.entryPrice) * 100 * direction;
+  return ((exitPrice - entryPrice) / entryPrice) * 100 * direction;
 }
 
-/** ROI на маржу: чистый P&L / (нотионал ÷ плечо). */
-export function calculateRoi(trade: Trade): number {
-  const margin = notional(trade) / Math.max(1, trade.leverage);
-  if (trade.status !== 'closed' || margin === 0) return 0;
-  return (calculatePnl(trade) / margin) * 100;
-}
-
-/** Нотионал позиции по цене входа. */
+/** Нотионал позиции по цене входа (или выхода, если вход до истории). */
 export function notional(trade: Trade): number {
-  return trade.entryPrice * trade.quantity;
+  return (trade.entryPrice ?? trade.exitPrice ?? 0) * trade.quantity;
 }
 
-/** Фактический R: чистый P&L / запланированный риск. */
-export function calculateRMultiple(trade: Trade): number | null {
-  const risk = plannedRiskUsd(trade);
-  if (trade.status !== 'closed' || risk === null || risk <= 0) return null;
-  return calculatePnl(trade) / risk;
-}
-
-/** Риск в $: явно заданный или расстояние до стопа × объём. */
-export function plannedRiskUsd(trade: Trade): number | null {
-  if (trade.riskUsd !== null && trade.riskUsd > 0) return trade.riskUsd;
-  if (trade.stopLoss === null) return null;
-  return Math.abs(trade.entryPrice - trade.stopLoss) * trade.quantity;
-}
-
-/** Плановое соотношение риск/прибыль по TP и SL. */
-export function plannedRiskReward(trade: Trade): number | null {
-  if (trade.stopLoss === null || trade.takeProfit === null) return null;
-  const risk = Math.abs(trade.entryPrice - trade.stopLoss);
-  const reward = Math.abs(trade.takeProfit - trade.entryPrice);
-  return risk === 0 ? null : reward / risk;
+/** Комиссии в нестейблах одной строкой: «0.0021 BNB». */
+export function formatFeesOther(trade: Trade): string {
+  return Object.entries(trade.feesOther)
+    .map(([asset, amount]) => `${Number(amount.toPrecision(4))} ${asset}`)
+    .join(' + ');
 }
 
 /** Торговая сессия по времени открытия (UTC). */
@@ -149,7 +108,8 @@ export function priceDecimals(price: number): number {
   return 8;
 }
 
-export function formatPrice(value: number): string {
+export function formatPrice(value: number | null): string {
+  if (value === null) return '—';
   return value.toLocaleString('ru-RU', {
     minimumFractionDigits: 0,
     maximumFractionDigits: priceDecimals(value),
@@ -170,12 +130,6 @@ export function formatMoney(value: number, opts: { sign?: boolean } = {}): strin
 export function formatPercent(value: number, opts: { sign?: boolean } = {}): string {
   const sign = value < 0 ? '−' : opts.sign && value > 0 ? '+' : '';
   return `${sign}${Math.abs(value).toFixed(2)}%`;
-}
-
-export function formatR(value: number | null): string {
-  if (value === null) return '—';
-  const sign = value < 0 ? '−' : value > 0 ? '+' : '';
-  return `${sign}${Math.abs(value).toFixed(2)}R`;
 }
 
 export function formatDateTime(iso: string): string {

@@ -11,7 +11,9 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { TradesStore } from './trades-store';
+import { AccountsStore } from '../accounts/accounts-store';
 import { TradeExpand } from './trade-expand';
 import { TradeNav, TradeRow } from './trade-nav';
 import {
@@ -20,7 +22,6 @@ import {
   TradeStatus,
   calculatePnl,
   calculatePnlPercent,
-  calculateRMultiple,
   durationMs,
   formatDateTime,
   formatDuration,
@@ -38,26 +39,18 @@ import { EmptyState } from '../../shared/ui/empty-state';
 import { Skeleton } from '../../shared/ui/skeleton';
 import { SketchUnderline } from '../../shared/ui/sketch/sketch-underline';
 
-type SortKey = 'openedAt' | 'symbol' | 'notional' | 'pnl' | 'pnlPct' | 'r' | 'duration';
+type SortKey = 'openedAt' | 'symbol' | 'notional' | 'pnl' | 'pnlPct' | 'duration';
 
 const PAGE_SIZES = [25, 50, 100] as const;
-const VIEW_KEY = 'tj.trades.view';
 
 /** 'table' — таблица с раскрытием строки, 'split' — график слева, список справа. */
 type ViewMode = 'table' | 'split';
-
-function readStoredView(): ViewMode {
-  try {
-    return localStorage.getItem(VIEW_KEY) === 'split' ? 'split' : 'table';
-  } catch {
-    return 'table';
-  }
-}
 
 /** Список сделок с фильтрами, пагинацией и разбором, раскрывающимся под строкой. */
 @Component({
   selector: 'app-trade-list',
   imports: [
+    RouterLink,
     SketchUnderline,
     TradeExpand,
     TradeNav,
@@ -75,6 +68,7 @@ function readStoredView(): ViewMode {
 })
 export class TradeList {
   protected readonly store = inject(TradesStore);
+  protected readonly accounts = inject(AccountsStore);
 
   /** Из маршрута /trades/:id — сделка, которую нужно сразу раскрыть. */
   readonly id = input<string>();
@@ -87,7 +81,8 @@ export class TradeList {
   protected readonly page = signal(1);
   protected readonly pageSize = signal<number>(50);
   protected readonly expandedId = signal<string | null>(null);
-  protected readonly viewMode = signal<ViewMode>(readStoredView());
+  /** Страница всегда открывается таблицей; «График» — только на текущий визит. */
+  protected readonly viewMode = signal<ViewMode>('table');
 
   protected readonly viewOptions: SegmentOption[] = [
     { value: 'table', label: 'Таблица' },
@@ -113,28 +108,20 @@ export class TradeList {
     this.store.symbols().map((s) => ({ value: s, label: s })),
   );
 
-  protected readonly strategyOptions = computed<SelectOption[]>(() =>
-    this.store.strategies().map((s) => ({ value: s, label: s })),
-  );
-
-  protected readonly tagOptions = computed<SelectOption[]>(() =>
-    this.store.tags().map((t) => ({ value: t, label: t })),
-  );
-
   private readonly rows = computed<TradeRow[]>(() =>
     this.store.tableTrades().map((trade) => ({
       trade,
       pnl: calculatePnl(trade),
       pnlPct: calculatePnlPercent(trade),
-      r: calculateRMultiple(trade),
       notional: notional(trade),
     })),
   );
 
+  /** Открытые позиции закреплены сверху при любой сортировке, внутри — по ней же. */
   protected readonly sortedRows = computed<TradeRow[]>(() => {
     const key = this.sortKey();
     const dir = this.sortDir();
-    return [...this.rows()].sort((a, b) => compareRows(a, b, key) * dir);
+    return [...this.rows()].sort((a, b) => openFirst(a, b) || compareRows(a, b, key) * dir);
   });
 
   protected readonly pageCount = computed(() =>
@@ -182,14 +169,6 @@ export class TradeList {
   protected readonly selectedId = computed(() => this.selectedRow()?.trade.id ?? null);
 
   constructor() {
-    effect(() => {
-      const mode = this.viewMode();
-      try {
-        localStorage.setItem(VIEW_KEY, mode);
-      } catch {
-        // приватный режим — выбор живёт только в сессии
-      }
-    });
     // Держим страницу в допустимых границах при смене фильтров/размера.
     effect(() => {
       const count = this.pageCount();
@@ -259,16 +238,6 @@ export class TradeList {
     this.page.set(1);
   }
 
-  protected setStrategies(values: string[]): void {
-    this.store.updateTableFilters({ strategies: values.length ? values : undefined });
-    this.page.set(1);
-  }
-
-  protected setTags(values: string[]): void {
-    this.store.updateTableFilters({ tags: values.length ? values : undefined });
-    this.page.set(1);
-  }
-
   protected reset(): void {
     this.store.resetTableFilters();
     this.page.set(1);
@@ -323,6 +292,10 @@ export class TradeList {
   }
 }
 
+function openFirst(a: TradeRow, b: TradeRow): number {
+  return Number(b.trade.status === 'open') - Number(a.trade.status === 'open');
+}
+
 function compareRows(a: TradeRow, b: TradeRow, key: SortKey): number {
   switch (key) {
     case 'openedAt':
@@ -335,8 +308,6 @@ function compareRows(a: TradeRow, b: TradeRow, key: SortKey): number {
       return a.pnl - b.pnl;
     case 'pnlPct':
       return a.pnlPct - b.pnlPct;
-    case 'r':
-      return (a.r ?? -Infinity) - (b.r ?? -Infinity);
     case 'duration':
       return durationMs(a.trade) - durationMs(b.trade);
   }

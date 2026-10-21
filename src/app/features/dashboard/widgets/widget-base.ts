@@ -1,7 +1,8 @@
 import { Directive, computed, inject, input } from '@angular/core';
 import { TradesStore } from '../../trades/trades-store';
 import { AccountsStore } from '../../accounts/accounts-store';
-import { Trade, calculatePnl } from '../../trades/data/trade.model';
+import { Trade } from '../../trades/data/trade.model';
+import { PortfolioStore } from '../../analytics/portfolio-store';
 import { WidgetSettings } from '../data/workspace.model';
 import { PeriodStore, presetRange } from '../../../core/state/period-store';
 
@@ -14,6 +15,7 @@ export abstract class WidgetBase {
   protected readonly tradesStore = inject(TradesStore);
   protected readonly accountsStore = inject(AccountsStore);
   private readonly periodStore = inject(PeriodStore);
+  private readonly portfolio = inject(PortfolioStore);
 
   readonly settings = input<WidgetSettings>({});
 
@@ -25,20 +27,12 @@ export abstract class WidgetBase {
   });
 
   /**
-   * Капитал на начало периода: стартовые балансы счетов в выборке плюс
-   * результат сделок, закрытых до начала периода. База для процента роста.
+   * Капитал на начало периода — баланс кошелька на бирже в тот день (история
+   * баланса из Stats-Service). База для процента роста; 0 — истории ещё нет.
    */
-  protected readonly baseBalance = computed(() => {
-    const selected = this.accountsStore.selected();
-    const accounts = selected ? [selected] : this.accountsStore.accounts();
-    const fromMs = this.periodFromMs();
-    const start = accounts.reduce((sum, a) => sum + a.startBalance, 0);
-    const before = this.tradesStore
-      .accountScoped()
-      .filter((t) => t.status === 'closed' && fromMs !== null && new Date(t.closedAt).getTime() < fromMs)
-      .reduce((sum, t) => sum + calculatePnl(t), 0);
-    return start + before;
-  });
+  protected readonly baseBalance = computed(
+    () => this.portfolio.balanceAt(this.periodFromMs()) ?? 0,
+  );
 
   protected readonly trades = computed<readonly Trade[]>(() => {
     const period = this.settings().period;

@@ -1,36 +1,30 @@
 import { describe, expect, it } from 'vitest';
-import { dailyPnl, equityCurve, groupBy, rHistogram, summarize } from './metrics';
+import { dailyPnl, equityCurve, groupBy, summarize } from './metrics';
 import { Trade } from '../../trades/data/trade.model';
 
 let seq = 0;
 
 function closedTrade(pnl: number, overrides: Partial<Trade> = {}): Trade {
-  // Строим сделку с заданным чистым P&L: объём 1, комиссий нет.
+  // Сделка с заданным нетто: объём 1, комиссий и фандинга нет.
   const entry = 100;
   return {
     id: `t-${++seq}`,
     accountId: 'acc',
     symbol: 'BTCUSDT',
-    market: 'futures',
     side: 'long',
-    leverage: 1,
+    status: 'closed',
+    carriedIn: false,
+    openedAt: `2026-01-0${(seq % 5) + 1}T10:00:00Z`,
+    closedAt: `2026-01-0${(seq % 5) + 1}T12:00:00Z`,
     quantity: 1,
     entryPrice: entry,
     exitPrice: entry + pnl,
-    stopLoss: entry - 10,
-    takeProfit: null,
-    riskUsd: 10,
-    status: 'closed',
-    openedAt: `2026-01-0${(seq % 5) + 1}T10:00:00Z`,
-    closedAt: `2026-01-0${(seq % 5) + 1}T12:00:00Z`,
+    realizedPnl: pnl,
     fees: 0,
+    feesOther: {},
     funding: 0,
-    strategy: 'Тест',
-    timeframe: '15m',
-    setupGrade: null,
-    mistakes: [],
-    tags: [],
-    notes: '',
+    netPnl: pnl,
+    fillsCount: 2,
     ...overrides,
   };
 }
@@ -55,7 +49,7 @@ describe('summarize', () => {
   });
 
   it('открытые сделки не входят в статистику', () => {
-    const open = closedTrade(0, { status: 'open', exitPrice: 0, closedAt: '' });
+    const open = closedTrade(0, { status: 'open', exitPrice: null, closedAt: '' });
     const s = summarize([open, closedTrade(10)]);
     expect(s.tradeCount).toBe(1);
     expect(s.openCount).toBe(1);
@@ -89,22 +83,19 @@ describe('dailyPnl', () => {
 });
 
 describe('groupBy', () => {
-  it('раскрывает массивные ключи (теги) по отдельности', () => {
-    const trades = [
-      closedTrade(10, { tags: ['a', 'b'] }),
-      closedTrade(20, { tags: ['a'] }),
-    ];
-    const groups = groupBy(trades, (t) => t.tags);
-    expect(groups.find((g) => g.key === 'a')?.pnl).toBe(30);
-    expect(groups.find((g) => g.key === 'b')?.pnl).toBe(10);
+  it('раскрывает массивные ключи по отдельности', () => {
+    const trades = [closedTrade(10, { symbol: 'BTCUSDT' }), closedTrade(20, { symbol: 'ETHUSDT' })];
+    const groups = groupBy(trades, (t) => [t.symbol, 'все']);
+    expect(groups.find((g) => g.key === 'все')?.pnl).toBe(30);
+    expect(groups.find((g) => g.key === 'ETHUSDT')?.pnl).toBe(20);
   });
 });
 
-describe('rHistogram', () => {
-  it('раскладывает R по корзинам 0.5R', () => {
-    // pnl 10 / риск 10 = +1R; pnl -10 → -1R
-    const buckets = rHistogram([closedTrade(10), closedTrade(10), closedTrade(-10)]);
-    expect(buckets.find((b) => b.from === 1)?.count).toBe(2);
-    expect(buckets.find((b) => b.from === -1)?.count).toBe(1);
+describe('summarize: комиссии и фандинг', () => {
+  it('валовый P&L — нетто плюс комиссии минус полученный фандинг', () => {
+    const s = summarize([closedTrade(9, { realizedPnl: 10, fees: 1.5, funding: 0.5 })]);
+    expect(s.grossPnl).toBeCloseTo(10);
+    expect(s.fees).toBeCloseTo(1.5);
+    expect(s.funding).toBeCloseTo(0.5);
   });
 });

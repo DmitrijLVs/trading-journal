@@ -14,11 +14,9 @@ import {
   groupBySession,
   groupByWeekday,
   hourWeekdayHeatmap,
-  rHistogram,
 } from '../../analytics/data/metrics';
 import {
   calculatePnl,
-  calculateRMultiple,
   durationMs,
   formatCompact,
   formatMoney,
@@ -281,7 +279,6 @@ const METRIC_LABELS: Record<string, string> = {
   pnl: 'P&L',
   count: 'Сделки',
   winrate: 'Винрейт',
-  avgR: 'Средний R',
 };
 
 @Component({
@@ -370,56 +367,6 @@ export class WidgetDistribution extends WidgetBase {
                   formatMetric(metricValue(groups[p.dataIndex], metric), metric),
               }
             : { show: false },
-        },
-      ],
-    };
-  });
-}
-
-// ── Гистограмма R ───────────────────────────────────────────────────────────
-
-@Component({
-  selector: 'app-widget-r-histogram',
-  imports: [EChart, EmptyState],
-  template: CHART_WIDGET_TEMPLATE,
-  styles: CHART_WIDGET_STYLE,
-  changeDetection: ChangeDetectionStrategy.OnPush,
-})
-export class WidgetRHistogram extends WidgetBase {
-  private readonly buckets = computed(() => rHistogram(this.trades()));
-  protected readonly hasData = computed(() => this.buckets().length > 0);
-
-  protected readonly options = computed<EChartsCoreOption>(() => {
-    const buckets = this.buckets();
-    return {
-      tooltip: {
-        ...baseTooltip(),
-        trigger: 'axis',
-        formatter: (params: unknown) => {
-          const p = (params as { dataIndex: number }[])[0];
-          const b = buckets[p.dataIndex];
-          return `${fmtR(b.from)}…${fmtR(b.from + 0.5)}<br/>${b.count} сделок`;
-        },
-      },
-      grid: baseGrid(),
-      xAxis: {
-        type: 'category',
-        data: buckets.map((b) => fmtR(b.from)),
-      },
-      yAxis: { type: 'value', minInterval: 1 },
-      series: [
-        {
-          name: 'Сделки',
-          type: 'bar',
-          data: buckets.map((b) => ({
-            value: b.count,
-            itemStyle: {
-              color: b.from >= 0 ? CHART.pos : CHART.neg,
-              borderRadius: [3, 3, 0, 0],
-              opacity: 0.45 + Math.min(0.55, Math.abs(b.from) / 4),
-            },
-          })),
-          barCategoryGap: '18%',
         },
       ],
     };
@@ -590,7 +537,6 @@ export class WidgetDurationScatter extends WidgetBase {
       .map((t) => ({
         minutes: Math.max(1, durationMs(t) / 60_000),
         pnl: calculatePnl(t),
-        r: calculateRMultiple(t),
         symbol: t.symbol,
       })),
   );
@@ -629,10 +575,7 @@ export class WidgetDurationScatter extends WidgetBase {
               borderWidth: 1,
             },
           })),
-          symbolSize: (v: [number, number], p: { dataIndex: number }) => {
-            const r = points[p.dataIndex].r;
-            return 6 + Math.min(10, Math.abs(r ?? 1) * 2.5);
-          },
+          symbolSize: 9,
         },
       ],
     };
@@ -645,14 +588,12 @@ function groupStats(trades: Parameters<typeof groupBy>[0], key: GroupKey): Group
   switch (key) {
     case 'symbol':
       return groupBy(trades, (t) => t.symbol);
+    // Разбора сделок в API нет — такие виджеты показывают «скоро».
     case 'strategy':
-      return groupBy(trades, (t) => t.strategy);
     case 'tag':
-      return groupBy(trades, (t) => t.tags);
     case 'mistake':
-      return groupBy(trades, (t) => t.mistakes);
     case 'setup':
-      return groupBy(trades, (t) => (t.setupGrade ? `Сетап ${t.setupGrade}` : ''));
+      return [];
     case 'session':
       return groupBySession(trades);
     case 'weekday':
@@ -668,8 +609,6 @@ function metricValue(g: GroupStat, metric: string): number {
       return g.count;
     case 'winrate':
       return g.winRate * 100;
-    case 'avgR':
-      return g.avgR ?? 0;
     default:
       return g.pnl;
   }
@@ -687,15 +626,9 @@ function formatMetric(value: number, metric: string): string {
       return String(Math.round(value));
     case 'winrate':
       return `${value.toFixed(0)}%`;
-    case 'avgR':
-      return `${value >= 0 ? '+' : '−'}${Math.abs(value).toFixed(2)}R`;
     default:
       return formatMoney(value, { sign: true });
   }
-}
-
-function fmtR(value: number): string {
-  return `${value > 0 ? '+' : value < 0 ? '−' : ''}${Math.abs(value).toFixed(1)}R`;
 }
 
 function fmtDurationMin(minutes: number): string {

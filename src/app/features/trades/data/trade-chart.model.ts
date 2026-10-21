@@ -1,5 +1,5 @@
 import { Candle, Timeframe, isTimeframe } from '../../../core/market/market.model';
-import { Trade } from './trade.model';
+import { Trade, durationMs } from './trade.model';
 
 /** Исполнение ордера сделки: время (мс), сторона, цена, количество. */
 export interface TradeFill {
@@ -10,33 +10,40 @@ export interface TradeFill {
 }
 
 /**
- * Первое окно графика сделки: свечи биржи вокруг сделки (дальше история
+ * Первое окно графика сделки: свечи биржи вокруг неё (дальше история
  * подгружается страницами, текущая свеча обновляется потоком) и исполнения.
  */
 export interface TradeChartData {
-  tradeId: string;
   timeframe: Timeframe;
   /** Знаков после запятой у цен символа. */
   priceDecimals: number;
   candles: Candle[];
-  /** Исполнения входа и выхода; средневзвешенные равны ценам сделки. */
+  /** Исполнения сделки из журнала (`/journal/trades/:id`). */
   fills: TradeFill[];
 }
 
-/** Таймфрейм графика: запрошенный, иначе таймфрейм сделки, иначе 15m. */
-export function resolveTimeframe(trade: Trade, requested?: string | null): Timeframe {
+const HOUR_MS = 3_600_000;
+
+/** Таймфрейм графика: выбранный пользователем, иначе по длительности сделки. */
+export function chartTimeframe(trade: Trade, requested?: string | null): Timeframe {
   if (requested && isTimeframe(requested)) return requested;
-  return isTimeframe(trade.timeframe) ? trade.timeframe : '15m';
+  const ms = durationMs(trade);
+  if (ms <= 2 * HOUR_MS) return '1m';
+  if (ms <= 12 * HOUR_MS) return '5m';
+  if (ms <= 72 * HOUR_MS) return '15m';
+  if (ms <= 20 * 24 * HOUR_MS) return '1h';
+  return '4h';
 }
 
-/** Исполнения сделки; без них (бэкенд не прислал) — одно на вход и одно на выход. */
+/** Исполнения сделки; без них (не загрузились) — средние входа и выхода. */
 export function tradeFills(trade: Trade, data: TradeChartData): TradeFill[] {
   if (data.fills.length > 0) return data.fills;
   const entrySide: TradeFill['side'] = trade.side === 'long' ? 'buy' : 'sell';
-  const fills: TradeFill[] = [
-    { time: Date.parse(trade.openedAt), side: entrySide, price: trade.entryPrice, qty: trade.quantity },
-  ];
-  if (trade.status === 'closed') {
+  const fills: TradeFill[] = [];
+  if (trade.entryPrice !== null && !trade.carriedIn) {
+    fills.push({ time: Date.parse(trade.openedAt), side: entrySide, price: trade.entryPrice, qty: trade.quantity });
+  }
+  if (trade.status === 'closed' && trade.exitPrice !== null) {
     fills.push({
       time: Date.parse(trade.closedAt),
       side: entrySide === 'buy' ? 'sell' : 'buy',

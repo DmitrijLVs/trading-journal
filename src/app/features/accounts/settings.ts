@@ -1,20 +1,19 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TradesStore } from '../trades/trades-store';
-import { calculatePnl, calculateRMultiple } from '../trades/data/trade.model';
+import { AccountsStore } from './accounts-store';
+import { formatFeesOther } from '../trades/data/trade.model';
 import { Button } from '../../shared/ui/button';
 import { Icon } from '../../shared/ui/icon';
 import { IconName } from '../../shared/ui/icons';
-import { AccountsPanel } from './accounts-panel';
-import { Select, SelectOption } from '../../shared/ui/select';
 import { Segmented, SegmentOption } from '../../shared/ui/segmented';
 import { THEME_LABELS, ThemeName, ThemeStore } from '../../core/state/theme-store';
-import { Toggle } from '../../shared/ui/toggle';
 import { ToastService } from '../../shared/ui/toast';
 import { ConfirmService } from '../../shared/ui/confirm-dialog';
-import { SketchUnderline } from '../../shared/ui/sketch/sketch-underline';
+import { ExchangeSettings } from './exchange-settings';
+import { AccountSettings } from './account-settings';
 
-type SettingsTab = 'profile' | 'accounts' | 'display' | 'data';
+type SettingsTab = 'exchange' | 'account' | 'display' | 'data';
 
 interface TabDef {
   id: SettingsTab;
@@ -22,23 +21,25 @@ interface TabDef {
   icon: IconName;
 }
 
+/** Порядок важен: первым пользователь видит подключение ключа. */
 const TABS: readonly TabDef[] = [
-  { id: 'profile', label: 'Профиль', icon: 'user' },
-  { id: 'accounts', label: 'Счета', icon: 'wallet' },
-  { id: 'display', label: 'Отображение', icon: 'sun' },
+  { id: 'exchange', label: 'Биржа', icon: 'link' },
+  { id: 'account', label: 'Аккаунт', icon: 'user' },
+  { id: 'display', label: 'Оформление', icon: 'sun' },
   { id: 'data', label: 'Данные', icon: 'download' },
 ];
 
+/** Настройки: разделы по маршруту /settings/:tab, слева — навигация. */
 @Component({
   selector: 'app-settings',
-  imports: [SketchUnderline, RouterLink, AccountsPanel, Button, Icon, Select, Toggle, Segmented],
+  imports: [RouterLink, Button, Icon, Segmented, ExchangeSettings, AccountSettings],
   templateUrl: './settings.html',
   styleUrl: './settings.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-/** Настройки — вкладки по маршруту /settings/:tab (счета переехали сюда). */
 export class Settings {
   private readonly tradesStore = inject(TradesStore);
+  private readonly accountsStore = inject(AccountsStore);
   private readonly toast = inject(ToastService);
   private readonly confirm = inject(ConfirmService);
   protected readonly themeStore = inject(ThemeStore);
@@ -49,58 +50,32 @@ export class Settings {
   protected readonly tabs = TABS;
   protected readonly activeTab = computed<SettingsTab>(() => {
     const id = this.tab();
-    return TABS.some((t) => t.id === id) ? (id as SettingsTab) : 'profile';
+    return TABS.some((t) => t.id === id) ? (id as SettingsTab) : 'exchange';
   });
 
-  protected readonly name = signal('Дмитрий');
-  protected readonly email = signal('motores7@gmail.com');
-  protected readonly timezone = signal<string | null>('utc');
-  protected readonly currency = signal<string | null>('usd');
-  protected readonly defaultRisk = signal(1);
-  protected readonly weekStartMonday = signal(true);
-  protected readonly confirmDeletes = signal(true);
+  protected readonly themeOptions: SegmentOption[] = (Object.keys(THEME_LABELS) as ThemeName[]).map(
+    (value) => ({ value, label: THEME_LABELS[value] }),
+  );
 
-  protected readonly timezoneOptions: SelectOption[] = [
-    { value: 'utc', label: 'UTC' },
-    { value: 'msk', label: 'Москва (UTC+3)' },
-    { value: 'local', label: 'Локальное время' },
-  ];
-
-  protected readonly currencyOptions: SelectOption[] = [
-    { value: 'usd', label: 'USD ($)' },
-    { value: 'usdt', label: 'USDT' },
-    { value: 'eur', label: 'EUR (€)' },
-  ];
-
-  protected readonly themeOptions: SegmentOption[] = (
-    Object.keys(THEME_LABELS) as ThemeName[]
-  ).map((value) => ({ value, label: THEME_LABELS[value] }));
+  protected readonly tradeCount = computed(() => this.tradesStore.all().length);
 
   protected setTheme(value: string): void {
     if (value === 'graphite' || value === 'paper') this.themeStore.setTheme(value);
   }
 
-  protected saveProfile(): void {
-    this.toast.success('Профиль сохранён');
-  }
-
-  /** Экспорт всех сделок в CSV — работает по-настоящему. */
+  /** Все сделки журнала (до 183 дней) в CSV — для Excel и своей аналитики. */
   protected exportCsv(): void {
     const trades = this.tradesStore.all();
+    const labels = new Map(this.accountsStore.accounts().map((a) => [a.id, a.label]));
     const header = [
-      'id', 'account', 'symbol', 'side', 'status', 'openedAt', 'closedAt',
-      'quantity', 'leverage', 'entryPrice', 'exitPrice', 'stopLoss', 'takeProfit',
-      'riskUsd', 'fees', 'funding', 'pnl', 'rMultiple', 'strategy', 'timeframe',
-      'setupGrade', 'tags', 'mistakes', 'notes',
+      'id', 'account', 'symbol', 'side', 'status', 'openedAt', 'closedAt', 'quantity',
+      'entryPrice', 'exitPrice', 'realizedPnl', 'fees', 'feesOther', 'funding', 'netPnl', 'fills',
     ];
     const rows = trades.map((t) =>
       [
-        t.id, t.accountId, t.symbol, t.side, t.status, t.openedAt, t.closedAt,
-        t.quantity, t.leverage, t.entryPrice, t.exitPrice, t.stopLoss ?? '', t.takeProfit ?? '',
-        t.riskUsd ?? '', t.fees, t.funding, calculatePnl(t).toFixed(2),
-        calculateRMultiple(t)?.toFixed(2) ?? '', t.strategy, t.timeframe,
-        t.setupGrade ?? '', t.tags.join('|'), t.mistakes.join('|'),
-        `"${t.notes.replaceAll('"', '""')}"`,
+        t.id, csv(labels.get(t.accountId) ?? t.accountId), t.symbol, t.side, t.status,
+        t.openedAt, t.closedAt, t.quantity, t.entryPrice ?? '', t.exitPrice ?? '',
+        t.realizedPnl, t.fees, csv(formatFeesOther(t)), t.funding, t.netPnl, t.fillsCount,
       ].join(','),
     );
     const blob = new Blob(['﻿' + [header.join(','), ...rows].join('\n')], {
@@ -115,12 +90,12 @@ export class Settings {
     this.toast.success(`Экспортировано сделок: ${trades.length}`);
   }
 
-  /** Сбрасывает раскладку дашборда и локальные настройки. */
+  /** Сбрасывает раскладку дашборда и настройки этого браузера. */
   protected async resetLocal(): Promise<void> {
     const ok = await this.confirm.ask({
-      title: 'Сбросить локальные данные?',
+      title: 'Сбросить настройки браузера?',
       message:
-        'Раскладка дашборда, выбранный счёт и период вернутся к значениям по умолчанию. Сделки не пострадают.',
+        'Раскладка дашборда, выбранный счёт, период, тема и рисунки на графиках вернутся к значениям по умолчанию. Сделки и подключённые ключи не пострадают.',
       confirmLabel: 'Сбросить',
       danger: true,
     });
@@ -130,4 +105,9 @@ export class Settings {
     }
     location.reload();
   }
+}
+
+/** Значение CSV-ячейки: кавычки, если внутри запятая или кавычка. */
+function csv(value: string): string {
+  return /[",\n]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value;
 }

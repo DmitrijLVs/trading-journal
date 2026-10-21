@@ -54,3 +54,34 @@ export function toCandleBar(row: Candle, meta: CandleMeta): CandleBar {
     volume: row[5] ?? 0,
   };
 }
+
+/** Самые мелкие цены — до 10 знаков; больше Int32-тиков движок не держит. */
+const MAX_DECIMALS = 10;
+const MAX_TICKS = 1.5e9;
+
+/**
+ * Знаков после запятой у цен свечей: по отсчётам с начала и конца ряда,
+ * не больше, чем помещается в Int32-тики при максимальной цене.
+ */
+export function candleDecimals(rows: readonly Candle[]): number {
+  let digits = 0;
+  let peak = 0;
+  const sample = rows.length > 600 ? [...rows.slice(0, 300), ...rows.slice(-300)] : rows;
+  for (const row of sample) {
+    for (let k = 1; k <= 4; k++) {
+      digits = Math.max(digits, decimalsOf(row[k]));
+      peak = Math.max(peak, Math.abs(row[k]));
+    }
+  }
+  while (digits > 0 && peak * 10 ** digits > MAX_TICKS) digits--;
+  return digits;
+}
+
+function decimalsOf(value: number): number {
+  if (!Number.isFinite(value) || value === 0) return 0;
+  for (let digits = 0; digits < MAX_DECIMALS; digits++) {
+    const scaled = Math.abs(value) * 10 ** digits;
+    if (Math.abs(scaled - Math.round(scaled)) < 1e-7 * Math.max(1, scaled)) return digits;
+  }
+  return MAX_DECIMALS;
+}

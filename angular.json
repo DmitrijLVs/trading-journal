@@ -82,7 +82,8 @@
                 "@nv/gpu",
                 "@nv/tools"
               ]
-            }
+            },
+            "proxyConfig": "proxy.conf.mjs"
           }
         },
         "test": {

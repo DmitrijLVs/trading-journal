@@ -97,9 +97,6 @@ const RIGHT_PAD_CANDLES = 8;
       @if (feed.loading()) {
         <span class="status">загрузка…</span>
       }
-      @if (feed.live()) {
-        <span class="live" appTooltip="Текущая свеча обновляется с биржи"><i></i><b>LIVE</b></span>
-      }
       <span class="side" [class.long]="trade().side === 'long'" [class.short]="trade().side === 'short'">
         <app-icon [name]="trade().side" style="--icon-size: 13px" />
         <b>{{ trade().side === 'long' ? 'LONG' : 'SHORT' }}</b>
@@ -132,10 +129,9 @@ const RIGHT_PAD_CANDLES = 8;
       white-space: nowrap;
     }
 
-    // Узкий график (рядом с таблицей): подписи LIVE и направления — только значками.
+    // Узкий график (рядом с таблицей): направление — только значком.
     @container (max-width: 720px) {
       .bar { gap: $space-2; }
-      .live b,
       .side b,
       .side .dot { display: none; }
     }
@@ -189,34 +185,6 @@ const RIGHT_PAD_CANDLES = 8;
     .status {
       font-size: $text-xs;
       color: var(--fg-subtle);
-    }
-
-    .live {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      font-family: $font-mono;
-      font-size: $text-xs;
-      letter-spacing: 0.06em;
-      color: var(--fg-muted);
-
-      b { font-weight: 600; }
-
-      i {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: var(--success-fg);
-        animation: live-pulse 2s ease-in-out infinite;
-      }
-    }
-
-    @keyframes live-pulse {
-      50% { opacity: 0.35; }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .live i { animation: none; }
     }
 
     .side {

@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/c
 import { WidgetBase } from './widget-base';
 import { Icon } from '../../../shared/ui/icon';
 import { Tooltip } from '../../../shared/ui/tooltip';
-import { calculatePnl, formatCompact, formatMoney, notional } from '../../trades/data/trade.model';
+import { calculatePnl, formatCompact, formatMoney, notional, tradeCosts } from '../../trades/data/trade.model';
 
 interface DayStat {
   pnl: number;
@@ -64,7 +64,7 @@ export class WidgetPnlCalendar extends WidgetBase {
       stat.pnl += calculatePnl(t);
       stat.count += 1;
       stat.volume += notional(t);
-      stat.fees += t.fees + t.funding;
+      stat.fees += tradeCosts(t);
       map.set(key, stat);
     }
     return map;

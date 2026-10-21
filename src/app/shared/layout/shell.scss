@@ -142,19 +142,35 @@
 
 .user-meta {
   display: flex;
+  flex: 1;
   flex-direction: column;
   line-height: 1.2;
   min-width: 0;
 }
 
 .user-name {
+  overflow: hidden;
   font-size: $text-sm;
   font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.user-plan {
-  font-size: $text-xs;
+.logout {
+  display: flex;
+  flex: none;
+  padding: 6px;
+  background: none;
+  border: none;
+  border-radius: $radius-md;
   color: var(--fg-subtle);
+  cursor: pointer;
+  transition: color $duration-fast $ease-apple, background $duration-fast $ease-apple;
+
+  &:hover {
+    background: var(--canvas-overlay);
+    color: var(--fg-default);
+  }
 }
 
 // ── Правая часть ────────────────────────────────────────────────────────────

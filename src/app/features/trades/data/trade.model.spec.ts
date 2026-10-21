@@ -3,96 +3,82 @@ import {
   Trade,
   calculatePnl,
   calculatePnlPercent,
-  calculateRMultiple,
-  calculateRoi,
-  plannedRiskReward,
-  plannedRiskUsd,
+  formatFeesOther,
+  notional,
+  tradeCosts,
   tradingSession,
 } from './trade.model';
 
 function makeTrade(overrides: Partial<Trade> = {}): Trade {
   return {
-    id: 't-1',
+    id: '1',
     accountId: 'acc',
     symbol: 'BTCUSDT',
-    market: 'futures',
     side: 'long',
-    leverage: 10,
+    status: 'closed',
+    carriedIn: false,
+    openedAt: '2026-01-05T10:00:00Z',
+    closedAt: '2026-01-05T14:00:00Z',
     quantity: 1,
     entryPrice: 100,
     exitPrice: 110,
-    stopLoss: 95,
-    takeProfit: 120,
-    riskUsd: null,
-    status: 'closed',
-    openedAt: '2026-01-05T10:00:00Z',
-    closedAt: '2026-01-05T14:00:00Z',
+    realizedPnl: 10,
     fees: 1,
-    funding: 0,
-    strategy: 'Тест',
-    timeframe: '15m',
-    setupGrade: null,
-    mistakes: [],
-    tags: [],
-    notes: '',
+    feesOther: {},
+    funding: -0.5,
+    netPnl: 8.5,
+    fillsCount: 2,
     ...overrides,
   };
 }
 
 describe('calculatePnl', () => {
-  it('лонг: (выход − вход) × объём − комиссии', () => {
-    expect(calculatePnl(makeTrade())).toBe(9); // 10 - 1 fee
+  it('берёт нетто биржи как есть (realized − комиссия + фандинг)', () => {
+    expect(calculatePnl(makeTrade())).toBe(8.5);
   });
 
-  it('шорт: прибыль при падении цены', () => {
-    expect(calculatePnl(makeTrade({ side: 'short', exitPrice: 90 }))).toBe(9);
-  });
-
-  it('открытая сделка — ноль', () => {
-    expect(calculatePnl(makeTrade({ status: 'open', exitPrice: 0, closedAt: '' }))).toBe(0);
+  it('открытая сделка — ноль: итог ещё не известен', () => {
+    expect(calculatePnl(makeTrade({ status: 'open', closedAt: '', netPnl: 3 }))).toBe(0);
   });
 });
 
-describe('calculatePnlPercent / ROI', () => {
-  it('движение цены без плеча', () => {
+describe('tradeCosts', () => {
+  it('комиссия плюс уплаченный фандинг, полученный — уменьшает издержки', () => {
+    expect(tradeCosts(makeTrade())).toBe(1.5);
+    expect(tradeCosts(makeTrade({ funding: 0.4 }))).toBeCloseTo(0.6);
+  });
+});
+
+describe('calculatePnlPercent', () => {
+  it('движение цены без плеча, со знаком направления', () => {
     expect(calculatePnlPercent(makeTrade())).toBeCloseTo(10);
+    expect(calculatePnlPercent(makeTrade({ side: 'short', exitPrice: 90 }))).toBeCloseTo(10);
   });
 
-  it('ROI учитывает маржу (плечо)', () => {
-    // margin = 100/10 = 10; pnl = 9 → 90%
-    expect(calculateRoi(makeTrade())).toBeCloseTo(90);
+  it('вход до начала истории — движения не посчитать', () => {
+    expect(calculatePnlPercent(makeTrade({ carriedIn: true, entryPrice: null }))).toBe(0);
   });
 });
 
-describe('риск и R-multiple', () => {
-  it('риск из стопа: |вход − SL| × объём', () => {
-    expect(plannedRiskUsd(makeTrade())).toBe(5);
+describe('notional', () => {
+  it('по цене входа, а без неё — по цене выхода', () => {
+    expect(notional(makeTrade({ quantity: 2 }))).toBe(200);
+    expect(notional(makeTrade({ entryPrice: null, quantity: 2 }))).toBe(220);
   });
+});
 
-  it('явный riskUsd важнее стопа', () => {
-    expect(plannedRiskUsd(makeTrade({ riskUsd: 50 }))).toBe(50);
-  });
-
-  it('R = чистый P&L / риск', () => {
-    expect(calculateRMultiple(makeTrade())).toBeCloseTo(9 / 5);
-  });
-
-  it('без стопа и риска R не считается', () => {
-    expect(calculateRMultiple(makeTrade({ stopLoss: null, riskUsd: null }))).toBeNull();
-  });
-
-  it('плановый R:R по TP/SL', () => {
-    expect(plannedRiskReward(makeTrade())).toBeCloseTo(4); // reward 20 / risk 5
+describe('formatFeesOther', () => {
+  it('комиссии в нестейблах одной строкой', () => {
+    expect(formatFeesOther(makeTrade({ feesOther: { BNB: 0.0021 } }))).toBe('0.0021 BNB');
+    expect(formatFeesOther(makeTrade())).toBe('');
   });
 });
 
 describe('tradingSession', () => {
-  it.each([
-    ['2026-01-05T03:00:00Z', 'asia'],
-    ['2026-01-05T09:00:00Z', 'london'],
-    ['2026-01-05T15:00:00Z', 'newyork'],
-    ['2026-01-05T22:30:00Z', 'off'],
-  ])('%s → %s', (iso, expected) => {
-    expect(tradingSession(iso)).toBe(expected);
+  it('определяет сессию по часу открытия (UTC)', () => {
+    expect(tradingSession('2026-01-05T03:00:00Z')).toBe('asia');
+    expect(tradingSession('2026-01-05T09:00:00Z')).toBe('london');
+    expect(tradingSession('2026-01-05T15:00:00Z')).toBe('newyork');
+    expect(tradingSession('2026-01-05T22:00:00Z')).toBe('off');
   });
 });

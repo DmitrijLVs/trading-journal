@@ -5,7 +5,7 @@
       <app-icon name="search" style="--icon-size: 14px" />
       <input
         type="text"
-        placeholder="Тикер, стратегия, тег, заметка…"
+        placeholder="Тикер"
         [value]="store.tableFilters().search ?? ''"
         (input)="setSearch($any($event.target).value)"
       />
@@ -35,24 +35,6 @@
       size="sm"
       [value]="store.tableFilters().status ?? null"
       (valueChange)="setStatus($event)"
-    />
-    <app-select
-      [options]="strategyOptions()"
-      placeholder="Стратегия"
-      [multi]="true"
-      [clearable]="true"
-      size="sm"
-      [values]="store.tableFilters().strategies ?? []"
-      (valuesChange)="setStrategies($event)"
-    />
-    <app-select
-      [options]="tagOptions()"
-      placeholder="Теги"
-      [multi]="true"
-      [clearable]="true"
-      size="sm"
-      [values]="store.tableFilters().tags ?? []"
-      (valuesChange)="setTags($event)"
     />
 
     @if (store.hasActiveTableFilters()) {
@@ -138,17 +120,10 @@
                 </span>
               </th>
               <th class="num">
-                <span class="tj-th-sort" [class.active]="sortKey() === 'r'" (click)="sortBy('r')">
-                  R <span class="arrow">{{ sortArrow('r') }}</span>
-                </span>
-              </th>
-              <th class="num">
                 <span class="tj-th-sort" [class.active]="sortKey() === 'duration'" (click)="sortBy('duration')">
                   Время <span class="arrow">{{ sortArrow('duration') }}</span>
                 </span>
               </th>
-              <th class="col-strategy">Стратегия</th>
-              <th class="col-tags">Теги</th>
             </tr>
           </thead>
           <tbody>
@@ -165,9 +140,6 @@
                   <span class="tj-side" [class]="row.trade.side">
                     <app-icon [name]="row.trade.side" style="--icon-size: 12px" />
                     {{ row.trade.side === 'long' ? 'Лонг' : 'Шорт' }}
-                    @if (row.trade.leverage > 1) {
-                      <span class="lev">×{{ row.trade.leverage }}</span>
-                    }
                   </span>
                 </td>
                 <td class="num muted">{{ fmtNotional(row.notional) }}</td>
@@ -193,27 +165,11 @@
                     <span class="muted">—</span>
                   }
                 </td>
-                <td class="num">
-                  @if (row.r !== null) {
-                    <app-pnl [value]="row.r" kind="r" />
-                  } @else {
-                    <span class="muted">—</span>
-                  }
-                </td>
                 <td class="num muted">{{ fmtDuration(row.trade) }}</td>
-                <td class="muted col-strategy">{{ row.trade.strategy }}</td>
-                <td class="tags-cell col-tags">
-                  @for (tag of row.trade.tags.slice(0, 2); track tag) {
-                    <span class="tag">{{ tag }}</span>
-                  }
-                  @if (row.trade.tags.length > 2) {
-                    <span class="tag more">+{{ row.trade.tags.length - 2 }}</span>
-                  }
-                </td>
               </tr>
               @if (expandedId() === row.trade.id) {
                 <tr class="expand-row">
-                  <td colspan="12">
+                  <td colspan="9">
                     <app-trade-expand [trade]="row.trade" (closed)="expandedId.set(null)" />
                   </td>
                 </tr>
@@ -229,12 +185,7 @@
               </td>
               <td class="num"><app-pnl [value]="summary().netPnl" /></td>
               <td></td>
-              <td class="num muted">
-                {{ summary().avgR === null ? '—' : (summary().avgR!.toFixed(2) + 'R') }}
-              </td>
               <td></td>
-              <td class="col-strategy"></td>
-              <td class="col-tags"></td>
             </tr>
           </tfoot>
         </table>
@@ -277,6 +228,20 @@
           (valueChange)="setPageSize($event)"
         />
       </div>
+    } @else if (accounts.hasLoaded() && !accounts.hasAccounts()) {
+      <app-empty-state
+        icon="link"
+        title="Сделок пока нет"
+        description="Подключите Binance read-only ключом — сделки за последние ~3 месяца подтянутся сами."
+      >
+        <a app-button variant="primary" size="sm" routerLink="/dashboard">Подключить Binance</a>
+      </app-empty-state>
+    } @else if (accounts.isImporting() && store.all().length === 0) {
+      <app-empty-state
+        icon="refresh"
+        title="Загружаем историю"
+        description="Импорт сделок с Binance займёт несколько минут — они появятся здесь автоматически."
+      />
     } @else {
       <app-empty-state
         icon="filter"

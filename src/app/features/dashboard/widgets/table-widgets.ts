@@ -1,17 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { WidgetBase } from './widget-base';
 import { EmptyState } from '../../../shared/ui/empty-state';
 import { PnlValue } from '../../../shared/ui/pnl-value';
 import { Icon } from '../../../shared/ui/icon';
-import {
-  Trade,
-  calculatePnl,
-  calculateRMultiple,
-  formatPrice,
-  plannedRiskReward,
-  plannedRiskUsd,
-} from '../../trades/data/trade.model';
+import { Trade, calculatePnl, calculatePnlPercent, formatPrice } from '../../trades/data/trade.model';
+import { PortfolioStore } from '../../analytics/portfolio-store';
 
 const TABLE_STYLE = `
   @use 'styles/index' as *;
@@ -42,7 +36,7 @@ const TABLE_STYLE = `
             <th></th>
             <th>Закрыта</th>
             <th class="num">P&L</th>
-            <th class="num col-narrow-hide">R</th>
+            <th class="num col-narrow-hide">%</th>
           </tr>
         </thead>
         <tbody>
@@ -57,7 +51,7 @@ const TABLE_STYLE = `
               </td>
               <td class="muted">{{ closedAt(row.trade) }}</td>
               <td class="num"><app-pnl [value]="row.pnl" /></td>
-              <td class="num muted col-narrow-hide">{{ rText(row.r) }}</td>
+              <td class="num col-narrow-hide"><app-pnl [value]="row.pct" kind="percent" /></td>
             </tr>
           }
         </tbody>
@@ -76,7 +70,7 @@ export class WidgetRecentTrades extends WidgetBase {
       .filter((t) => t.status === 'closed')
       .sort((a, b) => b.closedAt.localeCompare(a.closedAt))
       .slice(0, limit)
-      .map((trade) => ({ trade, pnl: calculatePnl(trade), r: calculateRMultiple(trade) }));
+      .map((trade) => ({ trade, pnl: calculatePnl(trade), pct: calculatePnlPercent(trade) }));
   });
 
   /** «08.07 16:11» — в виджете года и месяца словами не нужно. */
@@ -85,17 +79,12 @@ export class WidgetRecentTrades extends WidgetBase {
     const pad = (n: number) => String(n).padStart(2, '0');
     return `${pad(d.getDate())}.${pad(d.getMonth() + 1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
-
-  protected rText(r: number | null): string {
-    if (r === null) return '—';
-    return `${r > 0 ? '+' : r < 0 ? '−' : ''}${Math.abs(r).toFixed(1)}R`;
-  }
 }
 
-/** Открытые позиции с риском и целями. */
+/** Открытые позиции по данным биржи: объём, вход и нереализованный P&L. */
 @Component({
   selector: 'app-widget-open-positions',
-  imports: [RouterLink, EmptyState, Icon],
+  imports: [RouterLink, EmptyState, PnlValue, Icon],
   template: `
     @if (rows().length > 0) {
       <table class="tj-table">
@@ -103,29 +92,30 @@ export class WidgetRecentTrades extends WidgetBase {
           <tr>
             <th>Тикер</th>
             <th></th>
+            <th class="num col-narrow-hide">Объём</th>
             <th class="num">Вход</th>
-            <th class="num">SL</th>
-            <th class="num col-narrow-hide">TP</th>
-            <th class="num">Риск</th>
-            <th class="num col-narrow-hide">R:R</th>
+            <th class="num">Нереализ.</th>
           </tr>
         </thead>
         <tbody>
-          @for (row of rows(); track row.trade.id) {
+          @for (row of rows(); track row.accountId + row.symbol + row.side) {
             <tr>
-              <td><a class="sym" [routerLink]="['/trades', row.trade.id]">{{ row.trade.symbol }}</a></td>
               <td>
-                <span class="tj-side" [class]="row.trade.side">
-                  <app-icon [name]="row.trade.side" style="--icon-size: 12px" />
-                  {{ row.trade.side === 'long' ? 'L' : 'S' }}
-                  ×{{ row.trade.leverage }}
+                @if (row.tradeId) {
+                  <a class="sym" [routerLink]="['/trades', row.tradeId]">{{ row.symbol }}</a>
+                } @else {
+                  <span class="sym">{{ row.symbol }}</span>
+                }
+              </td>
+              <td>
+                <span class="tj-side" [class]="row.side">
+                  <app-icon [name]="row.side" style="--icon-size: 12px" />
+                  {{ row.side === 'long' ? 'L' : 'S' }}
                 </span>
               </td>
-              <td class="num">{{ price(row.trade.entryPrice) }}</td>
-              <td class="num loss">{{ row.trade.stopLoss !== null ? price(row.trade.stopLoss) : '—' }}</td>
-              <td class="num win col-narrow-hide">{{ row.trade.takeProfit !== null ? price(row.trade.takeProfit) : '—' }}</td>
-              <td class="num muted">{{ row.risk === null ? '—' : '$' + row.risk.toFixed(0) }}</td>
-              <td class="num muted col-narrow-hide">{{ row.rr === null ? '—' : '1:' + row.rr.toFixed(1) }}</td>
+              <td class="num muted col-narrow-hide">{{ row.quantity }}</td>
+              <td class="num">{{ price(row.entryPrice) }}</td>
+              <td class="num"><app-pnl [value]="row.unrealizedPnl" /></td>
             </tr>
           }
         </tbody>
@@ -134,25 +124,12 @@ export class WidgetRecentTrades extends WidgetBase {
       <app-empty-state icon="zap" title="Нет открытых позиций" description="Все позиции закрыты — рынок подождёт." />
     }
   `,
-  styles:
-    TABLE_STYLE +
-    `
-    .loss { color: var(--danger-fg); }
-    .win { color: var(--success-fg); }
-  `,
+  styles: TABLE_STYLE,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WidgetOpenPositions extends WidgetBase {
-  protected readonly rows = computed(() =>
-    this.trades()
-      .filter((t) => t.status === 'open')
-      .sort((a, b) => b.openedAt.localeCompare(a.openedAt))
-      .map((trade) => ({
-        trade,
-        risk: plannedRiskUsd(trade),
-        rr: plannedRiskReward(trade),
-      })),
-  );
+  /** Нереализованный P&L биржа присылает при изменении позиции, а не по тикам цены. */
+  protected readonly rows = inject(PortfolioStore).positions;
 
   protected price(value: number): string {
     return formatPrice(value);

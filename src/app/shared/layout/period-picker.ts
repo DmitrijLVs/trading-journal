@@ -1,10 +1,9 @@
 import { OverlayModule } from '@angular/cdk/overlay';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { PERIOD_LABELS, PeriodPreset, PeriodStore } from '../../core/state/period-store';
+import { PERIOD_LABELS, PERIOD_PRESETS, PeriodPreset, PeriodStore } from '../../core/state/period-store';
 import { Icon } from '../ui/icon';
 import { Button } from '../ui/button';
 
-const PRESETS: readonly PeriodPreset[] = ['7d', '30d', '90d', 'ytd', '1y', 'all'];
 
 /** Глобальный период анализа в топбаре: пресеты + произвольный диапазон. */
 @Component({
@@ -16,7 +15,7 @@ const PRESETS: readonly PeriodPreset[] = ['7d', '30d', '90d', 'ytd', '1y', 'all'
 })
 export class PeriodPicker {
   protected readonly store = inject(PeriodStore);
-  protected readonly presets = PRESETS;
+  protected readonly presets = PERIOD_PRESETS;
   protected readonly labels = PERIOD_LABELS;
 
   protected readonly open = signal(false);

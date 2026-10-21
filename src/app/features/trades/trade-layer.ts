@@ -34,7 +34,7 @@ export function tradeMarkup(trade: Trade, fills: readonly TradeFill[], pnlLabel:
     entryLine: runningAverage(fills.filter((f) => f.side === entrySide)),
     exitLine: runningAverage(fills.filter((f) => f.side !== entrySide)),
     fills: fills.map((f) => ({ time: f.time, buy: f.side === 'buy', price: f.price })),
-    exitPrice: trade.status === 'closed' ? trade.exitPrice : 0,
+    exitPrice: trade.status === 'closed' ? (trade.exitPrice ?? 0) : 0,
     pnlLabel,
     isLong,
     isProfit: calculatePnlPercent(trade) >= 0,

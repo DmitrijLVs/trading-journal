@@ -1,7 +1,6 @@
 import {
   Trade,
   calculatePnl,
-  calculateRMultiple,
   durationMs,
   notional,
   tradingSession,
@@ -34,15 +33,16 @@ export interface GroupStat {
   count: number;
   wins: number;
   winRate: number;
-  avgR: number | null;
 }
 
 export interface SummaryMetrics {
   tradeCount: number;
   openCount: number;
   netPnl: number;
+  /** Сумма realized P&L биржи — до комиссий и фандинга. */
   grossPnl: number;
   fees: number;
+  /** Плюс — фандинг получен, минус — уплачен. */
   funding: number;
   winCount: number;
   lossCount: number;
@@ -50,12 +50,10 @@ export interface SummaryMetrics {
   winRate: number;
   profitFactor: number | null;
   expectancyUsd: number;
-  expectancyR: number | null;
   avgWin: number;
   avgLoss: number;
   largestWin: number;
   largestLoss: number;
-  avgR: number | null;
   totalVolume: number;
   avgDurationMs: number;
   maxDrawdown: number;
@@ -97,7 +95,6 @@ export function summarize(trades: readonly Trade[]): SummaryMetrics {
   const netPnl = pnls.reduce((s, v) => s + v, 0);
   const fees = closed.reduce((s, t) => s + t.fees, 0);
   const funding = closed.reduce((s, t) => s + t.funding, 0);
-  const rValues = closed.map(calculateRMultiple).filter((r): r is number => r !== null);
   const decisive = winCount + lossCount;
 
   const equity = equityCurve(closed);
@@ -110,7 +107,7 @@ export function summarize(trades: readonly Trade[]): SummaryMetrics {
     tradeCount: closed.length,
     openCount: trades.length - closed.length,
     netPnl,
-    grossPnl: netPnl + fees + funding,
+    grossPnl: netPnl + fees - funding,
     fees,
     funding,
     winCount,
@@ -119,12 +116,10 @@ export function summarize(trades: readonly Trade[]): SummaryMetrics {
     winRate: decisive === 0 ? 0 : winCount / decisive,
     profitFactor: grossLoss === 0 ? (grossProfit > 0 ? Infinity : null) : grossProfit / grossLoss,
     expectancyUsd: closed.length === 0 ? 0 : netPnl / closed.length,
-    expectancyR: rValues.length === 0 ? null : rValues.reduce((s, v) => s + v, 0) / rValues.length,
     avgWin: winCount === 0 ? 0 : grossProfit / winCount,
     avgLoss: lossCount === 0 ? 0 : grossLoss / lossCount,
     largestWin: pnls.length === 0 ? 0 : Math.max(0, ...pnls),
     largestLoss: pnls.length === 0 ? 0 : Math.min(0, ...pnls),
-    avgR: rValues.length === 0 ? null : rValues.reduce((s, v) => s + v, 0) / rValues.length,
     totalVolume: closed.reduce((s, t) => s + notional(t), 0),
     avgDurationMs:
       closed.length === 0 ? 0 : closed.reduce((s, t) => s + durationMs(t), 0) / closed.length,
@@ -165,23 +160,18 @@ export function dailyPnl(trades: readonly Trade[]): DayPnl[] {
   return [...map.values()].sort((a, b) => a.date.localeCompare(b.date));
 }
 
-/** Универсальная группировка: P&L, винрейт и средний R по ключу. */
+/** Универсальная группировка: P&L и винрейт по ключу. */
 export function groupBy(trades: readonly Trade[], keyFn: (t: Trade) => string | string[]): GroupStat[] {
-  const map = new Map<string, { pnl: number; count: number; wins: number; rSum: number; rCount: number }>();
+  const map = new Map<string, { pnl: number; count: number; wins: number }>();
   for (const t of closedTrades(trades)) {
     const keys = keyFn(t);
     const pnl = calculatePnl(t);
-    const r = calculateRMultiple(t);
     for (const key of Array.isArray(keys) ? keys : [keys]) {
       if (!key) continue;
-      const row = map.get(key) ?? { pnl: 0, count: 0, wins: 0, rSum: 0, rCount: 0 };
+      const row = map.get(key) ?? { pnl: 0, count: 0, wins: 0 };
       row.pnl += pnl;
       row.count++;
       if (pnl > BREAKEVEN_EPS) row.wins++;
-      if (r !== null) {
-        row.rSum += r;
-        row.rCount++;
-      }
       map.set(key, row);
     }
   }
@@ -192,7 +182,6 @@ export function groupBy(trades: readonly Trade[], keyFn: (t: Trade) => string | 
       count: v.count,
       wins: v.wins,
       winRate: v.count === 0 ? 0 : v.wins / v.count,
-      avgR: v.rCount === 0 ? null : v.rSum / v.rCount,
     }))
     .sort((a, b) => b.pnl - a.pnl);
 }
@@ -240,30 +229,6 @@ export function hourWeekdayHeatmap(trades: readonly Trade[]): HeatmapCell[] {
     map.set(key, cell);
   }
   return [...map.values()];
-}
-
-export interface RBucket {
-  /** Левая граница интервала, в R. */
-  from: number;
-  count: number;
-}
-
-/** Гистограмма R-multiple с шагом 0.5R. */
-export function rHistogram(trades: readonly Trade[]): RBucket[] {
-  const values = closedTrades(trades)
-    .map(calculateRMultiple)
-    .filter((r): r is number => r !== null);
-  if (values.length === 0) return [];
-  const step = 0.5;
-  const map = new Map<number, number>();
-  for (const r of values) {
-    const clamped = Math.max(-3, Math.min(6, r));
-    const from = Math.floor(clamped / step) * step;
-    map.set(from, (map.get(from) ?? 0) + 1);
-  }
-  return [...map.entries()]
-    .map(([from, count]) => ({ from, count }))
-    .sort((a, b) => a.from - b.from);
 }
 
 function streaks(pnls: readonly number[]): { current: number; bestWin: number; worstLoss: number } {

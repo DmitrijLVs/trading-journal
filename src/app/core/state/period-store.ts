@@ -1,6 +1,9 @@
 import { Injectable, computed, effect, signal } from '@angular/core';
 
-export type PeriodPreset = '7d' | '30d' | '90d' | 'ytd' | '1y' | 'all' | 'custom';
+export type PeriodPreset = '7d' | '30d' | '90d' | '180d' | 'custom';
+
+/** Пресеты по порядку. Журнал хранит 183 дня — «6 месяцев» и есть вся история. */
+export const PERIOD_PRESETS: readonly Exclude<PeriodPreset, 'custom'>[] = ['7d', '30d', '90d', '180d'];
 
 export interface PeriodRange {
   fromMs: number | null;
@@ -11,9 +14,7 @@ export const PERIOD_LABELS: Record<PeriodPreset, string> = {
   '7d': '7 дней',
   '30d': '30 дней',
   '90d': '90 дней',
-  ytd: 'С начала года',
-  '1y': 'Год',
-  all: 'Всё время',
+  '180d': '6 месяцев',
   custom: 'Диапазон',
 };
 
@@ -80,8 +81,10 @@ export class PeriodStore {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
-      const state = JSON.parse(raw) as { preset?: PeriodPreset; from?: string | null; to?: string | null };
-      if (state.preset && state.preset in PERIOD_LABELS) this._preset.set(state.preset);
+      const state = JSON.parse(raw) as { preset?: string; from?: string | null; to?: string | null };
+      // Старые «год» и «всё время» шире записанной истории — это теперь 6 месяцев.
+      const preset = state.preset && state.preset in PERIOD_LABELS ? (state.preset as PeriodPreset) : '180d';
+      this._preset.set(preset);
       this._customFrom.set(state.from ?? null);
       this._customTo.set(state.to ?? null);
     } catch {
@@ -101,11 +104,7 @@ export function presetRange(preset: Exclude<PeriodPreset, 'custom'>): PeriodRang
       return { fromMs: now - 30 * day, toMs: null };
     case '90d':
       return { fromMs: now - 90 * day, toMs: null };
-    case '1y':
-      return { fromMs: now - 365 * day, toMs: null };
-    case 'ytd':
-      return { fromMs: Date.UTC(new Date().getUTCFullYear(), 0, 1), toMs: null };
-    case 'all':
+    case '180d':
       return { fromMs: null, toMs: null };
   }
 }

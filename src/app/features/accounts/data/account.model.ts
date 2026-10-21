@@ -1,52 +1,125 @@
-import { MarketType } from '../../trades/data/trade.model';
+/** Биржи для подключения. Записывается пока только Binance USDⓈ-M Futures. */
+export type ExchangeId = 'binance' | 'bybit' | 'okx';
 
-export type ExchangeId = 'binance' | 'bybit' | 'okx' | 'bitget' | 'manual';
+/** Состояние записи журнала по счёту (`GET /journal/accounts`). */
+export type SyncStatus = 'pending' | 'importing' | 'live' | 'reconnecting' | 'key_rejected' | 'error';
 
+/** Подключённый биржевой аккаунт: ключ (Exchange-Service) + состояние записи (Journal-Service). */
 export interface Account {
   id: string;
-  name: string;
   exchange: ExchangeId;
-  market: MarketType;
-  currency: string;
-  startBalance: number;
+  label: string;
   createdAt: string;
-  /** Маскированный API-ключ — полный ключ на клиенте не хранится. */
-  apiKeyMasked: string;
-  syncEnabled: boolean;
-  lastSyncAt: string;
+  status: SyncStatus;
+  /** Начало записанной истории. */
+  historyFrom: string | null;
+  /** Первый импорт закончен; null — ещё идёт. */
+  importedAt: string | null;
+  lastFillAt: string | null;
+  lastError: string;
+  openPositions: number;
 }
 
 export interface AccountDraft {
-  name: string;
-  exchange: ExchangeId;
-  market: MarketType;
+  label: string;
   apiKey: string;
   apiSecret: string;
-  startBalance: number;
+}
+
+export interface ExchangeAccountDto {
+  id: string;
+  exchange: string;
+  label: string;
+  created_at: string;
+}
+
+export interface JournalAccountDto {
+  id: string;
+  status: SyncStatus;
+  history_from: string | null;
+  imported_at: string | null;
+  last_fill_at: string | null;
+  last_error: string | null;
+  open_positions: number | null;
 }
 
 export interface ExchangeMeta {
   id: ExchangeId;
   label: string;
+  /** Что именно записываем. */
+  market: string;
   /** Буква-монограмма для аватара биржи. */
   mark: string;
-  /** Фирменный цвет для аватара. */
   color: string;
+  /** false — показываем с пометкой «скоро». */
+  available: boolean;
 }
 
 export const EXCHANGES: readonly ExchangeMeta[] = [
-  { id: 'binance', label: 'Binance', mark: 'B', color: '#f3ba2f' },
-  { id: 'bybit', label: 'Bybit', mark: 'Y', color: '#f7a600' },
-  { id: 'okx', label: 'OKX', mark: 'O', color: '#8c8c8c' },
-  { id: 'bitget', label: 'Bitget', mark: 'G', color: '#00f0ff' },
-  { id: 'manual', label: 'Вручную', mark: 'M', color: '#0a84ff' },
+  { id: 'binance', label: 'Binance', market: 'USDⓈ-M Futures', mark: 'B', color: '#f3ba2f', available: true },
+  { id: 'bybit', label: 'Bybit', market: 'Фьючерсы', mark: 'Y', color: '#f7a600', available: false },
+  { id: 'okx', label: 'OKX', market: 'Фьючерсы', mark: 'O', color: '#8c8c8c', available: false },
 ];
 
 export function exchangeMeta(id: ExchangeId): ExchangeMeta {
-  return EXCHANGES.find((e) => e.id === id) ?? EXCHANGES[EXCHANGES.length - 1];
+  return EXCHANGES.find((e) => e.id === id) ?? EXCHANGES[0];
 }
 
-export function maskApiKey(key: string): string {
-  if (key.length <= 8) return '••••••••';
-  return `${key.slice(0, 4)}••••••••${key.slice(-4)}`;
+export interface SyncStatusMeta {
+  label: string;
+  tone: 'ok' | 'progress' | 'warn' | 'danger';
+  hint: string;
+}
+
+export const SYNC_STATUS: Readonly<Record<SyncStatus, SyncStatusMeta>> = {
+  pending: {
+    label: 'Ожидает',
+    tone: 'progress',
+    hint: 'Ключ принят, запись скоро начнётся',
+  },
+  importing: {
+    label: 'Импорт истории',
+    tone: 'progress',
+    hint: 'Загружаем сделки за последние ~3 месяца — это займёт несколько минут',
+  },
+  live: {
+    label: 'Подключён',
+    tone: 'ok',
+    hint: 'Новые сделки появляются в реальном времени',
+  },
+  reconnecting: {
+    label: 'Переподключение',
+    tone: 'warn',
+    hint: 'Связь с биржей восстанавливается, пропущенное догрузим сами',
+  },
+  key_rejected: {
+    label: 'Ключ отклонён',
+    tone: 'danger',
+    hint: 'Биржа не принимает ключ — удалите счёт и подключите новый ключ',
+  },
+  error: {
+    label: 'Ошибка записи',
+    tone: 'danger',
+    hint: 'Повторим автоматически',
+  },
+};
+
+export function toAccount(dto: ExchangeAccountDto, journal: JournalAccountDto | undefined): Account {
+  return {
+    id: dto.id,
+    exchange: toExchangeId(dto.exchange),
+    label: dto.label,
+    createdAt: dto.created_at,
+    status: journal?.status ?? 'pending',
+    historyFrom: journal?.history_from ?? null,
+    importedAt: journal?.imported_at ?? null,
+    lastFillAt: journal?.last_fill_at ?? null,
+    lastError: journal?.last_error ?? '',
+    openPositions: journal?.open_positions ?? 0,
+  };
+}
+
+function toExchangeId(exchange: string): ExchangeId {
+  const id = exchange.toLowerCase();
+  return id === 'bybit' || id === 'okx' ? id : 'binance';
 }

@@ -23,7 +23,7 @@ import { SparkLine } from '../../../shared/ui/spark-line';
     </div>
     <div class="sub">
       <span>{{ s.tradeCount }} сделок</span>
-      <span class="mono">комиссии {{ money(s.fees + s.funding) }}</span>
+      <span class="mono">комиссии {{ money(s.fees - s.funding) }}</span>
     </div>
     <div class="fill spark" title="Накопленный P&L за период">
       <app-spark-line [data]="sparkData()" />

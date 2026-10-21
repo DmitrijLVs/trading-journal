@@ -3,7 +3,19 @@
   <!-- График -->
   <div class="chart">
     @if (chartData(); as data) {
-      <app-trade-chart [trade]="t" [chartData]="data" [exchange]="exchange()" [(timeframe)]="timeframe" />
+      @if (data.candles.length > 0) {
+        <app-trade-chart [trade]="t" [chartData]="data" [exchange]="exchange()" [(timeframe)]="timeframe" />
+      } @else {
+        <app-empty-state
+          icon="chart-line"
+          title="Нет свечей"
+          [description]="t.symbol + ' не торгуется на ' + marketLabel() + ' — графику не по чему строиться.'"
+        />
+      }
+    } @else if (chartFailed()) {
+      <app-empty-state icon="chart-line" title="График не загрузился" description="Биржа не ответила — попробуйте ещё раз.">
+        <button app-button variant="outline" size="sm" (click)="reloadChart()">Повторить</button>
+      </app-empty-state>
     } @else {
       <app-skeleton height="100%" />
     }
@@ -16,7 +28,7 @@
         <span class="sym">{{ t.symbol }}</span>
         <span class="tj-side" [class]="t.side">
           <app-icon [name]="t.side" style="--icon-size: 13px" />
-          {{ t.side === 'long' ? 'Лонг' : 'Шорт' }} ×{{ t.leverage }}
+          {{ t.side === 'long' ? 'Лонг' : 'Шорт' }}
         </span>
         @if (t.status === 'open') {
           <span app-badge tone="accent">Открыта</span>
@@ -24,13 +36,9 @@
         <span class="when">
           {{ fmtDateTime(t.openedAt) }}
           @if (t.status === 'closed') { → {{ fmtDateTime(t.closedAt) }} }
-          · {{ t.strategy }}
         </span>
       </div>
       <div class="side-actions">
-        <button app-button variant="ghost" size="sm" [iconOnly]="true" appTooltip="Удалить из журнала" (click)="remove()">
-          <app-icon name="trash" style="--icon-size: 14px" />
-        </button>
         @if (!embedded()) {
           <button app-button variant="ghost" size="sm" [iconOnly]="true" aria-label="Свернуть" (click)="closed.emit()">
             <app-icon name="x" style="--icon-size: 15px" />
@@ -49,51 +57,11 @@
       }
     </div>
 
-    <!-- Разбор -->
-    <div class="review">
-      <h4>Разбор</h4>
-      <textarea
-        class="tj-textarea tj-textarea--hand"
-        rows="2"
-        placeholder="Почему вошли, что видели на графике, какие выводы…"
-        [value]="noteDraft()"
-        (input)="noteDraft.set($any($event.target).value)"
-      ></textarea>
-      @if (noteDirty()) {
-        <div class="note-actions">
-          <button app-button variant="primary" size="sm" (click)="saveNote()">Сохранить заметку</button>
-        </div>
-      }
-      <div class="pickers">
-        <app-select
-          [options]="mistakeOptions()"
-          placeholder="Ошибки"
-          [multi]="true"
-          [clearable]="true"
-          size="sm"
-          [values]="t.mistakes"
-          (valuesChange)="setMistakes($event)"
-        />
-        <app-select
-          [options]="tagOptions()"
-          placeholder="Теги"
-          [multi]="true"
-          [clearable]="true"
-          size="sm"
-          [values]="t.tags"
-          (valuesChange)="setTags($event)"
-        />
-      </div>
-      @if (t.mistakes.length > 0 || t.tags.length > 0) {
-        <div class="chips">
-          @for (m of t.mistakes; track m) {
-            <span app-badge tone="danger">{{ m }}</span>
-          }
-          @for (tag of t.tags; track tag) {
-            <span app-badge tone="neutral">{{ tag }}</span>
-          }
-        </div>
-      }
-    </div>
+    <!-- Разбор: в API пока нет полей для него -->
+    <app-soon
+      class="review"
+      title="Разбор сделки"
+      description="Заметки, теги и ошибки по сделке появятся, когда их начнёт хранить платформа."
+    />
   </div>
 </div>

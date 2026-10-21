@@ -183,36 +183,4 @@
 
 .review {
   min-width: 0;
-
-  h4 {
-    margin: 0 0 $space-2;
-    font-size: $text-sm;
-    font-weight: 600;
-    color: var(--fg-muted);
-  }
-}
-
-.note-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: $space-2;
-}
-
-.pickers {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: $space-2;
-  margin-top: $space-2;
-
-  app-select {
-    display: block;
-    width: 100%;
-  }
-}
-
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: $space-1;
-  margin-top: $space-2;
 }

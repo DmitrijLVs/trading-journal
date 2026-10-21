@@ -110,7 +110,12 @@ export interface WidgetDef {
   minCols: number;
   minRows: number;
   defaultSettings?: WidgetSettings;
+  /** Данных для виджета в API ещё нет: карточка «скоро» вместо него. */
+  soon?: string;
 }
+
+const SOON_REVIEW = 'Нужен разбор сделок — стратегии, теги и ошибки платформа пока не хранит.';
+const SOON_RISK = 'Нужен риск по сделке (стоп-лосс) — биржа его не отдаёт, а разбор сделок пока не хранится.';
 
 export const WIDGET_REGISTRY: readonly WidgetDef[] = [
   // ── Показатели ──
@@ -221,6 +226,7 @@ export const WIDGET_REGISTRY: readonly WidgetDef[] = [
     minCols: 6,
     minRows: 6,
     defaultSettings: { groupBy: 'strategy', metric: 'pnl', limit: 10 },
+    soon: SOON_REVIEW,
   },
   {
     id: 'dist-tags',
@@ -235,6 +241,7 @@ export const WIDGET_REGISTRY: readonly WidgetDef[] = [
     minCols: 6,
     minRows: 6,
     defaultSettings: { groupBy: 'tag', metric: 'pnl', limit: 12 },
+    soon: SOON_REVIEW,
   },
   {
     id: 'dist-mistakes',
@@ -249,6 +256,7 @@ export const WIDGET_REGISTRY: readonly WidgetDef[] = [
     minCols: 6,
     minRows: 6,
     defaultSettings: { groupBy: 'mistake', metric: 'pnl', limit: 10 },
+    soon: SOON_REVIEW,
   },
   {
     id: 'long-short',
@@ -275,6 +283,7 @@ export const WIDGET_REGISTRY: readonly WidgetDef[] = [
     rows: 8,
     minCols: 6,
     minRows: 6,
+    soon: SOON_RISK,
   },
   {
     id: 'duration-scatter',
@@ -400,6 +409,17 @@ export function widgetDefFor(widget: Pick<WidgetInstance, 'type' | 'settings'>):
       (d) => d.type === widget.type && (d.defaultSettings?.groupBy ?? null) === groupBy,
     ) ?? WIDGET_REGISTRY.find((d) => d.type === widget.type)
   );
+}
+
+/** Почему виджет пока не работает (null — работает): нет данных в API. */
+export function soonReason(widget: Pick<WidgetInstance, 'type' | 'settings'>): string | null {
+  const def = widgetDefFor(widget);
+  if (def?.soon) return def.soon;
+  const groupBy = widget.settings.groupBy;
+  if (groupBy === 'strategy' || groupBy === 'tag' || groupBy === 'mistake' || groupBy === 'setup') {
+    return SOON_REVIEW;
+  }
+  return widget.settings.metric === 'avgR' ? SOON_RISK : null;
 }
 
 export function isKnownWidgetType(type: string): type is WidgetType {

@@ -48,14 +48,6 @@
   }
 }
 
-.off-plan {
-  font-size: $text-xs;
-  color: var(--attention-fg);
-  background: var(--attention-subtle);
-  padding: 0 $space-2;
-  border-radius: $radius-md;
-}
-
 .pnl {
   font-size: $text-lg;
   font-weight: 600;
@@ -68,77 +60,6 @@
 .chevron {
   color: var(--fg-subtle);
   transition: color $duration-fast $ease-apple;
-}
-
-// ── Заметка ────────────────────────────────────────────────────────────────
-
-.note-block {
-  padding: 0 $space-4 $space-3;
-}
-
-.note {
-  // Заметка — «от руки» на разлинованном поле.
-  margin: 0;
-  padding: $space-2 $space-3;
-  background: var(--canvas-inset);
-  border: 1px solid transparent;
-  border-radius: $radius-md;
-  color: var(--fg-default);
-  font-family: $font-hand;
-  font-size: 15px;
-  line-height: 1.6;
-  cursor: text;
-  transition: border-color $duration-fast $ease-apple;
-
-  &:hover {
-    border-color: var(--border-default);
-  }
-}
-
-.add-note {
-  appearance: none;
-  display: inline-flex;
-  align-items: center;
-  gap: $space-2;
-  background: none;
-  border: 1px dashed var(--border-default);
-  border-radius: $radius-md;
-  color: var(--fg-subtle);
-  font-size: $text-sm;
-  padding: $space-2 $space-3;
-  cursor: pointer;
-  transition: all $duration-fast $ease-apple;
-
-  &:hover {
-    color: var(--accent-fg);
-    border-color: var(--accent-muted);
-    background: var(--accent-subtle);
-  }
-}
-
-.editor {
-  display: flex;
-  flex-direction: column;
-  gap: $space-2;
-}
-
-.editor-row {
-  display: flex;
-  align-items: center;
-  gap: $space-3;
-
-  .grow {
-    flex: 1;
-  }
-}
-
-.plan-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: $space-2;
-  font-size: $text-sm;
-  color: var(--fg-muted);
-  cursor: pointer;
 }
 
 // ── Сделки ─────────────────────────────────────────────────────────────────

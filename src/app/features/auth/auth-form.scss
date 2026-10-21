@@ -1,0 +1,97 @@
+// Общие стили форм экранов входа (подключаются каждым экраном).
+@use 'styles/index' as *;
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+  margin-top: $space-5;
+}
+
+.label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+
+  a {
+    font-size: $text-xs;
+    color: var(--fg-muted);
+
+    &:hover { color: var(--fg-default); }
+  }
+}
+
+.secret {
+  position: relative;
+
+  .tj-input { padding-right: 40px; }
+}
+
+.reveal {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  display: flex;
+  padding: 5px;
+  background: none;
+  border: none;
+  border-radius: $radius-sm;
+  color: var(--fg-subtle);
+  cursor: pointer;
+
+  &:hover { color: var(--fg-default); }
+}
+
+.hint {
+  color: var(--fg-subtle);
+  font-size: $text-xs;
+  line-height: 1.45;
+}
+
+.server-error {
+  padding: $space-2 $space-3;
+  border-radius: $radius-md;
+  background: var(--danger-subtle);
+  color: var(--danger-fg);
+  font-size: $text-sm;
+  line-height: 1.45;
+}
+
+.notice {
+  padding: $space-2 $space-3;
+  border-radius: $radius-md;
+  background: var(--success-subtle);
+  color: var(--success-fg);
+  font-size: $text-sm;
+  line-height: 1.45;
+}
+
+.submit {
+  width: 100%;
+  margin-top: $space-1;
+}
+
+.code {
+  font-family: $font-mono;
+  font-size: $text-lg;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.footer {
+  text-align: center;
+  color: var(--fg-muted);
+  font-size: $text-sm;
+
+  a {
+    color: var(--accent-fg);
+    font-weight: 600;
+  }
+}
+
+.secondary {
+  display: flex;
+  justify-content: center;
+  margin-top: $space-1;
+}

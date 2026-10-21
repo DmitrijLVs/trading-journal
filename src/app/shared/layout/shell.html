@@ -35,11 +35,13 @@
 
     <div class="sidebar-foot">
       <div class="user">
-        <span class="user-avatar">ДК</span>
+        <span class="user-avatar">{{ initials() }}</span>
         <span class="user-meta">
-          <span class="user-name">Дмитрий</span>
-          <span class="user-plan">Pro · демо-данные</span>
+          <span class="user-name" [title]="email()">{{ email() }}</span>
         </span>
+        <button type="button" class="logout" appTooltip="Выйти" aria-label="Выйти" (click)="logout()">
+          <app-icon name="logout" style="--icon-size: 15px" />
+        </button>
       </div>
     </div>
   </aside>
@@ -48,7 +50,9 @@
     <header class="topbar">
       <app-account-switcher />
       <div class="topbar-spacer"></div>
-      <app-period-picker />
+      @if (accounts.hasAccounts()) {
+        <app-period-picker />
+      }
     </header>
 
     <main class="content">

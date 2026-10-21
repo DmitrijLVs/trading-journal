@@ -21,7 +21,7 @@ import { RingSegment, SketchRing } from '../../../shared/ui/sketch/sketch-ring';
         <span class="k">Оборот</span>
       </div>
       <div class="tile">
-        <span class="v">{{ money(s.fees + s.funding) }}</span>
+        <span class="v">{{ money(s.fees - s.funding) }}</span>
         <span class="k">Комиссия</span>
       </div>
       <div class="tile">

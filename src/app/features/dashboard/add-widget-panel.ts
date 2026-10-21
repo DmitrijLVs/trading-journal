@@ -83,19 +83,32 @@ interface PanelItem {
 
       <div class="list">
         @for (item of visible(); track item.def.id) {
-          <button type="button" class="item" (click)="add(item.def)">
+          <button
+            type="button"
+            class="item"
+            [class.is-soon]="item.def.soon"
+            [disabled]="!!item.def.soon"
+            [title]="item.def.soon ?? ''"
+            (click)="add(item.def)"
+          >
             <app-widget-preview class="preview" [kind]="item.def.preview" />
             <span class="meta">
               <span class="name">{{ item.def.title }}</span>
               <span class="desc">{{ item.def.description }}</span>
               <span class="hint">
-                <span class="size">{{ item.def.cols }}×{{ item.def.rows }}</span>
-                @if (item.count > 0) {
-                  <span class="count">на листе: {{ item.count }}</span>
+                @if (item.def.soon) {
+                  <span class="soon-pill">скоро</span>
+                } @else {
+                  <span class="size">{{ item.def.cols }}×{{ item.def.rows }}</span>
+                  @if (item.count > 0) {
+                    <span class="count">на листе: {{ item.count }}</span>
+                  }
                 }
               </span>
             </span>
-            <span class="plus"><app-icon name="plus" style="--icon-size: 14px" /></span>
+            @if (!item.def.soon) {
+              <span class="plus"><app-icon name="plus" style="--icon-size: 14px" /></span>
+            }
           </button>
         } @empty {
           <p class="nothing">Ничего не нашлось. Попробуйте другое слово или снимите фильтр.</p>
@@ -265,6 +278,22 @@ interface PanelItem {
       }
 
       &:active { background: var(--canvas-inset); }
+
+      // Данных в API ещё нет — карточку видно, добавить нельзя.
+      &.is-soon {
+        cursor: default;
+        opacity: 0.6;
+
+        &:hover { background: none; }
+      }
+    }
+
+    .soon-pill {
+      padding: 0 $space-2;
+      border-radius: $radius-full;
+      background: var(--accent-subtle);
+      color: var(--accent-fg);
+      font-weight: 600;
     }
 
     .preview {
