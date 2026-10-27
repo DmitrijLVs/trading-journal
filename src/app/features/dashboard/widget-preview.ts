@@ -81,6 +81,32 @@ export class WidgetPreview {
     const put = (...els: SVGGElement[]): void => this.svg?.append(...els);
 
     switch (kind) {
+      case 'hero':
+        put(
+          rc.rectangle(2, 12, 68, 24, { ...ink, seed: seed + 1 }),
+          tint(rc.line(8, 22, 30, 22, { ...ink, strokeWidth: 3.4, seed: seed + 2 }), '--danger-fg'),
+          rc.line(8, 30, 22, 30, { ...faint, seed: seed + 3 }),
+          rc.rectangle(38, 20, 26, 5, { ...faint, seed: seed + 4 }),
+          tint(rc.rectangle(38, 20, 18, 5, { ...fill('--attention-fg', 2), seed: seed + 5 }), '--attention-fg'),
+        );
+        break;
+      case 'timeline':
+        put(
+          tint(rc.linearPath([[6, 18], [16, 14], [26, 16], [34, 8], [44, 20], [54, 26], [66, 22]], { ...ink, strokeWidth: 1.5, seed: seed + 1 }), '--accent-fg'),
+          tint(rc.line(8, 34, 20, 34, { ...ink, strokeWidth: 3, seed: seed + 2 }), '--success-fg'),
+          tint(rc.line(24, 34, 30, 34, { ...ink, strokeWidth: 3, seed: seed + 3 }), '--danger-fg'),
+          tint(rc.line(18, 40, 40, 40, { ...ink, strokeWidth: 3, seed: seed + 4 }), '--success-fg'),
+          tint(rc.line(44, 34, 64, 34, { ...ink, strokeWidth: 3, seed: seed + 5 }), '--danger-fg'),
+        );
+        break;
+      case 'notes':
+        [6, 21, 36].forEach((y, i) => {
+          const token = i === 1 ? '--attention-fg' : '--danger-fg';
+          put(tint(rc.circle(9, y + 3, 5, { ...ink, fill: 'currentColor', fillStyle: 'solid', seed: seed + i }), token));
+          put(rc.line(17, y + 1, 52, y + 1, { ...ink, strokeWidth: 1.8, seed: seed + 10 + i }));
+          put(rc.line(17, y + 7, 64, y + 7, { ...faint, seed: seed + 20 + i }));
+        });
+        break;
       case 'tile':
         put(
           rc.rectangle(4, 4, 64, 40, { ...ink, seed: seed + 1 }),
@@ -144,14 +170,6 @@ export class WidgetPreview {
         );
         break;
       }
-      case 'histogram':
-        put(rc.line(6, 42, 66, 42, { ...faint, seed: seed + 1 }));
-        [4, 9, 15, 20, 13, 7, 3].forEach((h, i) => {
-          const x = 8 + i * 8.2;
-          const token = i < 3 ? '--danger-fg' : '--success-fg';
-          put(tint(rc.rectangle(x, 42 - h, 6, h, { ...fill(token), seed: seed + 2 + i }), token));
-        });
-        break;
       case 'scatter':
         put(rc.line(6, 42, 66, 42, { ...faint, seed: seed + 1 }), rc.line(8, 4, 8, 42, { ...faint, seed: seed + 2 }));
         [[14, 30], [22, 16], [30, 36], [38, 12], [46, 26], [54, 33], [62, 9]].forEach(([x, y], i) => {

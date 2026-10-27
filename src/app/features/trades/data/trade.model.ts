@@ -1,5 +1,7 @@
 export type TradeSide = 'long' | 'short';
 export type TradeStatus = 'open' | 'closed';
+/** Тип ордера, открывшего или закрывшего сделку: маркет платит тейкера, лимит — мейкера. */
+export type OrderType = 'market' | 'limit';
 export type TradingSession = 'asia' | 'london' | 'newyork' | 'off';
 
 /**
@@ -35,6 +37,10 @@ export interface Trade {
   /** Итог сделки: realized − комиссия + фандинг. */
   netPnl: number;
   fillsCount: number;
+  /** Ордер первого входа; null — биржа не сообщила (история до записи). */
+  openOrderType: OrderType | null;
+  /** Ордер последнего выхода; null — сделка открыта или тип неизвестен. */
+  closeOrderType: OrderType | null;
 }
 
 export interface TradeFilters {
@@ -42,6 +48,8 @@ export interface TradeFilters {
   side?: TradeSide;
   status?: TradeStatus;
   search?: string;
+  /** Автотег разбора (`AutoTag`): реванш, тильт, овертрейд… */
+  tag?: string;
 }
 
 export const SESSION_LABELS: Record<TradingSession, string> = {
@@ -52,6 +60,21 @@ export const SESSION_LABELS: Record<TradingSession, string> = {
 };
 
 // ─── Расчёты по сделке ──────────────────────────────────────────────────────
+
+/**
+ * Сделка «в ноль» — |нетто| не больше полуцента. Как в Stats-Service: вин —
+ * нетто > 0, лосс — < 0. Порог в $1 ломал статистику мелких счетов: при
+ * позиции $50 почти все сделки попадали «в ноль».
+ */
+export const BREAKEVEN_EPS = 0.005;
+
+export function isWin(pnl: number): boolean {
+  return pnl > BREAKEVEN_EPS;
+}
+
+export function isLoss(pnl: number): boolean {
+  return pnl < -BREAKEVEN_EPS;
+}
 
 /** Чистый результат закрытой сделки (у открытой — 0: итог ещё не известен). */
 export function calculatePnl(trade: Trade): number {
@@ -116,7 +139,31 @@ export function formatPrice(value: number | null): string {
   });
 }
 
+// ─── Скрытые суммы ──────────────────────────────────────────────────────────
+
+/**
+ * Режим «скрыть суммы» (показ экрана, стрим, скриншот): деньги и объёмы
+ * заменяются точками, знак и цвет остаются. Флаг читает PrivacyStore —
+ * через этот хук домен остаётся без Angular, а computed/шаблоны, которые
+ * форматируют деньги, сами подписываются на сигнал режима.
+ */
+let moneyHidden: () => boolean = () => false;
+
+export const MONEY_MASK = '•••';
+
+export function configureMoneyMask(read: () => boolean): void {
+  moneyHidden = read;
+}
+
+export function isMoneyHidden(): boolean {
+  return moneyHidden();
+}
+
 export function formatMoney(value: number, opts: { sign?: boolean } = {}): string {
+  if (moneyHidden()) {
+    const masked = value < 0 ? '−' : opts.sign && value > 0 ? '+' : '';
+    return `${masked}$${MONEY_MASK}`;
+  }
   const abs = Math.abs(value);
   const digits = abs >= 1000 ? 0 : 2;
   const body = abs.toLocaleString('ru-RU', {
@@ -129,31 +176,52 @@ export function formatMoney(value: number, opts: { sign?: boolean } = {}): strin
 
 export function formatPercent(value: number, opts: { sign?: boolean } = {}): string {
   const sign = value < 0 ? '−' : opts.sign && value > 0 ? '+' : '';
-  return `${sign}${Math.abs(value).toFixed(2)}%`;
+  return `${sign}${decimal(Math.abs(value), 2)}%`;
+}
+
+/** Число с запятой: десятичный разделитель — как у денег (ru-RU). */
+export function decimal(value: number, digits: number): string {
+  return value.toFixed(digits).replace('.', ',');
+}
+
+/** Объём в монетах: разряды пробелом, дробная часть через запятую. Выдаёт размер — прячется вместе с деньгами. */
+export function formatQuantity(value: number): string {
+  if (moneyHidden()) return MONEY_MASK;
+  return value.toLocaleString('ru-RU', { maximumFractionDigits: 8 });
+}
+
+/** Короткие месяцы в родительном падеже: «24 июн», «3 мая». */
+const MONTHS_SHORT = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+
+/** День месяца и месяц; год — только если он не текущий. */
+function dayMonth(d: Date, withYear: boolean): string {
+  const base = `${String(d.getDate()).padStart(2, '0')} ${MONTHS_SHORT[d.getMonth()]}`;
+  return withYear || d.getFullYear() !== new Date().getFullYear() ? `${base} ${d.getFullYear()}` : base;
 }
 
 export function formatDateTime(iso: string): string {
   if (!iso) return '—';
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  const day = String(d.getDate()).padStart(2, '0');
-  const month = d.toLocaleString('ru-RU', { month: 'short' }).replace('.', '');
   const hh = String(d.getHours()).padStart(2, '0');
   const mm = String(d.getMinutes()).padStart(2, '0');
-  return `${day} ${month} ${d.getFullYear()} ${hh}:${mm}`;
+  return `${dayMonth(d, false)} ${hh}:${mm}`;
 }
 
 export function formatDate(iso: string): string {
   if (!iso) return '—';
-  const d = new Date(iso);
-  const day = String(d.getDate()).padStart(2, '0');
-  const month = d.toLocaleString('ru-RU', { month: 'short' }).replace('.', '');
-  return `${day} ${month} ${d.getFullYear()}`;
+  return dayMonth(new Date(iso), true);
 }
 
-export function formatDuration(openedAt: string, closedAt: string): string {
-  if (!closedAt) return '—';
-  const ms = new Date(closedAt).getTime() - new Date(openedAt).getTime();
+/** Календарный день в зоне пользователя: YYYY-MM-DD. */
+export function localDay(time: string | number): string {
+  const d = new Date(time);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+/** Длительность в мс одной-двумя единицами: «2ч 14м», «45с». */
+export function formatSpan(ms: number): string {
   if (!Number.isFinite(ms) || ms <= 0) return '—';
   const totalSeconds = Math.floor(ms / 1000);
   const days = Math.floor(totalSeconds / 86400);
@@ -166,11 +234,32 @@ export function formatDuration(openedAt: string, closedAt: string): string {
   return `${seconds}с`;
 }
 
+export function formatDuration(openedAt: string, closedAt: string): string {
+  if (!closedAt) return '—';
+  return formatSpan(new Date(closedAt).getTime() - new Date(openedAt).getTime());
+}
+
+/** Компактно для осей и плиток: «−1,2K», «146K», «38». Меньше 10 — с десятыми. */
 export function formatCompact(value: number): string {
   const abs = Math.abs(value);
-  const sign = value < 0 ? '−' : '';
-  if (abs >= 1_000_000) return `${sign}${(abs / 1_000_000).toFixed(1)}M`;
+  const sign = value < 0 && abs >= 0.05 ? '−' : '';
+  if (abs >= 1_000_000) return `${sign}${decimal(abs / 1_000_000, 1)}M`;
   if (abs >= 10_000) return `${sign}${(abs / 1000).toFixed(0)}K`;
-  if (abs >= 1000) return `${sign}${(abs / 1000).toFixed(1)}K`;
-  return `${sign}${abs.toFixed(0)}`;
+  if (abs >= 1000) return `${sign}${decimal(abs / 1000, 1)}K`;
+  if (abs >= 10) return `${sign}${abs.toFixed(0)}`;
+  if (abs < 0.05) return '0';
+  return `${sign}${decimal(abs, 1).replace(/,0$/, '')}`;
+}
+
+/** Компактные деньги: «+$1,2K», «−$38». В режиме скрытых сумм — «+$•••». */
+export function formatMoneyCompact(value: number, opts: { sign?: boolean } = {}): string {
+  const body = formatCompact(Math.abs(value));
+  if (body === '0') return moneyHidden() ? `$${MONEY_MASK}` : '$0';
+  const sign = value < 0 ? '−' : opts.sign ? '+' : '';
+  return `${sign}$${moneyHidden() ? MONEY_MASK : body}`;
+}
+
+/** Подпись денежной оси: при скрытых суммах ось без подписей (только сетка). */
+export function formatMoneyAxis(value: number): string {
+  return moneyHidden() ? '' : formatMoneyCompact(value);
 }

@@ -162,3 +162,19 @@ tfoot td {
 .pg-ink { position: absolute; left: 6px; right: 6px; bottom: 3px; height: 5px; }
 
 
+
+// Разбор — автотеги последней колонкой; пустая колонка не растягивает таблицу.
+.tags-col {
+  width: 1%;
+  white-space: nowrap;
+}
+
+// Открытая позиция: нереализованный P&L — курсивом и чуть тише закрытых.
+.unrealized {
+  font-style: italic;
+  opacity: 0.85;
+}
+
+.search {
+  flex: 0 1 220px;
+}

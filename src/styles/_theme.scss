@@ -48,6 +48,9 @@
 
   --teal-fg:     #{$teal-fg};
 
+  --long-fg:     #{$long-fg};
+  --short-fg:    #{$short-fg};
+
   // Typography
   --font-sans: #{$font-sans};
   --font-mono: #{$font-mono};
@@ -138,6 +141,9 @@
   --done-subtle: rgba(124, 79, 214, 0.14);
 
   --teal-fg:     #1f9fb0;
+
+  --long-fg:     #2f7fae;
+  --short-fg:    #9256b8;
 
   --shadow-sm:       0 1px 2px rgba(60, 50, 30, 0.1);
   --shadow-md:       0 1px 2px rgba(60, 50, 30, 0.08), 0 8px 20px rgba(60, 50, 30, 0.1);

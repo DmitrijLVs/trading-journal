@@ -20,10 +20,7 @@
 }
 
 .growth {
-  font-family: $font-mono;
-  font-variant-numeric: tabular-nums;
-  font-size: clamp(13px, 14cqh, 17px);
-  font-weight: 600;
+  @include figure(clamp(13px, 14cqh, 17px), 600);
   color: var(--fg-muted);
   white-space: nowrap;
 
@@ -32,13 +29,9 @@
 }
 
 .value {
-  font-size: clamp(26px, 30cqh, 40px);
-  font-weight: 650;
-  font-family: $font-mono;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
+  @include figure(clamp(26px, 30cqh, 42px));
   color: var(--fg-default);
+  white-space: nowrap;
 
   &.pos { color: var(--success-fg); }
   &.neg { color: var(--danger-fg); }
@@ -53,9 +46,10 @@
   line-height: 1.35;
   white-space: nowrap;
 
-  .mono {
+  b {
     font-family: $font-mono;
-    font-size: $text-sm;
+    font-weight: 600;
+    color: var(--fg-default);
   }
 
   .pos { color: var(--success-fg); }

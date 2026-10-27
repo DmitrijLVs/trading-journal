@@ -49,8 +49,23 @@
   <div class="main">
     <header class="topbar">
       <app-account-switcher />
-      <div class="topbar-spacer"></div>
       @if (accounts.hasAccounts()) {
+        <app-session-strip class="session" />
+      }
+      <div class="topbar-spacer"></div>
+      <button
+        type="button"
+        class="money-toggle"
+        [class.active]="privacy.hidden()"
+        [appTooltip]="privacy.hidden() ? 'Показать суммы (Shift+H)' : 'Скрыть суммы (Shift+H)'"
+        [attr.aria-pressed]="privacy.hidden()"
+        aria-label="Скрыть суммы"
+        (click)="privacy.toggle()"
+      >
+        <app-icon [name]="privacy.hidden() ? 'eye-off' : 'eye'" style="--icon-size: 16px" />
+      </button>
+      <!-- Период анализа нужен страницам с данными, в настройках он лишний. -->
+      @if (accounts.hasAccounts() && !onSettings()) {
         <app-period-picker />
       }
     </header>

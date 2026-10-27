@@ -77,8 +77,25 @@
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  // Семь дней + итог недели (чуть уже).
+  grid-template-columns: repeat(7, 1fr) 0.9fr;
   gap: 3px;
+}
+
+.week-h {
+  color: var(--fg-muted);
+}
+
+.week {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-end;
+  padding: 3px 6px;
+  border-left: 1px solid var(--border-muted);
+  min-height: 0;
+  overflow: hidden;
+  container-type: size;
 }
 
 .weekdays .wd {
@@ -144,56 +161,20 @@
   }
 }
 
-// День и счётчик сделок сверху, итог и расшифровка снизу.
-// В мелкой ячейке расшифровка уходит в тултип.
-
-.top {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 4px;
-  line-height: 1.1;
-}
+// Номер дня сверху, итог и число сделок снизу; оборот и комиссии — в тултипе.
 
 .d {
   font-size: $text-xs;
+  line-height: 1.1;
   color: var(--fg-muted);
-  text-shadow: 0 0 4px var(--canvas-inset);
-}
-
-.c {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 2px;
-  font-size: $text-xs;
-  font-weight: 600;
-  color: var(--fg-default);
-}
-
-.plate {
-  display: flex;
-  flex-direction: column;
-  margin-top: auto;
-}
-
-.c,
-.p,
-.row b {
-  font-family: $font-mono;
-}
-
-.c i,
-.row i {
-  font-style: normal;
-  font-size: 11px;
-  font-weight: 400;
-  color: var(--fg-subtle);
 }
 
 .p {
-  font-size: $text-md;
+  margin-top: auto;
+  font-family: $font-mono;
+  font-size: clamp(11px, 30cqh, 15px);
   font-weight: 700;
-  line-height: 1.3;
+  line-height: 1.25;
   color: var(--fg-default);
   white-space: nowrap;
   overflow: hidden;
@@ -203,28 +184,18 @@
   &.neg { color: var(--danger-fg); }
 }
 
-// Подпись слева, значение справа — как в приходной книге.
-.row {
-  display: none;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 4px;
-  line-height: 1.35;
+.week .p {
+  margin-top: 0;
+}
+
+.c {
+  font-size: 11px;
+  line-height: 1.2;
+  color: var(--fg-subtle);
   white-space: nowrap;
-
-  b {
-    font-size: 11px;
-    font-weight: 500;
-    color: var(--fg-muted);
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
 }
 
-@container (min-width: 46px) and (min-height: 44px) {
-  .row.vol { display: flex; }
-}
-
-@container (min-width: 46px) and (min-height: 58px) {
-  .row.fee { display: flex; }
+// Совсем мелкая ячейка — только цвет и номер дня.
+@container (max-height: 40px) {
+  .c { display: none; }
 }

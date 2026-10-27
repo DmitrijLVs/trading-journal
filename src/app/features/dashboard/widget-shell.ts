@@ -1,6 +1,6 @@
 import { CdkMenu, CdkMenuItem, CdkMenuTrigger } from '@angular/cdk/menu';
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { WidgetInstance, defaultWidgetTitle } from './data/workspace.model';
+import { WidgetInstance, defaultWidgetTitle, widgetRank } from './data/workspace.model';
 import { PERIOD_LABELS } from '../../core/state/period-store';
 import { Icon } from '../../shared/ui/icon';
 
@@ -11,7 +11,7 @@ import { Icon } from '../../shared/ui/icon';
 @Component({
   selector: 'app-widget-shell',
   imports: [CdkMenu, CdkMenuItem, CdkMenuTrigger, Icon],
-  host: { '[class.is-new]': 'highlight()' },
+  host: { '[class.is-new]': 'highlight()', '[class]': "'rank-' + rank()" },
   templateUrl: './widget-shell.html',
   styleUrl: './widget-shell.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -29,6 +29,8 @@ export class WidgetShell {
   readonly remove = output<void>();
 
   protected readonly title = computed(() => defaultWidgetTitle(this.widget()));
+  /** Ранг задаёт оболочку: полоса без шапки, голос тренера или тихий инструмент. */
+  protected readonly rank = computed(() => widgetRank(this.widget()));
 
   protected readonly periodBadge = computed(() => {
     const period = this.widget().settings.period;

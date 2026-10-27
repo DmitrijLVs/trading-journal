@@ -110,3 +110,67 @@
   overflow: hidden;
   border-radius: 0 0 $radius-xl $radius-xl;
 }
+
+// ── Ранги ───────────────────────────────────────────────────────────────────
+// Инструмент (графики, таблицы) — тихая шапка: мелкий заголовок без черты,
+// чтобы на листе выделялись главная полоса и голос тренера.
+:host(.rank-tool) {
+  .head {
+    height: 36px;
+    border-bottom: none;
+  }
+
+  .title {
+    font-size: $text-sm;
+    font-weight: 600;
+    color: var(--fg-muted);
+  }
+}
+
+// Голос тренера: заголовок от руки, поверхность чуть теплее соседей.
+:host(.rank-insight) {
+  background: color-mix(in srgb, var(--accent-fg) 4%, var(--canvas-subtle));
+  border-color: color-mix(in srgb, var(--accent-fg) 18%, var(--border-muted));
+
+  .head {
+    height: 42px;
+    border-bottom: none;
+  }
+
+  .title {
+    @include coach-voice(22px);
+    color: var(--fg-default);
+  }
+}
+
+// Главная полоса листа: без шапки, приподнята над остальными. Ручка и меню
+// всплывают в углу при наведении.
+:host(.rank-hero) {
+  border-color: var(--border-default);
+  box-shadow: $shadow-lg;
+
+  .head {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    z-index: 3;
+    height: auto;
+    padding: 2px 4px;
+    border: none;
+    border-radius: $radius-md;
+    gap: 2px;
+  }
+
+  .title,
+  .period {
+    display: none;
+  }
+
+  .grip {
+    margin-left: 0;
+  }
+
+  .body {
+    border-radius: $radius-xl;
+  }
+}

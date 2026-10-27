@@ -1,9 +1,9 @@
 import { Injectable, computed, effect, signal } from '@angular/core';
 
-export type PeriodPreset = '7d' | '30d' | '90d' | '180d' | 'custom';
+export type PeriodPreset = 'today' | '7d' | '30d' | '90d' | '180d' | 'custom';
 
 /** Пресеты по порядку. Журнал хранит 183 дня — «6 месяцев» и есть вся история. */
-export const PERIOD_PRESETS: readonly Exclude<PeriodPreset, 'custom'>[] = ['7d', '30d', '90d', '180d'];
+export const PERIOD_PRESETS: readonly Exclude<PeriodPreset, 'custom'>[] = ['today', '7d', '30d', '90d', '180d'];
 
 export interface PeriodRange {
   fromMs: number | null;
@@ -11,6 +11,7 @@ export interface PeriodRange {
 }
 
 export const PERIOD_LABELS: Record<PeriodPreset, string> = {
+  today: 'Сегодня',
   '7d': '7 дней',
   '30d': '30 дней',
   '90d': '90 дней',
@@ -98,6 +99,12 @@ export function presetRange(preset: Exclude<PeriodPreset, 'custom'>): PeriodRang
   const now = Date.now();
   const day = 86_400_000;
   switch (preset) {
+    case 'today': {
+      // Сегодня — с полуночи в зоне пользователя.
+      const midnight = new Date();
+      midnight.setHours(0, 0, 0, 0);
+      return { fromMs: midnight.getTime(), toMs: null };
+    }
     case '7d':
       return { fromMs: now - 7 * day, toMs: null };
     case '30d':

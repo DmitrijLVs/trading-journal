@@ -4,8 +4,8 @@ import { equityCurve, summarize } from '../../analytics/data/metrics';
 import { formatMoney, formatPercent } from '../../trades/data/trade.model';
 import { SparkLine } from '../../../shared/ui/spark-line';
 
-/** Чистый P&L: итог в $ и в % от капитала на начало периода, спарклайн
- *  накопленного P&L (как рос результат внутри периода), комиссии. */
+/** Чистый P&L: итог в $ и в % от капитала на начало периода, результат до
+ *  комиссий (комиссии сами — в «Издержках») и спарклайн накопленного P&L. */
 @Component({
   selector: 'app-widget-stat-pnl',
   imports: [SparkLine],
@@ -22,8 +22,8 @@ import { SparkLine } from '../../../shared/ui/spark-line';
       }
     </div>
     <div class="sub">
-      <span>{{ s.tradeCount }} сделок</span>
-      <span class="mono">комиссии {{ money(s.fees - s.funding) }}</span>
+      <span>{{ s.tradeCount }} сд.</span>
+      <span>до комиссий <b [class.pos]="s.grossPnl > 0" [class.neg]="s.grossPnl < 0">{{ money(s.grossPnl, true) }}</b></span>
     </div>
     <div class="fill spark" title="Накопленный P&L за период">
       <app-spark-line [data]="sparkData()" />

@@ -22,6 +22,10 @@
           <app-account-settings />
         }
 
+        @case ('discipline') {
+          <app-discipline-settings />
+        }
+
         @case ('display') {
           <header class="head">
             <h2>Оформление</h2>
@@ -32,6 +36,20 @@
               <span class="d">«Графит» — тёмная, «Бумага» — светлая</span>
             </div>
             <app-segmented [options]="themeOptions" [value]="themeStore.theme()" (valueChange)="setTheme($event)" />
+          </div>
+          <div class="row">
+            <div class="row-text">
+              <span class="t">Скрывать суммы</span>
+              <span class="d">Деньги и объёмы — точками, проценты и цвета остаются. Для показа экрана и скриншотов. Быстро — Shift+H</span>
+            </div>
+            <app-toggle [checked]="privacy.hidden()" (checkedChange)="privacy.setHidden($event)" />
+          </div>
+          <div class="row">
+            <div class="row-text">
+              <span class="t">Плотность таблиц</span>
+              <span class="d">«Компактная» — больше сделок на экране, для скальпинга</span>
+            </div>
+            <app-segmented [options]="densityOptions" [value]="themeStore.density()" (valueChange)="setDensity($event)" />
           </div>
         }
 

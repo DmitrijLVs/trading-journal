@@ -116,3 +116,10 @@
 .apply {
   align-self: flex-end;
 }
+
+// Телефон: только иконка календаря и подпись периода, без стрелки.
+@media (max-width: 760px) {
+  .trigger .caret {
+    display: none;
+  }
+}

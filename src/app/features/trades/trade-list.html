@@ -29,6 +29,14 @@
       (valueChange)="setSide($event)"
     />
     <app-select
+      [options]="tagOptions"
+      placeholder="Разбор"
+      [clearable]="true"
+      size="sm"
+      [value]="store.tableFilters().tag ?? null"
+      (valueChange)="setTag($event)"
+    />
+    <app-select
       [options]="statusOptions"
       placeholder="Статус"
       [clearable]="true"
@@ -124,6 +132,7 @@
                   Время <span class="arrow">{{ sortArrow('duration') }}</span>
                 </span>
               </th>
+              <th class="tags-col">Разбор</th>
             </tr>
           </thead>
           <tbody>
@@ -147,6 +156,8 @@
                 <td class="num">
                   @if (row.trade.status === 'closed') {
                     {{ fmtPrice(row.trade.exitPrice) }}
+                  } @else if (row.trade.exitPrice !== null) {
+                    <span class="open-badge" appTooltip="Часть позиции уже закрыта">частично</span>
                   } @else {
                     <span class="open-badge">открыта</span>
                   }
@@ -154,6 +165,10 @@
                 <td class="num">
                   @if (row.trade.status === 'closed') {
                     <app-pnl [value]="row.pnl" />
+                  } @else if (row.unrealized !== null) {
+                    <span class="unrealized" appTooltip="Нереализованный P&L по данным биржи">
+                      <app-pnl [value]="row.unrealized" />
+                    </span>
                   } @else {
                     <span class="muted">—</span>
                   }
@@ -166,10 +181,11 @@
                   }
                 </td>
                 <td class="num muted">{{ fmtDuration(row.trade) }}</td>
+                <td class="tags-col"><app-trade-tags class="inline" [marks]="row.marks" /></td>
               </tr>
               @if (expandedId() === row.trade.id) {
                 <tr class="expand-row">
-                  <td colspan="9">
+                  <td colspan="10">
                     <app-trade-expand [trade]="row.trade" (closed)="expandedId.set(null)" />
                   </td>
                 </tr>
@@ -184,6 +200,7 @@
                 комиссии {{ fmtMoney(summary().fees) }}
               </td>
               <td class="num"><app-pnl [value]="summary().netPnl" /></td>
+              <td></td>
               <td></td>
               <td></td>
             </tr>

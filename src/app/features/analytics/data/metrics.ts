@@ -1,11 +1,22 @@
 import {
+  BREAKEVEN_EPS,
+  OrderType,
   Trade,
   calculatePnl,
   durationMs,
+  isWin,
+  localDay,
   notional,
   tradingSession,
   SESSION_LABELS,
 } from '../../trades/data/trade.model';
+import {
+  AUTO_TAG_LABELS,
+  CLEAN_TAG_LABEL,
+  TradeTags,
+  lossStreakBefore,
+  tagsOf,
+} from './behavior';
 
 /**
  * Чистые функции аналитики. Работают с уже отфильтрованным массивом сделок;
@@ -30,6 +41,9 @@ export interface DayPnl {
 export interface GroupStat {
   key: string;
   pnl: number;
+  /** Биржевой результат до комиссий и фандинга. */
+  gross: number;
+  fees: number;
   count: number;
   wins: number;
   winRate: number;
@@ -69,8 +83,6 @@ export function closedTrades(trades: readonly Trade[]): Trade[] {
     .sort((a, b) => new Date(a.closedAt).getTime() - new Date(b.closedAt).getTime());
 }
 
-const BREAKEVEN_EPS = 1; // |P&L| ≤ $1 — сделка «в ноль»
-
 export function summarize(trades: readonly Trade[]): SummaryMetrics {
   const closed = closedTrades(trades);
   const pnls = closed.map(calculatePnl);
@@ -83,7 +95,7 @@ export function summarize(trades: readonly Trade[]): SummaryMetrics {
 
   for (const pnl of pnls) {
     if (Math.abs(pnl) <= BREAKEVEN_EPS) breakevenCount++;
-    else if (pnl > 0) {
+    else if (isWin(pnl)) {
       winCount++;
       grossProfit += pnl;
     } else {
@@ -101,7 +113,7 @@ export function summarize(trades: readonly Trade[]): SummaryMetrics {
   const maxDrawdown = equity.reduce((max, p) => Math.max(max, p.drawdown), 0);
 
   const { current, bestWin, worstLoss } = streaks(pnls);
-  const days = new Set(closed.map((t) => t.closedAt.slice(0, 10))).size;
+  const days = new Set(closed.map((t) => localDay(t.closedAt))).size;
 
   return {
     tradeCount: closed.length,
@@ -145,52 +157,60 @@ export function equityCurve(trades: readonly Trade[]): EquityPoint[] {
   return points;
 }
 
-/** P&L по календарным дням (по дате закрытия). */
+/** P&L по календарным дням пользователя (по дате закрытия). */
 export function dailyPnl(trades: readonly Trade[]): DayPnl[] {
   const map = new Map<string, DayPnl>();
   for (const t of closedTrades(trades)) {
-    const date = t.closedAt.slice(0, 10);
+    const date = localDay(t.closedAt);
     const row = map.get(date) ?? { date, pnl: 0, count: 0, wins: 0 };
     const pnl = calculatePnl(t);
     row.pnl += pnl;
     row.count++;
-    if (pnl > BREAKEVEN_EPS) row.wins++;
+    if (isWin(pnl)) row.wins++;
     map.set(date, row);
   }
   return [...map.values()].sort((a, b) => a.date.localeCompare(b.date));
 }
 
 /** Универсальная группировка: P&L и винрейт по ключу. */
-export function groupBy(trades: readonly Trade[], keyFn: (t: Trade) => string | string[]): GroupStat[] {
-  const map = new Map<string, { pnl: number; count: number; wins: number }>();
+export function groupBy(
+  trades: readonly Trade[],
+  keyFn: (t: Trade) => string | readonly string[],
+): GroupStat[] {
+  const map = new Map<string, { pnl: number; gross: number; fees: number; count: number; wins: number }>();
   for (const t of closedTrades(trades)) {
     const keys = keyFn(t);
     const pnl = calculatePnl(t);
-    for (const key of Array.isArray(keys) ? keys : [keys]) {
+    for (const key of typeof keys === 'string' ? [keys] : keys) {
       if (!key) continue;
-      const row = map.get(key) ?? { pnl: 0, count: 0, wins: 0 };
+      const row = map.get(key) ?? { pnl: 0, gross: 0, fees: 0, count: 0, wins: 0 };
       row.pnl += pnl;
+      row.gross += t.realizedPnl;
+      row.fees += t.fees;
       row.count++;
-      if (pnl > BREAKEVEN_EPS) row.wins++;
+      if (isWin(pnl)) row.wins++;
       map.set(key, row);
     }
   }
   return [...map.entries()]
     .map(([key, v]) => ({
       key,
-      pnl: v.pnl,
-      count: v.count,
-      wins: v.wins,
+      ...v,
       winRate: v.count === 0 ? 0 : v.wins / v.count,
     }))
     .sort((a, b) => b.pnl - a.pnl);
 }
 
+/** Группы в заданном порядке (порядковые шкалы: время, серии, нагрузка). */
+function ordered(stats: GroupStat[], order: readonly string[]): GroupStat[] {
+  return order.flatMap((key) => stats.filter((s) => s.key === key));
+}
+
 export const WEEKDAY_LABELS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'] as const;
 
-/** Индекс дня недели, понедельник = 0. */
+/** Индекс дня недели в зоне пользователя, понедельник = 0. */
 export function weekdayIndex(iso: string): number {
-  return (new Date(iso).getUTCDay() + 6) % 7;
+  return (new Date(iso).getDay() + 6) % 7;
 }
 
 export function groupByWeekday(trades: readonly Trade[]): GroupStat[] {
@@ -200,9 +220,83 @@ export function groupByWeekday(trades: readonly Trade[]): GroupStat[] {
     .filter((s): s is GroupStat => s !== undefined);
 }
 
+/** По часу входа в зоне пользователя. */
 export function groupByHour(trades: readonly Trade[]): GroupStat[] {
-  const stats = groupBy(trades, (t) => String(new Date(t.openedAt).getUTCHours()).padStart(2, '0'));
+  const stats = groupBy(trades, (t) => String(new Date(t.openedAt).getHours()).padStart(2, '0'));
   return stats.sort((a, b) => a.key.localeCompare(b.key));
+}
+
+/** Корзины времени удержания — от скальпа до свинга. */
+export const HOLD_BUCKETS: readonly { key: string; maxMs: number }[] = [
+  { key: '< 1 мин', maxMs: 60_000 },
+  { key: '1–5 мин', maxMs: 5 * 60_000 },
+  { key: '5–30 мин', maxMs: 30 * 60_000 },
+  { key: '30 мин – 2 ч', maxMs: 2 * 3_600_000 },
+  { key: '2–24 ч', maxMs: 86_400_000 },
+  { key: '> 1 дня', maxMs: Infinity },
+];
+
+export function holdBucket(ms: number): string {
+  return (HOLD_BUCKETS.find((b) => ms < b.maxMs) ?? HOLD_BUCKETS[HOLD_BUCKETS.length - 1]).key;
+}
+
+export function groupByHold(trades: readonly Trade[]): GroupStat[] {
+  const stats = groupBy(
+    trades.filter((t) => !t.carriedIn),
+    (t) => holdBucket(durationMs(t)),
+  );
+  return ordered(stats, HOLD_BUCKETS.map((b) => b.key));
+}
+
+/** Корзины дневной нагрузки: сколько сделок было в день этой сделки. */
+const DAY_LOAD_BUCKETS: readonly { key: string; max: number }[] = [
+  { key: 'до 5 в день', max: 5 },
+  { key: '6–15 в день', max: 15 },
+  { key: '16–25 в день', max: 25 },
+  { key: '26–50 в день', max: 50 },
+  { key: '50+ в день', max: Infinity },
+];
+
+export function groupByDayLoad(trades: readonly Trade[]): GroupStat[] {
+  const perDay = new Map<string, number>();
+  for (const t of trades) {
+    const day = localDay(t.openedAt);
+    perDay.set(day, (perDay.get(day) ?? 0) + 1);
+  }
+  const stats = groupBy(trades, (t) => {
+    const n = perDay.get(localDay(t.openedAt)) ?? 0;
+    return (DAY_LOAD_BUCKETS.find((b) => n <= b.max) ?? DAY_LOAD_BUCKETS[0]).key;
+  });
+  return ordered(stats, DAY_LOAD_BUCKETS.map((b) => b.key));
+}
+
+const STREAK_KEYS = ['после плюса', 'после 1 убытка', 'после 2 убытков', 'после 3+ убытков'] as const;
+
+/** Результат в зависимости от серии убытков перед входом. */
+export function groupByLossStreak(trades: readonly Trade[], history: readonly Trade[]): GroupStat[] {
+  const streaks = lossStreakBefore(history);
+  const stats = groupBy(trades, (t) => STREAK_KEYS[Math.min(3, streaks.get(t.id)?.count ?? 0)]);
+  return ordered(stats, STREAK_KEYS);
+}
+
+const ORDER_LABELS: Record<OrderType, string> = { market: 'Маркет', limit: 'Лимит' };
+
+/** Тип ордеров входа и выхода: «Маркет → маркет». */
+export function orderRoute(t: Trade): string {
+  if (!t.openOrderType || !t.closeOrderType) return 'Неизвестно';
+  return `${ORDER_LABELS[t.openOrderType]} → ${ORDER_LABELS[t.closeOrderType].toLowerCase()}`;
+}
+
+export function groupByOrderType(trades: readonly Trade[]): GroupStat[] {
+  return groupBy(trades, orderRoute).sort((a, b) => b.count - a.count);
+}
+
+/** Результат по автотегам; сделки без тегов — отдельной группой для сравнения. */
+export function groupByAutoTag(trades: readonly Trade[], tags: TradeTags): GroupStat[] {
+  return groupBy(trades, (t) => {
+    const list = tagsOf(tags, t);
+    return list.length ? list.map((tag) => AUTO_TAG_LABELS[tag]) : [CLEAN_TAG_LABEL];
+  });
 }
 
 export function groupBySession(trades: readonly Trade[]): GroupStat[] {
@@ -216,12 +310,12 @@ export interface HeatmapCell {
   count: number;
 }
 
-/** Матрица день-недели × час (UTC) для теплокарты активности. */
+/** Матрица день-недели × час (в зоне пользователя) для теплокарты активности. */
 export function hourWeekdayHeatmap(trades: readonly Trade[]): HeatmapCell[] {
   const map = new Map<string, HeatmapCell>();
   for (const t of closedTrades(trades)) {
     const weekday = weekdayIndex(t.openedAt);
-    const hour = new Date(t.openedAt).getUTCHours();
+    const hour = new Date(t.openedAt).getHours();
     const key = `${weekday}:${hour}`;
     const cell = map.get(key) ?? { weekday, hour, pnl: 0, count: 0 };
     cell.pnl += calculatePnl(t);
@@ -237,7 +331,7 @@ function streaks(pnls: readonly number[]): { current: number; bestWin: number; w
   let worstLoss = 0;
   for (const pnl of pnls) {
     if (Math.abs(pnl) <= BREAKEVEN_EPS) continue;
-    if (pnl > 0) current = current > 0 ? current + 1 : 1;
+    if (isWin(pnl)) current = current > 0 ? current + 1 : 1;
     else current = current < 0 ? current - 1 : -1;
     bestWin = Math.max(bestWin, current);
     worstLoss = Math.min(worstLoss, current);

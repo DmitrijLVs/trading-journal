@@ -6,6 +6,8 @@ import { PeriodStore } from '../../core/state/period-store';
 import { AuthStore } from '../../core/auth/auth-store';
 import { EventsSocket } from '../../core/events/events-socket';
 import { summarize } from '../analytics/data/metrics';
+import { TradeTags, autoTags, tagsOf } from '../analytics/data/behavior';
+import { DisciplineStore } from '../analytics/discipline-store';
 
 /** Пока счёт импортирует историю, сделки дозагружаются — перечитываем их так часто. */
 const IMPORT_POLL_MS = 30_000;
@@ -21,6 +23,7 @@ export class TradesStore {
   private readonly accountsStore = inject(AccountsStore);
   private readonly periodStore = inject(PeriodStore);
   private readonly auth = inject(AuthStore);
+  private readonly discipline = inject(DisciplineStore);
   /** Пользователь и набор его счетов: подключили или удалили счёт — история другая. */
   private readonly listKey = computed(() => {
     const owner = this.auth.user()?.id;
@@ -83,6 +86,14 @@ export class TradesStore {
     });
   });
 
+  /**
+   * Автотеги разбора — по всей истории счёта (реванш видит предыдущую сделку
+   * даже за границей периода), пороги — из правил дисциплины.
+   */
+  readonly tags = computed<TradeTags>(() =>
+    autoTags(this.accountScoped(), this.discipline.settings()),
+  );
+
   readonly openTrades = computed(() => this.scoped().filter((t) => t.status === 'open'));
 
   readonly summary = computed(() => summarize(this.scoped()));
@@ -94,8 +105,10 @@ export class TradesStore {
   readonly tableTrades = computed<readonly Trade[]>(() => {
     const f = this._tableFilters();
     const search = f.search?.trim().toLowerCase();
+    const tags = this.tags();
     return this.scoped()
       .filter((t) => {
+        if (f.tag && !tagsOf(tags, t).some((tag) => tag === f.tag)) return false;
         if (f.side && t.side !== f.side) return false;
         if (f.status && t.status !== f.status) return false;
         if (f.symbols?.length && !f.symbols.includes(t.symbol)) return false;
@@ -107,7 +120,7 @@ export class TradesStore {
 
   readonly hasActiveTableFilters = computed(() => {
     const f = this._tableFilters();
-    return Boolean(f.side || f.status || f.search?.trim() || f.symbols?.length);
+    return Boolean(f.side || f.status || f.tag || f.search?.trim() || f.symbols?.length);
   });
 
   trade(id: string): Trade | undefined {

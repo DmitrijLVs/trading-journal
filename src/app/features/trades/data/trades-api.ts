@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, Signal, inject, resource } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import { Trade } from './trade.model';
+import { OrderType, Trade } from './trade.model';
 import { TradeFill } from './trade-chart.model';
 
 /** Сделок на страницу — максимум API (больше клэмпится). */
@@ -29,6 +29,9 @@ interface TradeDto {
   funding: string;
   net_pnl: string;
   fills_count: number;
+  /** Нет в доке, но гейтвей отдаёт: MARKET | LIMIT | … (null/пусто — неизвестно). */
+  open_order_type?: string | null;
+  close_order_type?: string | null;
 }
 
 interface FillDto {
@@ -123,7 +126,15 @@ function toTrade(dto: TradeDto): Trade {
     funding: num(dto.funding),
     netPnl: num(dto.net_pnl),
     fillsCount: dto.fills_count,
+    openOrderType: toOrderType(dto.open_order_type),
+    closeOrderType: toOrderType(dto.close_order_type),
   };
+}
+
+/** LIMIT — мейкерский ордер, всё рыночное (MARKET, STOP_MARKET…) — тейкерский. */
+function toOrderType(value: string | null | undefined): OrderType | null {
+  if (!value) return null;
+  return value.toUpperCase() === 'LIMIT' ? 'limit' : 'market';
 }
 
 function toFill(dto: FillDto): TradeFill {

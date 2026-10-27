@@ -3,6 +3,12 @@ import { Injectable, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 /**
+ * Раздел профиля: `overview` — листы дашборда, `journal` — настройки журнала
+ * (правила дисциплины). Бэкенд не знает, что внутри.
+ */
+export type ConfigScope = 'overview' | 'journal';
+
+/**
  * Раскладки виджетов в профиле пользователя (Configuration-Service): бэкенд
  * хранит их как непрозрачный JSON до 64 КБ, содержимое — забота фронта.
  */
@@ -11,7 +17,7 @@ export class LayoutsApi {
   private readonly http = inject(HttpClient);
 
   /** Сохранённое состояние; null — пользователь ещё ничего не сохранял. */
-  async load(scope: 'overview'): Promise<unknown | null> {
+  async load(scope: ConfigScope): Promise<unknown | null> {
     try {
       const body = await firstValueFrom(
         this.http.get<{ state: unknown }>(`/config/widgets/${scope}`),
@@ -23,7 +29,7 @@ export class LayoutsApi {
     }
   }
 
-  async save(scope: 'overview', state: unknown): Promise<void> {
+  async save(scope: ConfigScope, state: unknown): Promise<void> {
     await firstValueFrom(this.http.put(`/config/widgets/${scope}`, state));
   }
 }

@@ -41,7 +41,7 @@
   }
 
   td {
-    padding: 13px $space-3;
+    padding: var(--table-cell-py, 13px) $space-3;
     border-bottom: 1px solid var(--border-muted);
     color: var(--fg-default);
     white-space: nowrap;
@@ -148,6 +148,36 @@ gridster.display-grid .gridster-row {
   font-size: $text-xs;
   font-weight: 600;
 
-  &.long { color: var(--success-fg); }
-  &.short { color: var(--danger-fg); }
+  &.long { color: var(--long-fg); }
+  &.short { color: var(--short-fg); }
+}
+
+// Компактная плотность (Настройки → Оформление): вдвое больше строк на экране.
+:root[data-density='compact'] {
+  --table-cell-py: 6px;
+}
+
+// Автотег — пометка тренера «от руки». Реванш и тильт — красным, деньги,
+// отданные бирже, — нейтрально (это не поведенческая ошибка).
+.tj-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 7px;
+  border-radius: $radius-full;
+  background: var(--attention-subtle);
+  color: var(--attention-fg);
+  @include coach-voice(14px);
+  line-height: 20px;
+  white-space: nowrap;
+
+  &.revenge,
+  &.tilt {
+    background: var(--danger-subtle);
+    color: var(--danger-fg);
+  }
+
+  &.fee-eaten {
+    background: var(--canvas-inset);
+    color: var(--fg-muted);
+  }
 }

@@ -76,16 +76,6 @@
   height: 6px;
 }
 
-.tab-count {
-  font-size: $text-xs;
-  font-family: $font-mono;
-  color: var(--fg-subtle);
-  background: var(--canvas-inset);
-  border-radius: $radius-full;
-  padding: 0 6px;
-  line-height: 16px;
-}
-
 .tab-close {
   appearance: none;
   display: inline-flex;
@@ -270,4 +260,17 @@ gridster-item.cell {
   display: flex;
   gap: $space-2;
   justify-content: center;
+}
+
+// ── Телефон ─────────────────────────────────────────────────────────────────
+@media (max-width: 760px) {
+  .bar {
+    padding: $space-2 $space-2 $space-1;
+    gap: $space-2;
+  }
+
+  // Раскладку на телефоне не правят: блокировка и меню листа — с десктопа.
+  .bar-actions {
+    display: none;
+  }
 }

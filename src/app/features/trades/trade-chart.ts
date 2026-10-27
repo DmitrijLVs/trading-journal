@@ -14,7 +14,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { MarketExchange, TIMEFRAMES, TIMEFRAME_MS, Timeframe } from '../../core/market/market.model';
-import { Trade, calculatePnlPercent } from './data/trade.model';
+import { decimal, Trade, calculatePnlPercent } from './data/trade.model';
 import { TradeChartData, TradeFill, candleIndexAt, tradeFills } from './data/trade-chart.model';
 import { TradeChartFeed } from './trade-chart-feed';
 import { TradeLayer, TradePalette, tradeMarkup } from './trade-layer';
@@ -99,7 +99,7 @@ const RIGHT_PAD_CANDLES = 8;
       }
       <span class="side" [class.long]="trade().side === 'long'" [class.short]="trade().side === 'short'">
         <app-icon [name]="trade().side" style="--icon-size: 13px" />
-        <b>{{ trade().side === 'long' ? 'LONG' : 'SHORT' }}</b>
+        <b>{{ trade().side === 'long' ? 'Лонг' : 'Шорт' }}</b>
         @if (pnlLabel(); as label) {
           <span class="dot">·</span>
           <span class="pnl" [class.pos]="isProfit()" [class.neg]="!isProfit()">{{ label }}</span>
@@ -196,8 +196,8 @@ const RIGHT_PAD_CANDLES = 8;
       font-weight: 600;
       letter-spacing: 0.04em;
 
-      &.long { color: var(--success-fg); }
-      &.short { color: var(--danger-fg); }
+      &.long { color: var(--long-fg); }
+      &.short { color: var(--short-fg); }
 
       b { font-weight: inherit; }
     }
@@ -240,7 +240,7 @@ export class TradeChart {
     const t = this.trade();
     if (t.status !== 'closed') return '';
     const pct = calculatePnlPercent(t);
-    return `${pct >= 0 ? '+' : '−'}${Math.abs(pct).toFixed(2)}%`;
+    return `${pct >= 0 ? '+' : '−'}${decimal(Math.abs(pct), 2)}%`;
   });
 
   private readonly ready = signal(false);

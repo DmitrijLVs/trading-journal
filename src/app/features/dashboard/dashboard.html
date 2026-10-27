@@ -24,7 +24,6 @@
             />
           } @else {
             <span class="tab-name">{{ ws.name }}</span>
-            <span class="tab-count">{{ ws.widgets.length }}</span>
             @if (ws.id === store.activeWorkspaceId()) {
               <i class="tab-ink" appSketchUnderline [sketchSeed]="ws.id" [sketchInset]="0"></i>
             }
@@ -42,7 +41,7 @@
         </div>
       }
 
-      <button type="button" class="tab-add" appTooltip="Новый лист" (click)="store.addWorkspace()">
+      <button type="button" class="tab-add" appTooltip="Новый лист" [cdkMenuTriggerFor]="addSheetMenu">
         <app-icon name="plus" style="--icon-size: 14px" />
       </button>
     </div>
@@ -76,6 +75,11 @@
       </button>
     </div>
   </div>
+
+  <!-- ── Предложение готовых листов (раскладка сохранена до их появления) ── -->
+  @if (store.showPresetOffer()) {
+    <app-preset-offer />
+  }
 
   <!-- ── Сетка ──────────────────────────────────────────────────────── -->
   <div class="grid-area" #gridArea>
@@ -133,6 +137,26 @@
     }
   </div>
 </div>
+
+<!-- ── Новый лист: пустой или из набора ─────────────────────────────── -->
+<ng-template #addSheetMenu>
+  <div class="tj-menu sheet-menu" cdkMenu>
+    <button class="tj-menu-item" cdkMenuItem (click)="store.addWorkspace()">
+      <app-icon name="plus" style="--icon-size: 14px" />
+      Пустой лист
+    </button>
+    <div class="tj-menu-separator"></div>
+    @for (preset of presets; track preset.id) {
+      <button class="tj-menu-item preset" cdkMenuItem (click)="store.addPreset(preset.id)">
+        <app-icon name="template" style="--icon-size: 14px" />
+        <span class="preset-text">
+          <span>{{ preset.name }}</span>
+          <span class="preset-q">{{ preset.question }}</span>
+        </span>
+      </button>
+    }
+  </div>
+</ng-template>
 
 <!-- ── Меню листа ─────────────────────────────────────────────────── -->
 <ng-template #workspaceMenu>

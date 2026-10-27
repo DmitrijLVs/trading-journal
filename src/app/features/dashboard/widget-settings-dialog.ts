@@ -24,15 +24,22 @@ const PERIOD_OPTIONS: SelectOption[] = [
 
 const GROUP_OPTIONS: SelectOption[] = [
   { value: 'symbol', label: 'Инструмент' },
+  { value: 'tag', label: 'Автотеги разбора' },
+  { value: 'hold', label: 'Время удержания' },
+  { value: 'streak', label: 'Серия убытков перед входом' },
+  { value: 'dayLoad', label: 'Сделок в день' },
+  { value: 'orderType', label: 'Тип ордеров' },
   { value: 'session', label: 'Сессия' },
   { value: 'weekday', label: 'День недели' },
-  { value: 'hour', label: 'Час (UTC)' },
+  { value: 'hour', label: 'Час входа' },
 ];
 
 const METRIC_OPTIONS: SelectOption[] = [
   { value: 'pnl', label: 'P&L' },
+  { value: 'avg', label: 'Средняя сделка' },
   { value: 'count', label: 'Количество сделок' },
   { value: 'winrate', label: 'Винрейт' },
+  { value: 'fees', label: 'Комиссии' },
 ];
 
 /** Настройки экземпляра виджета: заголовок, период, разрез, метрика. */

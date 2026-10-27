@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { TagMark } from '../analytics/data/behavior';
 import { Trade } from './data/trade.model';
 import { Icon } from '../../shared/ui/icon';
 import { PnlValue } from '../../shared/ui/pnl-value';
@@ -9,6 +10,10 @@ export interface TradeRow {
   pnl: number;
   pnlPct: number;
   notional: number;
+  /** Автотеги разбора с причинами. */
+  marks: readonly TagMark[];
+  /** Нереализованный P&L открытой позиции по данным биржи; null — закрыта или неизвестен. */
+  unrealized: number | null;
 }
 
 /**

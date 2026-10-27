@@ -10,19 +10,26 @@ import {
   dailyPnl,
   equityCurve,
   groupBy,
+  groupByAutoTag,
+  groupByDayLoad,
+  groupByHold,
   groupByHour,
+  groupByLossStreak,
+  groupByOrderType,
   groupBySession,
   groupByWeekday,
   hourWeekdayHeatmap,
 } from '../../analytics/data/metrics';
+import { TradeTags } from '../../analytics/data/behavior';
 import {
   calculatePnl,
   durationMs,
   formatCompact,
   formatMoney,
+  formatMoneyAxis,
   formatPercent,
 } from '../../trades/data/trade.model';
-import { GroupKey } from '../data/workspace.model';
+import { DistributionMetric, GroupKey } from '../data/workspace.model';
 
 /** Общий каркас чартового виджета: график или пустое состояние. */
 const CHART_WIDGET_TEMPLATE = `
@@ -67,7 +74,7 @@ export class WidgetEquityCurve extends WidgetBase {
       xAxis: { type: 'time' },
       yAxis: {
         type: 'value',
-        axisLabel: { formatter: (v: number) => formatCompact(v) },
+        axisLabel: { formatter: (v: number) => formatMoneyAxis(v) },
       },
       series: [
         {
@@ -157,7 +164,7 @@ export class WidgetCumulativeProfit extends WidgetBase {
       yAxis: {
         type: 'value',
         axisLabel: {
-          formatter: (v: number) => (percent ? `${v.toFixed(0)}%` : formatCompact(v)),
+          formatter: (v: number) => (percent ? `${v.toFixed(0)}%` : formatMoneyAxis(v)),
         },
       },
       series: [
@@ -211,7 +218,7 @@ export class WidgetDrawdown extends WidgetBase {
     },
     grid: baseGrid(),
     xAxis: { type: 'time' },
-    yAxis: { type: 'value', axisLabel: { formatter: (v: number) => formatCompact(v) } },
+    yAxis: { type: 'value', axisLabel: { formatter: (v: number) => formatMoneyAxis(v) } },
     series: [
       {
         name: 'Просадка',
@@ -256,7 +263,7 @@ export class WidgetDailyPnl extends WidgetBase {
         data: days.map((d) => d.date.slice(5)),
         axisLabel: { interval: Math.max(0, Math.ceil(days.length / 14) - 1) },
       },
-      yAxis: { type: 'value', axisLabel: { formatter: (v: number) => formatCompact(v) } },
+      yAxis: { type: 'value', axisLabel: { formatter: (v: number) => formatMoneyAxis(v) } },
       series: [
         {
           name: 'P&L',
@@ -275,11 +282,18 @@ export class WidgetDailyPnl extends WidgetBase {
 
 // ── Распределение по ключу ──────────────────────────────────────────────────
 
-const METRIC_LABELS: Record<string, string> = {
+const METRIC_LABELS: Record<DistributionMetric, string> = {
   pnl: 'P&L',
+  avg: 'Средняя сделка',
   count: 'Сделки',
   winrate: 'Винрейт',
+  fees: 'Комиссии',
 };
+
+/** Порядковые разрезы: порядок групп смысловой, по метрике не сортируем. */
+const ORDINAL: ReadonlySet<GroupKey> = new Set(['weekday', 'hour', 'hold', 'dayLoad', 'streak']);
+/** Вертикальные столбцы — для времени по оси X; остальное — горизонтальные полосы. */
+const VERTICAL: ReadonlySet<GroupKey> = new Set(['weekday', 'hour']);
 
 @Component({
   selector: 'app-widget-distribution',
@@ -291,11 +305,10 @@ const METRIC_LABELS: Record<string, string> = {
 export class WidgetDistribution extends WidgetBase {
   private readonly groups = computed<GroupStat[]>(() => {
     const key = this.settings().groupBy ?? 'symbol';
-    const trades = this.trades();
-    const stats = groupStats(trades, key);
+    const stats = groupStats(this.trades(), key, this.tradesStore.tags(), this.tradesStore.accountScoped());
+    if (ORDINAL.has(key)) return stats;
     const limit = this.settings().limit ?? 10;
-    // Сортировка по |метрике| — важное видно сразу; время оставляем по порядку.
-    if (key === 'weekday' || key === 'hour') return stats;
+    // Сортировка по |метрике| — важное видно сразу.
     const metric = this.settings().metric ?? 'pnl';
     return [...stats]
       .sort((a, b) => Math.abs(metricValue(b, metric)) - Math.abs(metricValue(a, metric)))
@@ -307,9 +320,10 @@ export class WidgetDistribution extends WidgetBase {
   protected readonly options = computed<EChartsCoreOption>(() => {
     const metric = this.settings().metric ?? 'pnl';
     const key = this.settings().groupBy ?? 'symbol';
-    const horizontal = key !== 'weekday' && key !== 'hour';
+    const horizontal = !VERTICAL.has(key);
     // Горизонтальные бары читаются сверху вниз — разворачиваем порядок.
     const groups = horizontal ? [...this.groups()].reverse() : this.groups();
+    const hasNegative = groups.some((g) => metricValue(g, metric) < 0);
 
     const values = groups.map((g) => {
       const v = metricValue(g, metric);
@@ -319,14 +333,26 @@ export class WidgetDistribution extends WidgetBase {
           color: metricColor(v, metric),
           borderRadius: horizontal ? hBarRadius(v) : barRadius(v),
         },
+        // Подпись — снаружи конца бара, со стороны значения: не налезает на сам бар.
+        label: { position: horizontal ? (v < 0 ? 'left' : 'right') : v < 0 ? 'bottom' : 'top' },
       };
     });
 
     const catAxis = { type: 'category', data: groups.map((g) => g.key) };
+    // Запас по краям шкалы: подпись значения встаёт за концом бара и не налезает
+    // на подписи категорий.
+    const raw = groups.map((g) => metricValue(g, metric));
+    const lo = Math.min(0, ...raw);
+    const hi = Math.max(0, ...raw);
+    const span = hi - lo || 1;
+    const headroom = horizontal ? 0.6 : 0.18;
     const valAxis = {
       type: 'value',
+      min: lo < 0 ? lo - span * headroom : 0,
+      max: hi > 0 ? hi + span * headroom : 0,
       axisLabel: {
-        formatter: (v: number) => (metric === 'winrate' ? `${v}%` : formatCompact(v)),
+        formatter: (v: number) =>
+          metric === 'winrate' ? `${Math.round(v)}%` : metric === 'count' ? formatCompact(v) : formatMoneyAxis(v),
       },
     };
 
@@ -334,19 +360,19 @@ export class WidgetDistribution extends WidgetBase {
       tooltip: {
         ...baseTooltip(),
         trigger: 'axis',
-        axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(255,255,255,0.04)' } },
+        axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(127,127,127,0.06)' } },
         formatter: (params: unknown) => {
           const p = (params as { dataIndex: number }[])[0];
           const g = groups[p.dataIndex];
           return [
             `<b>${g.key}</b>`,
             `${METRIC_LABELS[metric]}: ${formatMetric(metricValue(g, metric), metric)}`,
-            `${g.count} сд. · винрейт ${(g.winRate * 100).toFixed(0)}%`,
+            `${g.count} сд. · винрейт ${(g.winRate * 100).toFixed(0)}% · итог ${formatMoney(g.pnl, { sign: true })}`,
           ].join('<br/>');
         },
       },
-      grid: baseGrid(horizontal ? { left: 4 } : {}),
-      xAxis: horizontal ? valAxis : catAxis,
+      grid: baseGrid(horizontal ? { left: 4, right: 12 } : { top: 12 }),
+      xAxis: horizontal ? { ...valAxis, axisLabel: { show: false }, splitLine: { show: false } } : catAxis,
       yAxis: horizontal ? catAxis : valAxis,
       series: [
         {
@@ -355,18 +381,24 @@ export class WidgetDistribution extends WidgetBase {
           data: values,
           barMaxWidth: horizontal ? 16 : 30,
           barCategoryGap: '30%',
-          label: horizontal
+          label: {
+            show: horizontal || groups.length <= 8,
+            distance: 6,
+            color: CHART.fgMuted,
+            fontSize: 11,
+            fontFamily: CHART.mono,
+            formatter: (p: { dataIndex: number }) =>
+              formatMetric(metricValue(groups[p.dataIndex], metric), metric),
+          },
+          markLine: hasNegative
             ? {
-                show: true,
-                position: 'insideLeft',
-                distance: 6,
-                color: CHART.fg,
-                fontSize: 10,
-                fontFamily: CHART.mono,
-                formatter: (p: { dataIndex: number }) =>
-                  formatMetric(metricValue(groups[p.dataIndex], metric), metric),
+                silent: true,
+                symbol: 'none',
+                label: { show: false },
+                lineStyle: { color: CHART.border, type: 'solid' },
+                data: [horizontal ? { xAxis: 0 } : { yAxis: 0 }],
               }
-            : { show: false },
+            : undefined,
         },
       ],
     };
@@ -419,7 +451,8 @@ export class WidgetDistribution extends WidgetBase {
 export class WidgetLongShort extends WidgetBase {
   protected readonly rows = computed(() => {
     const stats = groupBy(this.trades(), (t) => (t.side === 'long' ? 'Лонг' : 'Шорт'));
-    return stats.map((s) => ({ ...s, color: s.key === 'Лонг' ? CHART.pos : CHART.neg }));
+    // Направление — не результат: свои нейтральные цвета, зелёный/красный только у денег.
+    return stats.map((s) => ({ ...s, color: s.key === 'Лонг' ? CHART.long : CHART.short }));
   });
 
   protected readonly hasData = computed(() => this.rows().length > 0);
@@ -476,7 +509,7 @@ export class WidgetHeatmapHours extends WidgetBase {
         formatter: (p: unknown) => {
           const { value } = p as { value: [number, number, number] };
           const cell = cells.find((c) => c.hour === value[0] && c.weekday === value[1]);
-          return `${WEEKDAY_LABELS[value[1]]}, ${String(value[0]).padStart(2, '0')}:00 UTC<br/>${formatMoney(value[2], { sign: true })} · ${cell?.count ?? 0} сд.`;
+          return `${WEEKDAY_LABELS[value[1]]}, ${String(value[0]).padStart(2, '0')}:00<br/>${formatMoney(value[2], { sign: true })} · ${cell?.count ?? 0} сд.`;
         },
       },
       grid: baseGrid({ top: 6, bottom: 30 }),
@@ -506,7 +539,7 @@ export class WidgetHeatmapHours extends WidgetBase {
         inRange: {
           color: [CHART.neg, mix(CHART.neg, CHART.grid, 0.7), CHART.grid, mix(CHART.pos, CHART.grid, 0.7), CHART.pos],
         },
-        formatter: (v: number) => formatCompact(v),
+        formatter: (v: number) => formatMoneyAxis(v),
       },
       series: [
         {
@@ -562,7 +595,7 @@ export class WidgetDurationScatter extends WidgetBase {
         nameTextStyle: { color: CHART.fgSubtle, fontSize: 9 },
         axisLabel: { formatter: (v: number) => fmtDurationMin(v) },
       },
-      yAxis: { type: 'value', axisLabel: { formatter: (v: number) => formatCompact(v) } },
+      yAxis: { type: 'value', axisLabel: { formatter: (v: number) => formatMoneyAxis(v) } },
       series: [
         {
           type: 'scatter',
@@ -584,48 +617,64 @@ export class WidgetDurationScatter extends WidgetBase {
 
 // ── Вспомогательные ────────────────────────────────────────────────────────
 
-function groupStats(trades: Parameters<typeof groupBy>[0], key: GroupKey): GroupStat[] {
+function groupStats(
+  trades: Parameters<typeof groupBy>[0],
+  key: GroupKey,
+  tags: TradeTags,
+  history: Parameters<typeof groupBy>[0],
+): GroupStat[] {
   switch (key) {
     case 'symbol':
       return groupBy(trades, (t) => t.symbol);
-    // Разбора сделок в API нет — такие виджеты показывают «скоро».
-    case 'strategy':
     case 'tag':
-    case 'mistake':
-    case 'setup':
-      return [];
+      return groupByAutoTag(trades, tags);
     case 'session':
       return groupBySession(trades);
     case 'weekday':
       return groupByWeekday(trades);
     case 'hour':
       return groupByHour(trades);
+    case 'hold':
+      return groupByHold(trades);
+    case 'dayLoad':
+      return groupByDayLoad(trades);
+    case 'streak':
+      return groupByLossStreak(trades, history);
+    case 'orderType':
+      return groupByOrderType(trades);
   }
 }
 
-function metricValue(g: GroupStat, metric: string): number {
+function metricValue(g: GroupStat, metric: DistributionMetric): number {
   switch (metric) {
     case 'count':
       return g.count;
     case 'winrate':
       return g.winRate * 100;
+    case 'fees':
+      return g.fees;
+    case 'avg':
+      return g.count ? g.pnl / g.count : 0;
     default:
       return g.pnl;
   }
 }
 
-function metricColor(value: number, metric: string): string {
+function metricColor(value: number, metric: DistributionMetric): string {
   if (metric === 'count') return CHART.accent;
+  if (metric === 'fees') return CHART.orange;
   if (metric === 'winrate') return value >= 50 ? CHART.pos : CHART.orange;
   return value >= 0 ? CHART.pos : CHART.neg;
 }
 
-function formatMetric(value: number, metric: string): string {
+function formatMetric(value: number, metric: DistributionMetric): string {
   switch (metric) {
     case 'count':
       return String(Math.round(value));
     case 'winrate':
       return `${value.toFixed(0)}%`;
+    case 'fees':
+      return formatMoney(value);
     default:
       return formatMoney(value, { sign: true });
   }

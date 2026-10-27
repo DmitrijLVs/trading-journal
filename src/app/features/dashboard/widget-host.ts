@@ -1,6 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { WidgetInstance, defaultWidgetTitle, soonReason } from './data/workspace.model';
-import { Soon } from '../../shared/ui/soon';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { WidgetInstance } from './data/workspace.model';
 import { WidgetStatPnl } from './widgets/stat-tiles';
 import { WidgetSummary } from './widgets/widget-summary';
 import {
@@ -15,11 +14,22 @@ import {
 } from './widgets/chart-widgets';
 import { WidgetPnlCalendar } from './widgets/pnl-calendar';
 import { WidgetBestWorst, WidgetOpenPositions, WidgetRecentTrades } from './widgets/table-widgets';
+import { WidgetAlerts, WidgetDayHero, WidgetDayTimeline } from './widgets/day-widgets';
+import { WidgetInsights } from './widgets/insight-widgets';
+import { WidgetPeriodResults } from './widgets/period-widgets';
+import { WidgetFeeLab, WidgetFeeWaterfall } from './widgets/cost-widgets';
 
 /** Резолвит тип виджета в компонент. */
 @Component({
   selector: 'app-widget-host',
   imports: [
+    WidgetDayHero,
+    WidgetDayTimeline,
+    WidgetAlerts,
+    WidgetInsights,
+    WidgetPeriodResults,
+    WidgetFeeLab,
+    WidgetFeeWaterfall,
     WidgetStatPnl,
     WidgetSummary,
     WidgetEquityCurve,
@@ -28,7 +38,6 @@ import { WidgetBestWorst, WidgetOpenPositions, WidgetRecentTrades } from './widg
     WidgetDrawdown,
     WidgetDistribution,
     WidgetLongShort,
-    Soon,
     WidgetHeatmapHours,
     WidgetDurationScatter,
     WidgetPnlCalendar,
@@ -37,10 +46,14 @@ import { WidgetBestWorst, WidgetOpenPositions, WidgetRecentTrades } from './widg
     WidgetBestWorst,
   ],
   template: `
-    @if (soon(); as reason) {
-      <div class="soon"><app-soon [title]="title()" [description]="reason" /></div>
-    } @else {
     @switch (widget().type) {
+      @case ('day-hero') { <app-widget-day-hero [settings]="widget().settings" /> }
+      @case ('day-timeline') { <app-widget-day-timeline [settings]="widget().settings" /> }
+      @case ('alerts') { <app-widget-alerts [settings]="widget().settings" /> }
+      @case ('insights') { <app-widget-insights [settings]="widget().settings" /> }
+      @case ('period-results') { <app-widget-period-results [settings]="widget().settings" /> }
+      @case ('fee-lab') { <app-widget-fee-lab [settings]="widget().settings" /> }
+      @case ('fee-waterfall') { <app-widget-fee-waterfall [settings]="widget().settings" /> }
       @case ('stat-pnl') { <app-widget-stat-pnl [settings]="widget().settings" /> }
       @case ('summary') { <app-widget-summary [settings]="widget().settings" /> }
       @case ('equity-curve') { <app-widget-equity-curve [settings]="widget().settings" /> }
@@ -56,19 +69,13 @@ import { WidgetBestWorst, WidgetOpenPositions, WidgetRecentTrades } from './widg
       @case ('open-positions') { <app-widget-open-positions [settings]="widget().settings" /> }
       @case ('best-worst') { <app-widget-best-worst [settings]="widget().settings" /> }
     }
-    }
   `,
   styles: `
     :host { display: block; height: 100%; }
     :host > * { height: 100%; }
-    .soon { display: flex; align-items: center; justify-content: center; padding: 16px; }
-    .soon app-soon { height: auto; max-width: 340px; }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class WidgetHost {
   readonly widget = input.required<WidgetInstance>();
-
-  protected readonly soon = computed(() => soonReason(this.widget()));
-  protected readonly title = computed(() => defaultWidgetTitle(this.widget()));
 }

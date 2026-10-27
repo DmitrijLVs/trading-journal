@@ -151,3 +151,19 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+
+// Меню «новый лист»: у готового набора — вопрос, на который он отвечает.
+.tj-menu.sheet-menu {
+  min-width: 240px;
+}
+
+.tj-menu .preset-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.tj-menu .preset-q {
+  font-size: $text-xs;
+  color: var(--fg-subtle);
+}

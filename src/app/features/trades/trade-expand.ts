@@ -16,12 +16,15 @@ import {
   Trade,
   calculatePnl,
   calculatePnlPercent,
+  durationMs,
   formatDateTime,
   formatDuration,
   formatFeesOther,
   formatMoney,
   formatPercent,
   formatPrice,
+  formatQuantity,
+  formatSpan,
   notional,
   tradingSession,
 } from './data/trade.model';
@@ -36,18 +39,32 @@ import { Button } from '../../shared/ui/button';
 import { Badge } from '../../shared/ui/badge';
 import { Skeleton } from '../../shared/ui/skeleton';
 import { EmptyState } from '../../shared/ui/empty-state';
-import { Soon } from '../../shared/ui/soon';
+import { TradeTags } from './trade-tags';
+import { TradesStore } from './trades-store';
+import { PortfolioStore } from '../analytics/portfolio-store';
 
 /** Ячейка таблицы фактов: подпись, значение и смысловой цвет. */
 interface Fact {
   k: string;
   v: string;
   tone?: 'pos' | 'neg' | 'win' | 'loss';
+  /** На всю ширину таблицы (длинные значения). */
+  wide?: boolean;
+}
+
+const ORDER_LABEL = { market: 'маркет', limit: 'лимит' } as const;
+
+/** «маркет → лимит»; неизвестный тип — прочерк. */
+function orderTypes(t: Trade): string {
+  const open = t.openOrderType ? ORDER_LABEL[t.openOrderType] : '—';
+  if (t.status === 'open') return open;
+  const close = t.closeOrderType ? ORDER_LABEL[t.closeOrderType] : '—';
+  return `${open} → ${close}`;
 }
 
 /**
- * Разбор сделки: график с исполнениями и факты биржи. Поля разбора (заметки,
- * теги, ошибки) API пока не хранит — на их месте пометка «скоро».
+ * Разбор сделки: график с исполнениями, итог крупно, факты биржи и автотеги
+ * (реванш, тильт, овертрейд…) с причинами.
  *
  * `layout` — 'row' (график слева, факты справа) для раскрытой строки таблицы,
  * 'column' (график сверху, факты колонками под ним) для режима «График».
@@ -55,7 +72,7 @@ interface Fact {
  */
 @Component({
   selector: 'app-trade-expand',
-  imports: [TradeChart, Icon, Button, Badge, Skeleton, EmptyState, Soon],
+  imports: [TradeChart, Icon, Button, Badge, Skeleton, EmptyState, TradeTags],
   templateUrl: './trade-expand.html',
   styleUrl: './trade-expand.scss',
   host: { '[class]': "'is-' + layout()", '[class.is-embedded]': 'embedded()' },
@@ -64,6 +81,8 @@ interface Fact {
 export class TradeExpand {
   private readonly accountsStore = inject(AccountsStore);
   private readonly loader = inject(TradeChartLoader);
+  private readonly tradesStore = inject(TradesStore);
+  private readonly portfolio = inject(PortfolioStore);
 
   readonly trade = input.required<Trade>();
   /** 'row' — рядом с таблицей, 'column' — в режиме «График». */
@@ -81,6 +100,27 @@ export class TradeExpand {
   protected readonly marketLabel = computed(() => {
     const meta = exchangeMeta(this.account()?.exchange ?? 'binance');
     return `${meta.label} ${meta.market}`;
+  });
+
+  protected readonly pnl = computed(() => calculatePnl(this.trade()));
+  protected readonly marks = computed(() => this.tradesStore.tags().get(this.trade().id) ?? []);
+
+  /** Нереализованный P&L открытой сделки по позиции биржи; null — неизвестен. */
+  protected readonly unrealized = computed(() => {
+    const id = this.trade().id;
+    return this.portfolio.positions().find((p) => p.tradeId === id)?.unrealizedPnl ?? null;
+  });
+
+  /** Под итогом: движение цены, комиссии; у открытой — сколько уже в позиции. */
+  protected readonly resultNote = computed(() => {
+    const t = this.trade();
+    if (t.status === 'open') {
+      const partial = t.exitPrice !== null ? ` · частично закрыта, realized ${formatMoney(t.realizedPnl, { sign: true })}` : '';
+      return `в позиции ${formatSpan(durationMs(t))}${partial}`;
+    }
+    const move = calculatePnlPercent(t);
+    const moveText = move ? `цена ${formatPercent(move, { sign: true })}` : 'движение неизвестно';
+    return `${moveText} · до комиссий ${formatMoney(t.realizedPnl, { sign: true })}`;
   });
 
   /** Таймфрейм графика: по длительности сделки, дальше — переключается в тулбаре. */
@@ -114,36 +154,29 @@ export class TradeExpand {
     const t = this.trade();
     const closed = t.status === 'closed';
     const sign = (v: number): Fact['tone'] => (v >= 0 ? 'pos' : 'neg');
-    const pnl = calculatePnl(t);
-    const move = calculatePnlPercent(t);
     const feesOther = formatFeesOther(t);
     return [
-      ...(closed
-        ? ([
-            { k: 'P&L', v: formatMoney(pnl, { sign: true }), tone: sign(pnl) },
-            { k: 'Движение', v: move ? formatPercent(move, { sign: true }) : '—', tone: move ? sign(move) : undefined },
-            { k: 'Realized', v: formatMoney(t.realizedPnl, { sign: true }), tone: sign(t.realizedPnl) },
-          ] as Fact[])
-        : ([
-            { k: 'Realized', v: formatMoney(t.realizedPnl, { sign: true }), tone: t.realizedPnl ? sign(t.realizedPnl) : undefined },
-          ] as Fact[])),
+      { k: 'Вход', v: t.carriedIn ? 'до начала истории' : formatPrice(t.entryPrice) },
+      { k: 'Выход', v: t.exitPrice === null ? 'в позиции' : formatPrice(t.exitPrice) },
+      { k: 'Объём', v: formatQuantity(t.quantity) },
+      { k: 'Номинал', v: formatMoney(notional(t)) },
       { k: 'Комиссии', v: feesOther ? `${formatMoney(t.fees)} + ${feesOther}` : formatMoney(t.fees) },
       {
         k: 'Фандинг',
         v: t.funding === 0 ? '—' : formatMoney(t.funding, { sign: true }),
         tone: t.funding === 0 ? undefined : sign(t.funding),
       },
-      { k: 'Вход', v: t.carriedIn ? 'до начала истории' : formatPrice(t.entryPrice) },
-      { k: 'Выход', v: t.exitPrice === null ? 'в позиции' : formatPrice(t.exitPrice) },
-      { k: 'Объём', v: `${t.quantity}` },
-      { k: 'Номинал', v: formatMoney(notional(t)) },
+      { k: 'В позиции', v: closed ? formatDuration(t.openedAt, t.closedAt) : formatSpan(durationMs(t)) },
       { k: 'Исполнений', v: `${t.fillsCount}` },
-      { k: 'В позиции', v: closed ? formatDuration(t.openedAt, t.closedAt) : 'позиция открыта' },
+      { k: 'Ордера', v: orderTypes(t) },
       { k: 'Сессия', v: SESSION_LABELS[tradingSession(t.openedAt)] },
-      { k: 'Счёт', v: this.accountName() },
-      { k: 'Рынок', v: this.marketLabel() },
+      { k: 'Счёт', v: `${this.accountName()} · ${this.marketLabel()}`, wide: true },
     ];
   });
+
+  protected money(value: number): string {
+    return formatMoney(value, { sign: true });
+  }
 
   constructor() {
     effect(() => {

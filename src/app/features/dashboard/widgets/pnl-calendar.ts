@@ -2,7 +2,16 @@ import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/c
 import { WidgetBase } from './widget-base';
 import { Icon } from '../../../shared/ui/icon';
 import { Tooltip } from '../../../shared/ui/tooltip';
-import { calculatePnl, formatCompact, formatMoney, notional, tradeCosts } from '../../trades/data/trade.model';
+import {
+  MONEY_MASK,
+  calculatePnl,
+  formatCompact,
+  formatMoney,
+  isMoneyHidden,
+  localDay,
+  notional,
+  tradeCosts,
+} from '../../trades/data/trade.model';
 
 interface DayStat {
   pnl: number;
@@ -23,6 +32,14 @@ interface CalendarCell {
   isToday: boolean;
   /** День уже прошёл (строго до сегодня) — без сделок он «пустой», серый. */
   isPast: boolean;
+}
+
+/** Итог недели — правая колонка календаря. */
+interface WeekTotal {
+  pnl: number;
+  count: number;
+  /** В неделе были сделки. */
+  active: boolean;
 }
 
 const MONTHS = [
@@ -59,7 +76,7 @@ export class WidgetPnlCalendar extends WidgetBase {
     const map = new Map<string, DayStat>();
     for (const t of this.trades()) {
       if (t.status !== 'closed') continue;
-      const key = t.closedAt.slice(0, 10);
+      const key = localDay(t.closedAt);
       const stat = map.get(key) ?? { pnl: 0, count: 0, volume: 0, fees: 0 };
       stat.pnl += calculatePnl(t);
       stat.count += 1;
@@ -77,7 +94,7 @@ export class WidgetPnlCalendar extends WidgetBase {
     const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
     const lead = (first.getUTCDay() + 6) % 7; // понедельник — первый
     const map = this.dayMap();
-    const todayKey = new Date().toISOString().slice(0, 10);
+    const todayKey = localDay(Date.now());
 
     const monthMax = Math.max(
       1,
@@ -97,16 +114,38 @@ export class WidgetPnlCalendar extends WidgetBase {
         count: stat?.count ?? 0,
         volume: stat?.volume ?? 0,
         fees: stat?.fees ?? 0,
-        intensity: stat ? 0.25 + 0.75 * Math.min(1, Math.abs(stat.pnl) / monthMax) : 0,
+        intensity: stat ? 0.2 + 0.8 * Math.min(1, Math.abs(stat.pnl) / monthMax) : 0,
         isToday: date === todayKey,
         isPast: date < todayKey,
       });
     }
+    // Хвост последней недели — пустые ячейки, чтобы колонка итогов не съезжала.
+    while (cells.length % 7) cells.push(null);
     return cells;
   });
 
+  /** Ячейки по неделям + итог каждой недели. */
+  protected readonly weeks = computed(() => {
+    const cells = this.cells();
+    const weeks: { cells: (CalendarCell | null)[]; total: WeekTotal }[] = [];
+    for (let i = 0; i < cells.length; i += 7) {
+      const week = cells.slice(i, i + 7);
+      const traded = week.filter((c): c is CalendarCell => c !== null && c.pnl !== null);
+      weeks.push({
+        cells: week,
+        total: {
+          pnl: traded.reduce((s, c) => s + (c.pnl ?? 0), 0),
+          count: traded.reduce((s, c) => s + c.count, 0),
+          active: traded.length > 0,
+        },
+      });
+    }
+    return weeks;
+  });
+
   protected readonly monthTotal = computed(() => {
-    const prefix = this.monthDate().toISOString().slice(0, 7);
+    const d = this.monthDate();
+    const prefix = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
     let pnl = 0;
     let count = 0;
     for (const [date, v] of this.dayMap()) {
@@ -126,8 +165,11 @@ export class WidgetPnlCalendar extends WidgetBase {
     this.monthOffset.set(0);
   }
 
+  /** Без «$» — ячейка узкая; при скрытых суммах — только знак и точки. */
   protected compact(value: number): string {
-    return (value > 0 ? '+' : value < 0 ? '−' : '') + formatCompact(Math.abs(value));
+    const body = formatCompact(Math.abs(value));
+    if (body === '0') return '0';
+    return (value > 0 ? '+' : '−') + (isMoneyHidden() ? MONEY_MASK : body);
   }
 
   protected isIdle(cell: CalendarCell): boolean {
@@ -140,11 +182,6 @@ export class WidgetPnlCalendar extends WidgetBase {
       `${cell.date}: ${formatMoney(cell.pnl, { sign: true })} · ${cell.count} сд. · ` +
       `оборот ${formatMoney(cell.volume)} · комиссии ${formatMoney(cell.fees)}`
     );
-  }
-
-  /** Компактные деньги для нижней строки ячейки: $146K, $132. */
-  protected short(value: number): string {
-    return `$${formatCompact(value)}`;
   }
 
   protected money(value: number): string {

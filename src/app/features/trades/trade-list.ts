@@ -9,6 +9,7 @@ import {
   inject,
   input,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -26,10 +27,15 @@ import {
   formatDateTime,
   formatDuration,
   formatMoney,
+  formatSpan,
   formatPrice,
   notional,
 } from './data/trade.model';
 import { summarize } from '../analytics/data/metrics';
+import { AUTO_TAGS, AUTO_TAG_LABELS, isAutoTag } from '../analytics/data/behavior';
+import { PortfolioStore } from '../analytics/portfolio-store';
+import { TradeTags } from './trade-tags';
+import { Tooltip } from '../../shared/ui/tooltip';
 import { Icon } from '../../shared/ui/icon';
 import { Button } from '../../shared/ui/button';
 import { Select, SelectOption } from '../../shared/ui/select';
@@ -61,6 +67,8 @@ type ViewMode = 'table' | 'split';
     PnlValue,
     EmptyState,
     Skeleton,
+    TradeTags,
+    Tooltip,
   ],
   templateUrl: './trade-list.html',
   styleUrl: './trade-list.scss',
@@ -70,8 +78,13 @@ export class TradeList {
   protected readonly store = inject(TradesStore);
   protected readonly accounts = inject(AccountsStore);
 
+  private readonly portfolio = inject(PortfolioStore);
+
   /** Из маршрута /trades/:id — сделка, которую нужно сразу раскрыть. */
   readonly id = input<string>();
+  /** Query-параметры: инсайт ведёт сюда с фильтром по автотегу или направлению. */
+  readonly tag = input<string>();
+  readonly side = input<string>();
 
   private readonly tableEl = viewChild<ElementRef<HTMLElement>>('tableWrap');
   private widthObserver: ResizeObserver | null = null;
@@ -99,6 +112,11 @@ export class TradeList {
     { value: 'short', label: 'Шорт' },
   ];
 
+  protected readonly tagOptions: SelectOption[] = AUTO_TAGS.map((tag) => ({
+    value: tag,
+    label: AUTO_TAG_LABELS[tag],
+  }));
+
   protected readonly statusOptions: SelectOption[] = [
     { value: 'closed', label: 'Закрытые' },
     { value: 'open', label: 'Открытые' },
@@ -108,14 +126,25 @@ export class TradeList {
     this.store.symbols().map((s) => ({ value: s, label: s })),
   );
 
-  private readonly rows = computed<TradeRow[]>(() =>
-    this.store.tableTrades().map((trade) => ({
+  /** Нереализованный P&L открытых сделок — из позиций биржи. */
+  private readonly unrealizedById = computed(() => {
+    const map = new Map<string, number>();
+    for (const p of this.portfolio.positions()) if (p.tradeId) map.set(p.tradeId, p.unrealizedPnl);
+    return map;
+  });
+
+  private readonly rows = computed<TradeRow[]>(() => {
+    const tags = this.store.tags();
+    const unrealized = this.unrealizedById();
+    return this.store.tableTrades().map((trade) => ({
       trade,
       pnl: calculatePnl(trade),
       pnlPct: calculatePnlPercent(trade),
       notional: notional(trade),
-    })),
-  );
+      marks: tags.get(trade.id) ?? [],
+      unrealized: trade.status === 'open' ? (unrealized.get(trade.id) ?? null) : null,
+    }));
+  });
 
   /** Открытые позиции закреплены сверху при любой сортировке, внутри — по ней же. */
   protected readonly sortedRows = computed<TradeRow[]>(() => {
@@ -169,6 +198,20 @@ export class TradeList {
   protected readonly selectedId = computed(() => this.selectedRow()?.trade.id ?? null);
 
   constructor() {
+    // Пришли из инсайта (?tag=… / ?side=…) — ставим ровно этот фильтр.
+    effect(() => {
+      const tag = this.tag();
+      const side = this.side();
+      if (tag === undefined && side === undefined) return;
+      untracked(() => {
+        this.store.resetTableFilters();
+        this.store.updateTableFilters({
+          tag: isAutoTag(tag) ? tag : undefined,
+          side: side === 'long' || side === 'short' ? side : undefined,
+        });
+        this.page.set(1);
+      });
+    });
     // Держим страницу в допустимых границах при смене фильтров/размера.
     effect(() => {
       const count = this.pageCount();
@@ -228,6 +271,11 @@ export class TradeList {
     this.page.set(1);
   }
 
+  protected setTag(value: string | null): void {
+    this.store.updateTableFilters({ tag: value ?? undefined });
+    this.page.set(1);
+  }
+
   protected setStatus(value: string | null): void {
     this.store.updateTableFilters({ status: (value as TradeStatus) ?? undefined });
     this.page.set(1);
@@ -283,8 +331,9 @@ export class TradeList {
     return formatMoney(value);
   }
 
+  /** У открытой — сколько уже в позиции. */
   protected fmtDuration(trade: Trade): string {
-    return trade.status === 'closed' ? formatDuration(trade.openedAt, trade.closedAt) : 'открыта';
+    return trade.status === 'closed' ? formatDuration(trade.openedAt, trade.closedAt) : formatSpan(durationMs(trade));
   }
 
   protected fmtMoney(value: number, sign = false): string {

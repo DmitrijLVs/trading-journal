@@ -53,8 +53,36 @@
   font-weight: 600;
 }
 
-.head .pnl:first-of-type {
+.day-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
   margin-left: auto;
+  min-width: 0;
+}
+
+
+.spark {
+  flex: none;
+  width: 120px;
+  height: 30px;
+}
+
+.pnl {
+  min-width: 96px;
+  text-align: right;
+}
+
+@media (max-width: 760px) {
+  .day-tags,
+  .spark {
+    display: none;
+  }
+
+  .pnl {
+    margin-left: auto;
+  }
 }
 
 .chevron {

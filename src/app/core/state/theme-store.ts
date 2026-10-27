@@ -10,6 +10,23 @@ export const THEME_LABELS: Record<ThemeName, string> = {
 };
 
 const STORAGE_KEY = 'tj.theme';
+const DENSITY_KEY = 'tj.density';
+
+/** Плотность таблиц: строки 46px или компактные — для сотен сделок в день. */
+export type Density = 'comfortable' | 'compact';
+
+export const DENSITY_LABELS: Record<Density, string> = {
+  comfortable: 'Обычная',
+  compact: 'Компактная',
+};
+
+function readStoredDensity(): Density {
+  try {
+    return localStorage.getItem(DENSITY_KEY) === 'compact' ? 'compact' : 'comfortable';
+  } catch {
+    return 'comfortable';
+  }
+}
 
 function readStoredTheme(): ThemeName {
   try {
@@ -28,7 +45,9 @@ function readStoredTheme(): ThemeName {
 @Injectable({ providedIn: 'root' })
 export class ThemeStore {
   private readonly current = signal<ThemeName>(readStoredTheme());
+  private readonly _density = signal<Density>(readStoredDensity());
   readonly theme = this.current.asReadonly();
+  readonly density = this._density.asReadonly();
 
   constructor() {
     // Синхронно — чтобы графики при первом вычислении читали уже нужные токены.
@@ -44,6 +63,20 @@ export class ThemeStore {
       }
       bumpThemeTick();
     });
+
+    effect(() => {
+      const density = this._density();
+      document.documentElement.dataset['density'] = density;
+      try {
+        localStorage.setItem(DENSITY_KEY, density);
+      } catch {
+        // приватный режим
+      }
+    });
+  }
+
+  setDensity(density: Density): void {
+    this._density.set(density);
   }
 
   setTheme(theme: ThemeName): void {

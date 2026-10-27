@@ -7,13 +7,16 @@ import { Button } from '../../shared/ui/button';
 import { Icon } from '../../shared/ui/icon';
 import { IconName } from '../../shared/ui/icons';
 import { Segmented, SegmentOption } from '../../shared/ui/segmented';
-import { THEME_LABELS, ThemeName, ThemeStore } from '../../core/state/theme-store';
+import { Toggle } from '../../shared/ui/toggle';
+import { PrivacyStore } from '../../core/state/privacy-store';
+import { DENSITY_LABELS, Density, THEME_LABELS, ThemeName, ThemeStore } from '../../core/state/theme-store';
 import { ToastService } from '../../shared/ui/toast';
 import { ConfirmService } from '../../shared/ui/confirm-dialog';
 import { ExchangeSettings } from './exchange-settings';
 import { AccountSettings } from './account-settings';
+import { DisciplineSettings } from './discipline-settings';
 
-type SettingsTab = 'exchange' | 'account' | 'display' | 'data';
+type SettingsTab = 'exchange' | 'discipline' | 'account' | 'display' | 'data';
 
 interface TabDef {
   id: SettingsTab;
@@ -24,6 +27,7 @@ interface TabDef {
 /** Порядок важен: первым пользователь видит подключение ключа. */
 const TABS: readonly TabDef[] = [
   { id: 'exchange', label: 'Биржа', icon: 'link' },
+  { id: 'discipline', label: 'Дисциплина', icon: 'target' },
   { id: 'account', label: 'Аккаунт', icon: 'user' },
   { id: 'display', label: 'Оформление', icon: 'sun' },
   { id: 'data', label: 'Данные', icon: 'download' },
@@ -32,7 +36,7 @@ const TABS: readonly TabDef[] = [
 /** Настройки: разделы по маршруту /settings/:tab, слева — навигация. */
 @Component({
   selector: 'app-settings',
-  imports: [RouterLink, Button, Icon, Segmented, ExchangeSettings, AccountSettings],
+  imports: [RouterLink, Button, Icon, Segmented, Toggle, ExchangeSettings, AccountSettings, DisciplineSettings],
   templateUrl: './settings.html',
   styleUrl: './settings.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -43,6 +47,7 @@ export class Settings {
   private readonly toast = inject(ToastService);
   private readonly confirm = inject(ConfirmService);
   protected readonly themeStore = inject(ThemeStore);
+  protected readonly privacy = inject(PrivacyStore);
 
   /** Параметр маршрута :tab (withComponentInputBinding). */
   readonly tab = input<string>();
@@ -58,6 +63,14 @@ export class Settings {
   );
 
   protected readonly tradeCount = computed(() => this.tradesStore.all().length);
+
+  protected readonly densityOptions: SegmentOption[] = (Object.keys(DENSITY_LABELS) as Density[]).map(
+    (value) => ({ value, label: DENSITY_LABELS[value] }),
+  );
+
+  protected setDensity(value: string): void {
+    if (value === 'comfortable' || value === 'compact') this.themeStore.setDensity(value);
+  }
 
   protected setTheme(value: string): void {
     if (value === 'graphite' || value === 'paper') this.themeStore.setTheme(value);

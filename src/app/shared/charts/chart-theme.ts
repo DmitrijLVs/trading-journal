@@ -1,5 +1,5 @@
 import * as echarts from 'echarts/core';
-import { BarChart, HeatmapChart, LineChart, PieChart, ScatterChart } from 'echarts/charts';
+import { BarChart, HeatmapChart, LineChart, LinesChart, PieChart, ScatterChart } from 'echarts/charts';
 import {
   CalendarComponent,
   DataZoomComponent,
@@ -59,6 +59,8 @@ export const CHART = {
   get orange() { return cssVar('--attention-fg', '#ff9f0a'); },
   get purple() { return cssVar('--done-fg', '#bf5af2'); },
   get teal() { return cssVar('--teal-fg', '#40c8e0'); },
+  get long() { return cssVar('--long-fg', '#7fb6d6'); },
+  get short() { return cssVar('--short-fg', '#c39ad6'); },
   get fg() { return cssVar('--fg-default', '#e6edf3'); },
   get fgMuted() { return cssVar('--fg-muted', '#7d8590'); },
   get fgSubtle() { return cssVar('--fg-subtle', '#6e7681'); },
@@ -75,6 +77,16 @@ export function categorical(): string[] {
   return [CHART.accent, CHART.orange, CHART.purple, CHART.teal];
 }
 
+/** Подмножество локали echarts: только то, что видно на осях времени. */
+const RU_LOCALE = {
+  time: {
+    month: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'],
+    monthAbbr: ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'],
+    dayOfWeek: ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'],
+    dayOfWeekAbbr: ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'],
+  },
+};
+
 let registered = false;
 
 /** Регистрирует echarts-модули (один раз) и тему из текущих токенов. */
@@ -84,6 +96,7 @@ export function setupECharts(): void {
 
   echarts.use([
     LineChart,
+    LinesChart,
     BarChart,
     PieChart,
     ScatterChart,
@@ -98,6 +111,9 @@ export function setupECharts(): void {
     CanvasRenderer,
   ]);
 
+  // Месяцы и дни недели на осях времени — по-русски (остальное echarts
+  // дополнит английским дефолтом).
+  echarts.registerLocale('RU', RU_LOCALE as Parameters<typeof echarts.registerLocale>[1]);
   registerChartTheme();
 }
 
@@ -109,7 +125,8 @@ export function registerChartTheme(): void {
     textStyle: { fontFamily: CHART.sans, color: CHART.fgMuted },
     categoryAxis: axisDefaults(),
     valueAxis: axisDefaults(),
-    timeAxis: axisDefaults(),
+    // Подписи месяцев на границах (жирные) иначе налезают на соседние дни.
+    timeAxis: { ...axisDefaults(), axisLabel: { ...axisLabelDefaults(), hideOverlap: true } },
     legend: {
       textStyle: { color: CHART.fgMuted, fontSize: 12 },
       icon: 'circle',
@@ -119,11 +136,15 @@ export function registerChartTheme(): void {
   });
 }
 
+function axisLabelDefaults(): Record<string, unknown> {
+  return { color: CHART.fgMuted, fontSize: 12, fontFamily: CHART.mono, margin: 12 };
+}
+
 function axisDefaults(): Record<string, unknown> {
   return {
     axisLine: { show: false },
     axisTick: { show: false },
-    axisLabel: { color: CHART.fgMuted, fontSize: 12, fontFamily: CHART.mono, margin: 12 },
+    axisLabel: axisLabelDefaults(),
     splitLine: { lineStyle: { color: CHART.grid, width: 1 } },
     splitArea: { show: false },
   };

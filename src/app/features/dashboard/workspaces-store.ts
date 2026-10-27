@@ -1,7 +1,7 @@
 import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { AuthStore } from '../../core/auth/auth-store';
 import { PERIOD_LABELS } from '../../core/state/period-store';
-import { LayoutsApi } from './data/layouts-api';
+import { LayoutsApi } from '../../core/config/layouts-api';
 import {
   DashboardState,
   GRID_COLS,
@@ -13,7 +13,14 @@ import {
   isKnownWidgetType,
   widgetDefFor,
 } from './data/workspace.model';
-import { DEFAULT_WORKSPACE_NAME, defaultWidgets, newWidgetId } from './data/default-workspace';
+import {
+  WORKSPACE_PRESETS,
+  WorkspacePreset,
+  defaultWorkspaces,
+  newWidgetId,
+  newWorkspaceId,
+  presetWorkspace,
+} from './data/default-workspace';
 
 // v2: без шаблонов и трёх убранных стат-плиток; старое хранилище не мигрируем.
 const STORAGE_KEY = 'tj.dashboard.v2';
@@ -38,6 +45,17 @@ export class WorkspacesStore {
   readonly workspaces = computed(() => this._state().workspaces);
   readonly activeWorkspaceId = computed(() => this._state().activeWorkspaceId);
   readonly layoutLocked = computed(() => this._state().layoutLocked);
+
+  /** Готовые листы, которых у пользователя ещё нет (по имени). */
+  readonly missingPresets = computed<readonly WorkspacePreset[]>(() => {
+    const names = new Set(this.workspaces().map((ws) => ws.name));
+    return WORKSPACE_PRESETS.filter((p) => !names.has(p.name));
+  });
+
+  /** Раскладка сохранена до появления наборов — предложить их один раз. */
+  readonly showPresetOffer = computed(
+    () => !this._state().presetsOffered && this.missingPresets().length > 0,
+  );
 
   readonly activeWorkspace = computed<Workspace>(() => {
     const state = this._state();
@@ -99,8 +117,37 @@ export class WorkspacesStore {
     this._state.update((s) => ({ ...s, activeWorkspaceId: id }));
   }
 
+  /** Лист из набора: «Сегодня», «Разбор», «Издержки»… */
+  addPreset(presetId: string): void {
+    const preset = WORKSPACE_PRESETS.find((p) => p.id === presetId);
+    if (!preset) return;
+    const ws = presetWorkspace(preset);
+    this._state.update((s) => ({
+      ...s,
+      workspaces: [...s.workspaces, ws],
+      activeWorkspaceId: ws.id,
+      presetsOffered: true,
+    }));
+  }
+
+  /** Все недостающие наборы разом; открывается первый из добавленных. */
+  addMissingPresets(): void {
+    const added = this.missingPresets().map(presetWorkspace);
+    if (added.length === 0) return;
+    this._state.update((s) => ({
+      ...s,
+      workspaces: [...added, ...s.workspaces],
+      activeWorkspaceId: added[0].id,
+      presetsOffered: true,
+    }));
+  }
+
+  dismissPresetOffer(): void {
+    this._state.update((s) => ({ ...s, presetsOffered: true }));
+  }
+
   addWorkspace(name?: string): void {
-    const ws: Workspace = { id: newId('ws'), name: name ?? this.nextName(), widgets: [] };
+    const ws: Workspace = { id: newWorkspaceId(), name: name ?? this.nextName(), widgets: [] };
     this._state.update((s) => ({
       ...s,
       workspaces: [...s.workspaces, ws],
@@ -121,7 +168,7 @@ export class WorkspacesStore {
     this._state.update((s) => {
       const workspaces = s.workspaces.filter((ws) => ws.id !== id);
       if (workspaces.length === 0) {
-        const fallback: Workspace = { id: newId('ws'), name: 'Лист 1', widgets: [] };
+        const fallback: Workspace = { id: newWorkspaceId(), name: 'Лист 1', widgets: [] };
         return { ...s, workspaces: [fallback], activeWorkspaceId: fallback.id };
       }
       return {
@@ -138,7 +185,7 @@ export class WorkspacesStore {
       const source = s.workspaces.find((ws) => ws.id === id);
       if (!source) return s;
       const copy: Workspace = {
-        id: newId('ws'),
+        id: newWorkspaceId(),
         name: `${source.name} (копия)`,
         widgets: source.widgets.map((w) => ({ ...w, instanceId: newWidgetId(), settings: { ...w.settings } })),
       };
@@ -234,10 +281,6 @@ export class WorkspacesStore {
   }
 }
 
-function newId(prefix: string): string {
-  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
-}
-
 /** Первое свободное окно сетки под размер cols×rows (скан сверху вниз). */
 function findSpot(widgets: readonly WidgetInstance[], cols: number, rows: number): { x: number; y: number } {
   const maxY = widgets.reduce((m, w) => Math.max(m, w.y + w.rows), 0);
@@ -262,13 +305,22 @@ function restore(): DashboardState {
   } catch {
     // повреждённое хранилище — пересоздаём дефолт
   }
-  // Первый запуск: один лист со стартовой раскладкой.
-  const overview: Workspace = {
-    id: newId('ws'),
-    name: DEFAULT_WORKSPACE_NAME,
-    widgets: defaultWidgets(),
-  };
-  return { workspaces: [overview], activeWorkspaceId: overview.id, layoutLocked: false };
+  // Первый запуск: все готовые листы, открыт первый («Сегодня»).
+  const workspaces = defaultWorkspaces();
+  return { workspaces, activeWorkspaceId: workspaces[0].id, layoutLocked: false, presetsOffered: true };
+}
+
+/** Разрезы «скоро» (стратегия, ошибки, сетап) теперь — автотеги. */
+const LEGACY_TAG_GROUPS = new Set(['strategy', 'mistake', 'setup']);
+
+/** Чинит старые настройки: убранные периоды, разрезы и метрики. */
+function migrateSettings(settings: WidgetSettings | undefined): WidgetSettings {
+  const next: WidgetSettings = { ...(settings ?? {}) };
+  // Пресеты «год» и «всё время» убраны (история — 183 дня): такие виджеты — на общий период.
+  if (next.period && next.period !== 'global' && !(next.period in PERIOD_LABELS)) next.period = 'global';
+  if (next.groupBy && LEGACY_TAG_GROUPS.has(next.groupBy)) next.groupBy = 'tag';
+  if ((next.metric as string | undefined) === 'avgR') next.metric = 'pnl';
+  return next;
 }
 
 /** Выбрасывает виджеты неизвестных типов и не даёт им быть меньше минимума. */
@@ -278,12 +330,7 @@ function sanitize(state: DashboardState): DashboardState {
     widgets: (ws.widgets ?? [])
       .filter((w) => isKnownWidgetType(w.type))
       .map((w) => {
-        // Пресеты «год» и «всё время» убраны (история — 183 дня): такие виджеты — на общий период.
-        const period = w.settings?.period;
-        const settings =
-          period && period !== 'global' && !(period in PERIOD_LABELS)
-            ? { ...w.settings, period: 'global' as const }
-            : (w.settings ?? {});
+        const settings = migrateSettings(w.settings);
         const def = widgetDefFor({ ...w, settings });
         const sized = def
           ? { cols: Math.max(w.cols, def.minCols), rows: Math.max(w.rows, def.minRows) }
@@ -294,7 +341,12 @@ function sanitize(state: DashboardState): DashboardState {
   const activeWorkspaceId = workspaces.some((ws) => ws.id === state.activeWorkspaceId)
     ? state.activeWorkspaceId
     : (workspaces[0]?.id ?? '');
-  return { workspaces, activeWorkspaceId, layoutLocked: Boolean(state.layoutLocked) };
+  return {
+    workspaces,
+    activeWorkspaceId,
+    layoutLocked: Boolean(state.layoutLocked),
+    presetsOffered: Boolean(state.presetsOffered),
+  };
 }
 
 export { GRID_COLS, GRID_ROWS };

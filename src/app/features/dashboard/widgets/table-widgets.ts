@@ -4,7 +4,7 @@ import { WidgetBase } from './widget-base';
 import { EmptyState } from '../../../shared/ui/empty-state';
 import { PnlValue } from '../../../shared/ui/pnl-value';
 import { Icon } from '../../../shared/ui/icon';
-import { Trade, calculatePnl, calculatePnlPercent, formatPrice } from '../../trades/data/trade.model';
+import { Trade, calculatePnl, calculatePnlPercent, formatDateTime, formatPrice } from '../../trades/data/trade.model';
 import { PortfolioStore } from '../../analytics/portfolio-store';
 
 const TABLE_STYLE = `
@@ -224,6 +224,6 @@ export class WidgetBestWorst extends WidgetBase {
   );
 
   protected date(trade: Trade): string {
-    return trade.closedAt.slice(0, 10);
+    return formatDateTime(trade.closedAt);
   }
 }

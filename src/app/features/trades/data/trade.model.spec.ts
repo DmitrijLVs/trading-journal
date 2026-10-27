@@ -28,6 +28,8 @@ function makeTrade(overrides: Partial<Trade> = {}): Trade {
     funding: -0.5,
     netPnl: 8.5,
     fillsCount: 2,
+    openOrderType: 'market',
+    closeOrderType: 'market',
     ...overrides,
   };
 }

@@ -22,6 +22,8 @@ import {
 } from 'angular-gridster2';
 import { firstValueFrom } from 'rxjs';
 import { GRID_COLS, GRID_ROWS, WorkspacesStore } from './workspaces-store';
+import { WORKSPACE_PRESETS } from './data/default-workspace';
+import { PresetOffer } from './preset-offer';
 import { WidgetInstance, WidgetSettings, widgetDefFor } from './data/workspace.model';
 import { WidgetShell } from './widget-shell';
 import { WidgetHost } from './widget-host';
@@ -57,6 +59,7 @@ interface DashGridItem extends GridsterItemConfig {
     Tooltip,
     SketchArrow,
     SketchUnderline,
+    PresetOffer,
   ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
@@ -64,6 +67,7 @@ interface DashGridItem extends GridsterItemConfig {
 })
 export class Dashboard {
   protected readonly store = inject(WorkspacesStore);
+  protected readonly presets = WORKSPACE_PRESETS;
   private readonly dialog = inject(Dialog);
   private readonly overlay = inject(Overlay);
   private readonly confirm = inject(ConfirmService);
@@ -97,6 +101,8 @@ export class Dashboard {
     return {
       gridType: GridType.VerticalFixed,
       fixedRowHeight: rowHeight,
+      // Телефон: виджеты стопкой во всю ширину, порядок — сверху вниз.
+      mobileBreakpoint: 760,
       compactType: 'none',
       margin: GRID_MARGIN,
       outerMargin: true,

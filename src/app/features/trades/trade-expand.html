@@ -47,21 +47,39 @@
       </div>
     </div>
 
+    <!-- Итог сделки — крупно; у открытой — нереализованный по данным биржи -->
+    <div class="result">
+      @if (t.status === 'closed') {
+        <span class="result-v" [class.pos]="pnl() > 0" [class.neg]="pnl() < 0">{{ money(pnl()) }}</span>
+        <span class="result-s">{{ resultNote() }}</span>
+      } @else {
+        <span class="result-v" [class.pos]="(unrealized() ?? 0) > 0" [class.neg]="(unrealized() ?? 0) < 0">
+          {{ unrealized() === null ? 'в позиции' : money(unrealized() ?? 0) }}
+        </span>
+        <span class="result-s">{{ resultNote() }}</span>
+      }
+    </div>
+
     <!-- Цифры сделки — одной плотной таблицей -->
     <div class="facts">
       @for (f of facts(); track f.k) {
-        <div class="fact">
+        <div class="fact" [class.wide]="f.wide">
           <span class="fk">{{ f.k }}</span>
           <span class="fv" [class]="f.tone ?? ''" [title]="f.v">{{ f.v }}</span>
         </div>
       }
     </div>
 
-    <!-- Разбор: в API пока нет полей для него -->
-    <app-soon
-      class="review"
-      title="Разбор сделки"
-      description="Заметки, теги и ошибки по сделке появятся, когда их начнёт хранить платформа."
-    />
+    <!-- Разбор: автотеги с причинами -->
+    <section class="review">
+      <h4 class="review-title">Разбор</h4>
+      @if (marks().length > 0) {
+        <app-trade-tags [marks]="marks()" [detailed]="true" />
+      } @else if (t.status === 'closed') {
+        <p class="clean">Чистая сделка: ни реванша, ни тильта, ни овертрейда.</p>
+      } @else {
+        <p class="clean">Разбор появится, когда позиция закроется.</p>
+      }
+    </section>
   </div>
 </div>

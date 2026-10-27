@@ -200,6 +200,23 @@
   flex: 1;
 }
 
+// «Скрыть суммы»: активное состояние — акцентом, чтобы не забыть, что суммы спрятаны.
+.money-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: none;
+  border: 1px solid var(--border-default);
+  border-radius: $radius-lg;
+  color: var(--fg-muted);
+  cursor: pointer;
+
+  &:hover { color: var(--fg-default); background: var(--canvas-overlay); }
+  &.active { color: var(--accent-fg); border-color: var(--accent-muted); background: var(--accent-subtle); }
+}
+
 .content {
   flex: 1;
   overflow-y: auto;

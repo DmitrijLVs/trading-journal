@@ -4,10 +4,20 @@
     <div class="date">
       <span class="title">{{ title() }}</span>
       <span class="meta">
-        {{ day().trades.length }} сд. · винрейт {{ winRate().toFixed(0) }}%
+        {{ day().trades.length }} сд. · винрейт {{ winRate().toFixed(0) }}% · комиссии {{ fees() }}
       </span>
     </div>
 
+    <!-- Пометки тренера за день: сколько было реванша, тильта, овертрейда -->
+    <span class="day-tags">
+      @for (item of day().tags; track item.tag) {
+        <span class="tj-tag" [class]="'tj-tag ' + item.tag">{{ tagLabels[item.tag] }} ×{{ item.count }}</span>
+      }
+    </span>
+
+    @if (day().curve.length > 2) {
+      <app-spark-line class="spark" [data]="day().curve" [w]="120" [h]="30" />
+    }
     <app-pnl class="pnl" [value]="day().pnl" />
     <app-icon class="chevron" [name]="expanded() ? 'chevron-up' : 'chevron-down'" style="--icon-size: 15px" />
   </button>
@@ -18,6 +28,7 @@
       <table class="tj-table">
         <thead>
           <tr>
+            <th>Закрыта</th>
             <th>Тикер</th>
             <th></th>
             <th class="num">Время</th>
@@ -28,6 +39,7 @@
         <tbody>
           @for (row of rows(); track row.trade.id) {
             <tr>
+              <td class="muted">{{ row.time }}</td>
               <td><a class="sym" [routerLink]="['/trades', row.trade.id]">{{ row.trade.symbol }}</a></td>
               <td>
                 <span class="tj-side" [class]="row.trade.side">

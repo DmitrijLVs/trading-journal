@@ -9,6 +9,7 @@ import { provideRouter, withComponentInputBinding } from '@angular/router';
 
 import { routes } from './app.routes';
 import { apiInterceptor } from './core/http/api-interceptor';
+import { PrivacyStore } from './core/state/privacy-store';
 import { ThemeStore } from './core/state/theme-store';
 
 export const appConfig: ApplicationConfig = {
@@ -19,6 +20,8 @@ export const appConfig: ApplicationConfig = {
     // Тема должна стоять на <html> до первого рендера — графики читают токены.
     provideAppInitializer(() => {
       inject(ThemeStore);
+      // Маска сумм должна стоять до первого форматирования денег.
+      inject(PrivacyStore);
     }),
   ],
 };

@@ -12,6 +12,7 @@ import {
 } from '@angular/core';
 import type { EChartsCoreOption, ECharts } from 'echarts/core';
 import { currentThemeTick, echarts, registerChartTheme, setupECharts } from './chart-theme';
+import { PrivacyStore } from '../../core/state/privacy-store';
 
 /**
  * Обёртка ECharts: сигнал options → setOption, авторесайз через
@@ -37,6 +38,7 @@ import { currentThemeTick, echarts, registerChartTheme, setupECharts } from './c
 export class EChart {
   private readonly host = viewChild.required<ElementRef<HTMLElement>>('host');
   private readonly destroyRef = inject(DestroyRef);
+  private readonly privacy = inject(PrivacyStore);
 
   readonly options = input.required<EChartsCoreOption>();
 
@@ -50,7 +52,7 @@ export class EChart {
 
     afterNextRender(() => {
       const el = this.host().nativeElement;
-      this.chart = echarts.init(el, 'tj', { renderer: 'canvas' });
+      this.chart = echarts.init(el, 'tj', { renderer: 'canvas', locale: 'RU' });
 
       this.resizeObserver = new ResizeObserver(() => {
         this.chart?.resize({ animation: { duration: 160 } });
@@ -62,6 +64,9 @@ export class EChart {
     effect(() => {
       const options = this.options();
       const tick = currentThemeTick();
+      // Подписи осей форматируются колбэками echarts — при смене режима
+      // «скрыть суммы» перерисовываем, чтобы они вызвались заново.
+      this.privacy.hidden();
       if (!this.ready() || !this.chart) return;
       if (tick !== this.renderedTick) {
         // Цвета осей/легенды живут в теме echarts — пересобираем её и график.
@@ -69,7 +74,7 @@ export class EChart {
         registerChartTheme();
         const el = this.host().nativeElement;
         this.chart.dispose();
-        this.chart = echarts.init(el, 'tj', { renderer: 'canvas' });
+        this.chart = echarts.init(el, 'tj', { renderer: 'canvas', locale: 'RU' });
       }
       this.chart.setOption(options, { notMerge: true });
     });

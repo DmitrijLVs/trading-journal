@@ -1,8 +1,16 @@
 import { PeriodPreset } from '../../../core/state/period-store';
+import { PeriodSpan } from '../../analytics/data/periods';
 import { IconName } from '../../../shared/ui/icons';
 
 /** Типы виджетов — по одному компоненту на тип. */
 export type WidgetType =
+  | 'day-hero'
+  | 'day-timeline'
+  | 'alerts'
+  | 'insights'
+  | 'period-results'
+  | 'fee-lab'
+  | 'fee-waterfall'
   | 'stat-pnl'
   | 'summary'
   | 'equity-curve'
@@ -12,24 +20,26 @@ export type WidgetType =
   | 'pnl-calendar'
   | 'distribution'
   | 'long-short'
-  | 'r-histogram'
   | 'heatmap-hours'
   | 'duration-scatter'
   | 'recent-trades'
   | 'open-positions'
   | 'best-worst';
 
+/** Разрезы распределения. `tag` — автотеги разбора (реванш, тильт…). */
 export type GroupKey =
   | 'symbol'
-  | 'strategy'
   | 'tag'
-  | 'mistake'
   | 'session'
   | 'weekday'
   | 'hour'
-  | 'setup';
+  | 'hold'
+  | 'dayLoad'
+  | 'streak'
+  | 'orderType';
 
-export type DistributionMetric = 'pnl' | 'count' | 'winrate' | 'avgR';
+/** `avg` — средний итог сделки в группе, `fees` — сумма комиссий. */
+export type DistributionMetric = 'pnl' | 'avg' | 'count' | 'winrate' | 'fees';
 
 /** Настройки экземпляра виджета; каждый виджет читает своё подмножество. */
 export interface WidgetSettings {
@@ -43,6 +53,8 @@ export interface WidgetSettings {
   showDrawdown?: boolean;
   /** Аккумулятивный профит: в процентах от депозита или в деньгах. */
   valueMode?: 'percent' | 'money';
+  /** Итоги: по неделям или по месяцам. */
+  span?: PeriodSpan;
 }
 
 export interface WidgetInstance {
@@ -65,22 +77,34 @@ export interface DashboardState {
   workspaces: Workspace[];
   activeWorkspaceId: string;
   layoutLocked: boolean;
+  /** Готовые листы уже предлагали (добавили или отказались) — плашку не показываем. */
+  presetsOffered?: boolean;
 }
 
 export const GRID_COLS = 24;
 export const GRID_ROWS = 24;
 
-export type WidgetCategory = 'stats' | 'charts' | 'time' | 'tables';
+export type WidgetCategory = 'today' | 'review' | 'costs' | 'stats' | 'charts' | 'time' | 'tables';
 
 export const WIDGET_CATEGORY_LABELS: Record<WidgetCategory, string> = {
+  today: 'Сегодня',
+  review: 'Разбор',
+  costs: 'Издержки',
   stats: 'Показатели',
   charts: 'Графики',
   time: 'Время',
   tables: 'Таблицы',
 };
 
+/**
+ * Ранг виджета задаёт его оболочку: `hero` — главная полоса листа без шапки,
+ * `insight` — голос тренера (рукописный заголовок), `tool` — тихий инструмент.
+ */
+export type WidgetRank = 'hero' | 'insight' | 'tool';
+
 /** Вид рукописной миниатюры в панели добавления (см. WidgetPreview). */
 export type PreviewKind =
+  | 'hero'
   | 'tile'
   | 'summary'
   | 'line'
@@ -89,11 +113,12 @@ export type PreviewKind =
   | 'drawdown'
   | 'hbars'
   | 'ring'
-  | 'histogram'
   | 'scatter'
   | 'calendar'
   | 'heatmap'
-  | 'table';
+  | 'table'
+  | 'timeline'
+  | 'notes';
 
 /** Карточка панели добавления: тип + дефолтные настройки и размер. */
 export interface WidgetDef {
@@ -105,25 +130,231 @@ export interface WidgetDef {
   icon: IconName;
   preview: PreviewKind;
   category: WidgetCategory;
+  rank?: WidgetRank;
   cols: number;
   rows: number;
   minCols: number;
   minRows: number;
   defaultSettings?: WidgetSettings;
-  /** Данных для виджета в API ещё нет: карточка «скоро» вместо него. */
-  soon?: string;
 }
 
-const SOON_REVIEW = 'Нужен разбор сделок — стратегии, теги и ошибки платформа пока не хранит.';
-const SOON_RISK = 'Нужен риск по сделке (стоп-лосс) — биржа его не отдаёт, а разбор сделок пока не хранится.';
-
 export const WIDGET_REGISTRY: readonly WidgetDef[] = [
+  // ── Сегодня ──
+  {
+    id: 'day-hero',
+    type: 'day-hero',
+    title: 'Итог дня',
+    description: 'Сегодняшний результат, лимит убытка, серия и открытые позиции — крупно, на всю ширину.',
+    icon: 'zap',
+    preview: 'hero',
+    category: 'today',
+    rank: 'hero',
+    cols: 24,
+    rows: 4,
+    minCols: 12,
+    minRows: 4,
+  },
+  {
+    id: 'day-timeline',
+    type: 'day-timeline',
+    title: 'Лента дня',
+    description: 'Накопленный итог и каждая сделка на оси времени — видно, где день пошёл не так.',
+    icon: 'clock',
+    preview: 'timeline',
+    category: 'today',
+    cols: 16,
+    rows: 11,
+    minCols: 8,
+    minRows: 6,
+  },
+  {
+    id: 'alerts',
+    type: 'alerts',
+    title: 'Предупреждения',
+    description: 'Реванш, серия убытков, овертрейд и дневной лимит — по вашим правилам, в реальном времени.',
+    icon: 'alert',
+    preview: 'notes',
+    category: 'today',
+    rank: 'insight',
+    cols: 9,
+    rows: 10,
+    minCols: 6,
+    minRows: 6,
+  },
+  {
+    id: 'open-positions',
+    type: 'open-positions',
+    title: 'Открытые позиции',
+    description: 'Текущие позиции с нереализованным P&L по данным биржи.',
+    icon: 'zap',
+    preview: 'table',
+    category: 'today',
+    cols: 8,
+    rows: 11,
+    minCols: 6,
+    minRows: 5,
+  },
+  // ── Разбор ──
+  {
+    id: 'insights',
+    type: 'insights',
+    title: 'Что важно',
+    description: 'Что журнал заметил сам: где вы теряете и что работает — с цифрами и ссылкой на сделки.',
+    icon: 'brain',
+    preview: 'notes',
+    category: 'review',
+    rank: 'insight',
+    cols: 12,
+    rows: 16,
+    minCols: 7,
+    minRows: 8,
+  },
+  {
+    id: 'weeks',
+    type: 'period-results',
+    title: 'Итоги недель',
+    description: 'Результат каждой недели, дни в плюсе и в минусе, какие недели уже закрыты.',
+    icon: 'calendar',
+    preview: 'table',
+    category: 'review',
+    cols: 12,
+    rows: 12,
+    minCols: 6,
+    minRows: 6,
+    defaultSettings: { span: 'week', limit: 8 },
+  },
+  {
+    id: 'months',
+    type: 'period-results',
+    title: 'Итоги месяцев',
+    description: 'Месяц за месяцем: результат, винрейт и закрытие месяца.',
+    icon: 'calendar',
+    preview: 'table',
+    category: 'review',
+    cols: 12,
+    rows: 8,
+    minCols: 6,
+    minRows: 5,
+    defaultSettings: { span: 'month', limit: 6 },
+  },
+  {
+    id: 'dist-mistakes',
+    type: 'distribution',
+    title: 'Цена ошибок',
+    description: 'Сколько стоит каждый автотег: реванш, тильт, овертрейд, передержанный убыток.',
+    icon: 'alert',
+    preview: 'hbars',
+    category: 'review',
+    cols: 12,
+    rows: 8,
+    minCols: 6,
+    minRows: 6,
+    defaultSettings: { groupBy: 'tag', metric: 'pnl' },
+  },
+  {
+    id: 'dist-hold',
+    type: 'distribution',
+    title: 'По времени удержания',
+    description: 'Какая длительность сделок приносит деньги, а какая — забирает.',
+    icon: 'clock',
+    preview: 'hbars',
+    category: 'review',
+    cols: 12,
+    rows: 8,
+    minCols: 6,
+    minRows: 6,
+    defaultSettings: { groupBy: 'hold', metric: 'pnl' },
+  },
+  {
+    id: 'dist-streak',
+    type: 'distribution',
+    title: 'После серии убытков',
+    description: 'Как меняется винрейт после 1, 2, 3+ убытков подряд — нужна ли пауза.',
+    icon: 'fire',
+    preview: 'hbars',
+    category: 'review',
+    cols: 8,
+    rows: 10,
+    minCols: 6,
+    minRows: 6,
+    defaultSettings: { groupBy: 'streak', metric: 'winrate' },
+  },
+  {
+    id: 'dist-dayload',
+    type: 'distribution',
+    title: 'Нагрузка дня',
+    description: 'Результат в днях с разным числом сделок — где начинается овертрейд.',
+    icon: 'layers',
+    preview: 'hbars',
+    category: 'review',
+    cols: 8,
+    rows: 10,
+    minCols: 6,
+    minRows: 6,
+    defaultSettings: { groupBy: 'dayLoad', metric: 'pnl' },
+  },
+  // ── Издержки ──
+  {
+    id: 'fee-lab',
+    type: 'fee-lab',
+    title: 'Комиссии',
+    description: 'Сколько ушло бирже, движение до безубытка, маркет против лимиток и сколько можно сэкономить.',
+    icon: 'coins',
+    preview: 'summary',
+    category: 'costs',
+    rank: 'hero',
+    cols: 24,
+    rows: 5,
+    minCols: 12,
+    minRows: 4,
+  },
+  {
+    id: 'fee-waterfall',
+    type: 'fee-waterfall',
+    title: 'Из чего итог',
+    description: 'Водопад: биржевой результат → комиссии → фандинг → итог.',
+    icon: 'chart-bar',
+    preview: 'bars',
+    category: 'costs',
+    cols: 10,
+    rows: 10,
+    minCols: 6,
+    minRows: 6,
+  },
+  {
+    id: 'dist-order',
+    type: 'distribution',
+    title: 'Маркет или лимит',
+    description: 'Результат по типам ордеров входа и выхода.',
+    icon: 'scale',
+    preview: 'hbars',
+    category: 'costs',
+    cols: 14,
+    rows: 10,
+    minCols: 6,
+    minRows: 6,
+    defaultSettings: { groupBy: 'orderType', metric: 'pnl' },
+  },
+  {
+    id: 'dist-symbol-fees',
+    type: 'distribution',
+    title: 'Комиссии по монетам',
+    description: 'Где больше всего платите бирже.',
+    icon: 'coins',
+    preview: 'hbars',
+    category: 'costs',
+    cols: 12,
+    rows: 10,
+    minCols: 6,
+    minRows: 6,
+    defaultSettings: { groupBy: 'symbol', metric: 'fees', limit: 10 },
+  },
   // ── Показатели ──
   {
     id: 'stat-pnl',
     type: 'stat-pnl',
     title: 'Чистый P&L',
-    description: 'Итог за период и спарклайн капитала.',
+    description: 'Итог за период, результат до комиссий и спарклайн капитала.',
     icon: 'coins',
     preview: 'tile',
     category: 'stats',
@@ -135,17 +366,17 @@ export const WIDGET_REGISTRY: readonly WidgetDef[] = [
   {
     id: 'summary',
     type: 'summary',
-    title: 'Сводка',
-    description: 'Оборот, комиссии, число сделок и баланс лонг/шорт.',
+    title: 'Качество',
+    description: 'Сделки, винрейт, средний плюс и минус, профит-фактор.',
     icon: 'layers',
     preview: 'summary',
     category: 'stats',
     cols: 8,
     rows: 6,
-    minCols: 6,
+    minCols: 5,
     minRows: 5,
   },
-  // ── Графики ──
+  // ── Графики, время, таблицы ──
   {
     id: 'equity-curve',
     type: 'equity-curve',
@@ -214,51 +445,6 @@ export const WIDGET_REGISTRY: readonly WidgetDef[] = [
     defaultSettings: { groupBy: 'symbol', metric: 'pnl', limit: 10 },
   },
   {
-    id: 'dist-strategy',
-    type: 'distribution',
-    title: 'По стратегиям',
-    description: 'Какие сетапы зарабатывают, а какие сливают.',
-    icon: 'target',
-    preview: 'hbars',
-    category: 'charts',
-    cols: 8,
-    rows: 8,
-    minCols: 6,
-    minRows: 6,
-    defaultSettings: { groupBy: 'strategy', metric: 'pnl', limit: 10 },
-    soon: SOON_REVIEW,
-  },
-  {
-    id: 'dist-tags',
-    type: 'distribution',
-    title: 'По тегам',
-    description: 'Свободная категоризация: результат в разрезе тегов.',
-    icon: 'tag',
-    preview: 'hbars',
-    category: 'charts',
-    cols: 8,
-    rows: 8,
-    minCols: 6,
-    minRows: 6,
-    defaultSettings: { groupBy: 'tag', metric: 'pnl', limit: 12 },
-    soon: SOON_REVIEW,
-  },
-  {
-    id: 'dist-mistakes',
-    type: 'distribution',
-    title: 'Цена ошибок',
-    description: 'Сколько стоит каждая типовая ошибка.',
-    icon: 'alert',
-    preview: 'hbars',
-    category: 'charts',
-    cols: 8,
-    rows: 8,
-    minCols: 6,
-    minRows: 6,
-    defaultSettings: { groupBy: 'mistake', metric: 'pnl', limit: 10 },
-    soon: SOON_REVIEW,
-  },
-  {
     id: 'long-short',
     type: 'long-short',
     title: 'Лонг / Шорт',
@@ -270,20 +456,6 @@ export const WIDGET_REGISTRY: readonly WidgetDef[] = [
     rows: 8,
     minCols: 6,
     minRows: 6,
-  },
-  {
-    id: 'r-histogram',
-    type: 'r-histogram',
-    title: 'Гистограмма R',
-    description: 'Распределение исходов в R-multiple: хвосты и стопы.',
-    icon: 'chart-bar',
-    preview: 'histogram',
-    category: 'charts',
-    cols: 8,
-    rows: 8,
-    minCols: 6,
-    minRows: 6,
-    soon: SOON_RISK,
   },
   {
     id: 'duration-scatter',
@@ -298,7 +470,6 @@ export const WIDGET_REGISTRY: readonly WidgetDef[] = [
     minCols: 6,
     minRows: 6,
   },
-  // ── Время ──
   {
     id: 'pnl-calendar',
     type: 'pnl-calendar',
@@ -353,7 +524,6 @@ export const WIDGET_REGISTRY: readonly WidgetDef[] = [
     minRows: 6,
     defaultSettings: { groupBy: 'weekday', metric: 'pnl' },
   },
-  // ── Таблицы ──
   {
     id: 'recent-trades',
     type: 'recent-trades',
@@ -369,19 +539,6 @@ export const WIDGET_REGISTRY: readonly WidgetDef[] = [
     defaultSettings: { limit: 8 },
   },
   {
-    id: 'open-positions',
-    type: 'open-positions',
-    title: 'Открытые позиции',
-    description: 'Текущие позиции с риском и целями.',
-    icon: 'zap',
-    preview: 'table',
-    category: 'tables',
-    cols: 12,
-    rows: 6,
-    minCols: 8,
-    minRows: 5,
-  },
-  {
     id: 'best-worst',
     type: 'best-worst',
     title: 'Лучшие и худшие',
@@ -395,31 +552,44 @@ export const WIDGET_REGISTRY: readonly WidgetDef[] = [
     minRows: 6,
     defaultSettings: { limit: 5 },
   },
+  {
+    id: 'dist-hour',
+    type: 'distribution',
+    title: 'По часам',
+    description: 'Результат по часу входа — в вашем часовом поясе.',
+    icon: 'clock',
+    preview: 'bars',
+    category: 'time',
+    cols: 12,
+    rows: 8,
+    minCols: 8,
+    minRows: 6,
+    defaultSettings: { groupBy: 'hour', metric: 'pnl' },
+  },
 ];
 
 export function widgetDef(id: string): WidgetDef | undefined {
   return WIDGET_REGISTRY.find((d) => d.id === id);
 }
 
-/** Карточка реестра, максимально совпадающая с экземпляром (тип + разрез). */
+/** Карточка реестра, максимально совпадающая с экземпляром (тип + разрез + метрика). */
 export function widgetDefFor(widget: Pick<WidgetInstance, 'type' | 'settings'>): WidgetDef | undefined {
   const groupBy = widget.settings.groupBy ?? null;
+  const metric = widget.settings.metric ?? null;
+  const span = widget.settings.span ?? null;
+  const sameType = WIDGET_REGISTRY.filter((d) => d.type === widget.type);
   return (
-    WIDGET_REGISTRY.find(
-      (d) => d.type === widget.type && (d.defaultSettings?.groupBy ?? null) === groupBy,
-    ) ?? WIDGET_REGISTRY.find((d) => d.type === widget.type)
+    sameType.find((d) => span !== null && (d.defaultSettings?.span ?? null) === span) ??
+    sameType.find(
+      (d) => (d.defaultSettings?.groupBy ?? null) === groupBy && (d.defaultSettings?.metric ?? null) === metric,
+    ) ??
+    sameType.find((d) => (d.defaultSettings?.groupBy ?? null) === groupBy) ??
+    sameType[0]
   );
 }
 
-/** Почему виджет пока не работает (null — работает): нет данных в API. */
-export function soonReason(widget: Pick<WidgetInstance, 'type' | 'settings'>): string | null {
-  const def = widgetDefFor(widget);
-  if (def?.soon) return def.soon;
-  const groupBy = widget.settings.groupBy;
-  if (groupBy === 'strategy' || groupBy === 'tag' || groupBy === 'mistake' || groupBy === 'setup') {
-    return SOON_REVIEW;
-  }
-  return widget.settings.metric === 'avgR' ? SOON_RISK : null;
+export function widgetRank(widget: Pick<WidgetInstance, 'type' | 'settings'>): WidgetRank {
+  return widgetDefFor(widget)?.rank ?? 'tool';
 }
 
 export function isKnownWidgetType(type: string): type is WidgetType {

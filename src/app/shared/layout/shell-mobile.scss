@@ -1,0 +1,66 @@
+@use 'styles/index' as *;
+
+// ── Телефон: навигация — нижней панелью, шапка компактная ───────────────────
+// Выход — в «Настройки → Аккаунт».
+@media (max-width: 760px) {
+  .sidebar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: $z-sticky + 1;
+    flex-direction: row;
+    width: auto;
+    height: calc(58px + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
+    border-right: none;
+    border-top: 1px solid var(--border-muted);
+  }
+
+  .brand,
+  .sidebar-foot,
+  .nav-divider,
+  .nav-ink {
+    display: none;
+  }
+
+  .nav {
+    display: flex;
+    flex: 1;
+    padding: 0;
+    overflow: visible;
+  }
+
+  .nav-section {
+    display: contents;
+  }
+
+  .nav-item {
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    padding: 6px 0;
+    border-radius: 0;
+    font-size: 11px;
+
+    app-icon {
+      --icon-size: 20px;
+    }
+
+    &.is-active {
+      background: none;
+      color: var(--accent-fg);
+    }
+  }
+
+  .topbar {
+    height: 52px;
+    padding: 0 $space-3;
+    gap: $space-2;
+  }
+
+  .content {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+  }
+}

@@ -20,39 +20,38 @@
     @for (wd of weekdays; track wd) {
       <span class="wd">{{ wd }}</span>
     }
+    <span class="wd week-h">Неделя</span>
   </div>
 
   <div class="grid days">
-    @for (cell of cells(); track $index) {
-      @if (cell) {
-        <div
-          class="cell"
-          [class.pos]="cell.pnl !== null && cell.pnl > 0"
-          [class.neg]="cell.pnl !== null && cell.pnl < 0"
-          [class.today]="cell.isToday"
-          [class.idle]="isIdle(cell)"
-          [style.--i]="cell.intensity"
-          [appTooltip]="tooltipFor(cell)"
-        >
-          <span class="top">
+    @for (week of weeks(); track $index) {
+      @for (cell of week.cells; track $index) {
+        @if (cell) {
+          <div
+            class="cell"
+            [class.pos]="cell.pnl !== null && cell.pnl > 0"
+            [class.neg]="cell.pnl !== null && cell.pnl < 0"
+            [class.today]="cell.isToday"
+            [class.idle]="isIdle(cell)"
+            [style.--i]="cell.intensity"
+            [appTooltip]="tooltipFor(cell)"
+          >
             <span class="d">{{ cell.day }}</span>
-            @if (cell.count > 0) {
-              <span class="c">{{ cell.count }}<i>сд</i></span>
+            @if (cell.pnl !== null) {
+              <span class="p" [class.pos]="cell.pnl > 0" [class.neg]="cell.pnl < 0">{{ compact(cell.pnl) }}</span>
+              <span class="c">{{ cell.count }} сд</span>
             }
-          </span>
-          @if (cell.pnl !== null) {
-            <span class="plate">
-              <span class="p" [class.pos]="cell.pnl > 0" [class.neg]="cell.pnl < 0">
-                {{ compact(cell.pnl) }}
-              </span>
-              <span class="row vol"><i>об</i><b>{{ short(cell.volume) }}</b></span>
-              <span class="row fee"><i>ком</i><b>{{ short(cell.fees) }}</b></span>
-            </span>
-          }
-        </div>
-      } @else {
-        <div class="cell empty"></div>
+          </div>
+        } @else {
+          <div class="cell empty"></div>
+        }
       }
+      <div class="week" [class.active]="week.total.active">
+        @if (week.total.active) {
+          <span class="p" [class.pos]="week.total.pnl > 0" [class.neg]="week.total.pnl < 0">{{ compact(week.total.pnl) }}</span>
+          <span class="c">{{ week.total.count }} сд</span>
+        }
+      </div>
     }
   </div>
 </div>

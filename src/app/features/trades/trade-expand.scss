@@ -163,15 +163,18 @@
   text-overflow: ellipsis;
 }
 
+.fact.wide {
+  grid-column: 1 / -1;
+}
+
+// Значения не режем многоточием — переносим: «Binance USD…» ничего не говорит.
 .fv {
   font-family: $font-mono;
   font-variant-numeric: tabular-nums;
   font-size: $text-sm;
   line-height: 1.25;
   color: var(--fg-default);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 
   &.pos { color: var(--success-fg); }
   &.neg { color: var(--danger-fg); }
@@ -179,8 +182,44 @@
   &.loss { color: var(--danger-fg); }
 }
 
+// ── Итог сделки ───────────────────────────────────────────────────────────
+
+.result {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 2px $space-3;
+  margin: $space-1 0 $space-3;
+}
+
+.result-v {
+  @include figure(30px);
+  color: var(--fg-default);
+
+  &.pos { color: var(--success-fg); }
+  &.neg { color: var(--danger-fg); }
+}
+
+.result-s {
+  font-size: $text-sm;
+  color: var(--fg-muted);
+}
+
 // ── Разбор ────────────────────────────────────────────────────────────────
 
 .review {
   min-width: 0;
+  margin-top: $space-3;
+}
+
+.review-title {
+  margin: 0 0 $space-2;
+  @include coach-voice(21px);
+  color: var(--fg-default);
+}
+
+.clean {
+  margin: 0;
+  font-size: $text-sm;
+  color: var(--fg-muted);
 }

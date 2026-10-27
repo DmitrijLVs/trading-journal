@@ -25,6 +25,8 @@ function closedTrade(pnl: number, overrides: Partial<Trade> = {}): Trade {
     funding: 0,
     netPnl: pnl,
     fillsCount: 2,
+    openOrderType: 'market',
+    closeOrderType: 'market',
     ...overrides,
   };
 }
@@ -43,7 +45,7 @@ describe('summarize', () => {
   });
 
   it('сделки «в ноль» не считаются ни победой, ни поражением', () => {
-    const s = summarize([closedTrade(0.5), closedTrade(20)]);
+    const s = summarize([closedTrade(0.004), closedTrade(20)]);
     expect(s.breakevenCount).toBe(1);
     expect(s.winRate).toBe(1);
   });
