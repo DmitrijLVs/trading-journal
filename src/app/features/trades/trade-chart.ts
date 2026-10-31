@@ -13,7 +13,16 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
-import { MarketExchange, TIMEFRAMES, TIMEFRAME_MS, Timeframe } from '../../core/market/market.model';
+import type { Chart } from '@nv/core';
+import {
+  KLINE_TIMEFRAMES,
+  MarketExchange,
+  SECONDS_TIMEFRAMES,
+  TIMEFRAME_MS,
+  Timeframe,
+  isDenseTimeframe,
+  secondsAvailable,
+} from '../../core/market/market.model';
 import { decimal, Trade, calculatePnlPercent } from './data/trade.model';
 import { TradeChartData, TradeFill, candleIndexAt, tradeFills } from './data/trade-chart.model';
 import { TradeChartFeed } from './trade-chart-feed';
@@ -23,8 +32,9 @@ import { ChartDrawingsStore } from '../../shared/nv-chart/chart-drawings-store';
 import { NvCandleChart } from '../../shared/nv-chart/nv-candle-chart';
 import { candleMeta } from '../../shared/nv-chart/nv-candles';
 import { BarRange } from '../../shared/nv-chart/nv-chart.types';
-import { DRAWING_TOOLS, DRAWING_TOOL_NAMES } from '../../shared/nv-chart/nv-drawing-tools';
+import { NvDrawbar } from '../../shared/nv-chart/nv-drawbar';
 import { NvRuntime } from '../../shared/nv-chart/nv-runtime';
+import { NvSelectionBar } from '../../shared/nv-chart/nv-selection-bar';
 import { Icon } from '../../shared/ui/icon';
 import { Tooltip } from '../../shared/ui/tooltip';
 
@@ -39,13 +49,29 @@ const RIGHT_PAD_CANDLES = 8;
  */
 @Component({
   selector: 'app-trade-chart',
-  imports: [Icon, Tooltip],
+  imports: [Icon, Tooltip, NvDrawbar, NvSelectionBar],
   providers: [TradeChartFeed],
   template: `
     <div class="bar">
       <span class="sym">{{ trade().symbol }}</span>
+      <div class="seg" role="tablist" aria-label="Секундный таймфрейм">
+        @for (tf of secondsTimeframes; track tf) {
+          <button
+            type="button"
+            class="seg-btn tf"
+            role="tab"
+            [appTooltip]="secondsReady() ? '' : secondsNote()"
+            [disabled]="!secondsReady()"
+            [class.active]="tf === timeframe()"
+            [attr.aria-selected]="tf === timeframe()"
+            (click)="timeframe.set(tf)"
+          >
+            {{ tf }}
+          </button>
+        }
+      </div>
       <div class="seg" role="tablist" aria-label="Таймфрейм">
-        @for (tf of timeframes; track tf) {
+        @for (tf of klineTimeframes; track tf) {
           <button
             type="button"
             class="seg-btn tf"
@@ -57,41 +83,6 @@ const RIGHT_PAD_CANDLES = 8;
             {{ tf }}
           </button>
         }
-      </div>
-      <div class="seg" role="toolbar" aria-label="Рисование">
-        <button
-          type="button"
-          class="seg-btn"
-          appTooltip="Курсор · Esc"
-          aria-label="Курсор"
-          [class.active]="activeTool() === null"
-          (click)="selectTool(null)"
-        >
-          <app-icon name="cursor" style="--icon-size: 14px" />
-        </button>
-        @for (tool of tools; track tool.name) {
-          <button
-            type="button"
-            class="seg-btn"
-            [appTooltip]="tool.label + ' · ' + tool.hint"
-            [attr.aria-label]="tool.label"
-            [attr.aria-pressed]="activeTool() === tool.name"
-            [class.active]="activeTool() === tool.name"
-            (click)="selectTool(tool.name)"
-          >
-            <app-icon [name]="tool.icon" style="--icon-size: 14px" />
-          </button>
-        }
-        <button
-          type="button"
-          class="seg-btn"
-          appTooltip="Удалить рисунки"
-          aria-label="Удалить рисунки"
-          [disabled]="drawingCount() === 0"
-          (click)="clearDrawings()"
-        >
-          <app-icon name="trash" style="--icon-size: 14px" />
-        </button>
       </div>
       <span class="spacer"></span>
       @if (feed.loading()) {
@@ -106,7 +97,13 @@ const RIGHT_PAD_CANDLES = 8;
         }
       </span>
     </div>
-    <div #host class="chart"></div>
+    <div class="body">
+      <app-nv-drawbar [chart]="chart()" />
+      <div class="stage">
+        <div #host class="chart"></div>
+        <app-nv-selection-bar [chart]="chart()" />
+      </div>
+    </div>
   `,
   styles: `
     @use 'styles/index' as *;
@@ -166,7 +163,7 @@ const RIGHT_PAD_CANDLES = 8;
       transition: background $duration-fast $ease-apple, color $duration-fast $ease-apple;
 
       &:hover:not(:disabled) { color: var(--fg-default); }
-      &:disabled { opacity: 0.4; cursor: default; }
+      &:disabled { opacity: 0.4; cursor: help; }
 
       &.active {
         background: var(--canvas-overlay);
@@ -206,11 +203,21 @@ const RIGHT_PAD_CANDLES = 8;
     .pnl.pos { color: var(--success-fg); }
     .pnl.neg { color: var(--danger-fg); }
 
-    .chart {
-      position: relative;
+    .body {
+      display: flex;
       flex: 1;
       min-height: 0;
-      width: 100%;
+    }
+
+    .stage {
+      position: relative;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .chart {
+      position: absolute;
+      inset: 0;
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -230,10 +237,19 @@ export class TradeChart {
   /** Таймфрейм — двусторонний: родитель перезапрашивает свечи. */
   readonly timeframe = model<Timeframe>('15m');
 
-  protected readonly timeframes = TIMEFRAMES;
-  protected readonly tools = DRAWING_TOOLS;
-  protected readonly activeTool = this.runtime.activeTool;
-  protected readonly drawingCount = signal(0);
+  protected readonly secondsTimeframes = SECONDS_TIMEFRAMES;
+  protected readonly klineTimeframes = KLINE_TIMEFRAMES;
+  /** График движка — для панели рисования и панели над выделенным рисунком. */
+  protected readonly chart = signal<Chart | null>(null);
+  /** Секунды есть только у Binance и только за последние сутки (их хранит wintrading). */
+  protected readonly secondsReady = computed(() =>
+    secondsAvailable(this.exchange(), Date.parse(this.trade().openedAt), Date.now()),
+  );
+  protected readonly secondsNote = computed(() =>
+    this.exchange() === 'binance'
+      ? 'Секундные бары хранятся сутки — сделка старше'
+      : 'Секундные бары — только для Binance',
+  );
 
   protected readonly isProfit = computed(() => calculatePnlPercent(this.trade()) >= 0);
   protected readonly pnlLabel = computed(() => {
@@ -271,22 +287,12 @@ export class TradeChart {
     });
 
     effect(() => {
-      const live = this.feed.live();
+      // Таймер до закрытия свечи на редких секундных барах только мешает.
+      const live = this.feed.live() && isDenseTimeframe(this.timeframe());
       if (this.ready()) this.view.chart?.setOptions({ candleTimer: live });
     });
 
     this.destroyRef.onDestroy(() => this.teardown());
-  }
-
-  protected selectTool(name: string | null): void {
-    this.runtime.setTool(name !== null && this.activeTool() === name ? null : name);
-  }
-
-  protected clearDrawings(): void {
-    const chart = this.view.chart;
-    if (!chart) return;
-    this.view.tools?.clear(chart, { undoable: true });
-    this.saveDrawings();
   }
 
   private async mountChart(): Promise<void> {
@@ -298,7 +304,6 @@ export class TradeChart {
     const chart = this.view.chart;
     const tools = this.view.tools;
     if (!mounted || !chart || !tools) return;
-    tools.setChartTools(chart, DRAWING_TOOL_NAMES);
     this.view.scene?.add(this.layer);
     for (const event of ['created', 'updated', 'removed'] as const) {
       this.unsubscribers.push(
@@ -307,6 +312,7 @@ export class TradeChart {
         }),
       );
     }
+    this.chart.set(chart);
     this.ready.set(true);
   }
 
@@ -347,16 +353,13 @@ export class TradeChart {
     } finally {
       this.restoring = false;
     }
-    this.drawingCount.set(tools.list(chart).length);
   }
 
   private saveDrawings(): void {
     const chart = this.view.chart;
     const tools = this.view.tools;
     if (!chart || !tools || this.restoring) return;
-    const drawings = tools.list(chart);
-    this.drawingsStore.save(this.symbol, drawings);
-    this.drawingCount.set(drawings.length);
+    this.drawingsStore.save(this.symbol, tools.list(chart));
   }
 
   /** Цвета разметки — из токенов темы (cssVar отслеживает её смену). */
@@ -370,6 +373,7 @@ export class TradeChart {
   }
 
   private teardown(): void {
+    this.chart.set(null);
     for (const unsubscribe of this.unsubscribers) unsubscribe();
     this.feed.stop();
     this.view.destroy();

@@ -8,6 +8,8 @@ import { EventsSocket } from '../../core/events/events-socket';
 import { summarize } from '../analytics/data/metrics';
 import { TradeTags, autoTags, tagsOf } from '../analytics/data/behavior';
 import { DisciplineStore } from '../analytics/discipline-store';
+import { ManualTagsStore } from './manual-tags-store';
+import { manualTagOfFilter } from './data/manual-tags.model';
 
 /** Пока счёт импортирует историю, сделки дозагружаются — перечитываем их так часто. */
 const IMPORT_POLL_MS = 30_000;
@@ -24,6 +26,7 @@ export class TradesStore {
   private readonly periodStore = inject(PeriodStore);
   private readonly auth = inject(AuthStore);
   private readonly discipline = inject(DisciplineStore);
+  private readonly manualTags = inject(ManualTagsStore);
   /** Пользователь и набор его счетов: подключили или удалили счёт — история другая. */
   private readonly listKey = computed(() => {
     const owner = this.auth.user()?.id;
@@ -106,9 +109,13 @@ export class TradesStore {
     const f = this._tableFilters();
     const search = f.search?.trim().toLowerCase();
     const tags = this.tags();
+    const manual = manualTagOfFilter(f.tag);
+    const manualTags = this.manualTags.byTrade();
     return this.scoped()
       .filter((t) => {
-        if (f.tag && !tagsOf(tags, t).some((tag) => tag === f.tag)) return false;
+        if (manual !== null) {
+          if (!manualTags.get(t.id)?.includes(manual)) return false;
+        } else if (f.tag && !tagsOf(tags, t).some((tag) => tag === f.tag)) return false;
         if (f.side && t.side !== f.side) return false;
         if (f.status && t.status !== f.status) return false;
         if (f.symbols?.length && !f.symbols.includes(t.symbol)) return false;

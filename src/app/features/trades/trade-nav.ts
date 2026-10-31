@@ -12,6 +12,8 @@ export interface TradeRow {
   notional: number;
   /** Автотеги разбора с причинами. */
   marks: readonly TagMark[];
+  /** Ручные теги трейдера. */
+  manualTags: readonly string[];
   /** Нереализованный P&L открытой позиции по данным биржи; null — закрыта или неизвестен. */
   unrealized: number | null;
 }

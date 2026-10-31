@@ -73,7 +73,7 @@ export class Settings {
   }
 
   protected setTheme(value: string): void {
-    if (value === 'graphite' || value === 'paper') this.themeStore.setTheme(value);
+    if (value === 'carmine' || value === 'paper') this.themeStore.setTheme(value);
   }
 
   /** Все сделки журнала (до 183 дней) в CSV — для Excel и своей аналитики. */

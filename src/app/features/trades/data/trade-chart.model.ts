@@ -1,4 +1,10 @@
-import { Candle, Timeframe, isTimeframe } from '../../../core/market/market.model';
+import {
+  Candle,
+  MarketExchange,
+  Timeframe,
+  isTimeframe,
+  secondsAvailable,
+} from '../../../core/market/market.model';
 import { Trade, durationMs } from './trade.model';
 
 /** Исполнение ордера сделки: время (мс), сторона, цена, количество. */
@@ -22,12 +28,27 @@ export interface TradeChartData {
   fills: TradeFill[];
 }
 
+const MINUTE_MS = 60_000;
 const HOUR_MS = 3_600_000;
 
-/** Таймфрейм графика: выбранный пользователем, иначе по длительности сделки. */
-export function chartTimeframe(trade: Trade, requested?: string | null): Timeframe {
+/**
+ * Таймфрейм графика: выбранный пользователем, иначе по длительности сделки.
+ * Скальп последних суток на Binance открывается на секундах — на минутке
+ * вход и выход сливаются в одну свечу.
+ */
+export function chartTimeframe(
+  trade: Trade,
+  exchange: MarketExchange,
+  now = Date.now(),
+  requested?: string | null,
+): Timeframe {
   if (requested && isTimeframe(requested)) return requested;
   const ms = durationMs(trade);
+  if (secondsAvailable(exchange, Date.parse(trade.openedAt), now)) {
+    if (ms <= 2 * MINUTE_MS) return '1s';
+    if (ms <= 8 * MINUTE_MS) return '5s';
+    if (ms <= 25 * MINUTE_MS) return '15s';
+  }
   if (ms <= 2 * HOUR_MS) return '1m';
   if (ms <= 12 * HOUR_MS) return '5m';
   if (ms <= 72 * HOUR_MS) return '15m';

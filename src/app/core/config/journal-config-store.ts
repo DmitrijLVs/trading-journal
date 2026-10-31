@@ -3,13 +3,18 @@ import { AuthStore } from '../auth/auth-store';
 import { LayoutsApi } from './layouts-api';
 
 /**
- * Раздел профиля `journal` целиком: правила дисциплины и закрытые недели и
- * месяцы. Один владелец у раздела, иначе сторы затирали бы записи друг друга
- * (сервер хранит последний PUT). Содержимое разделов знают их сторы.
+ * Раздел профиля `journal` целиком: правила дисциплины, закрытые недели и
+ * месяцы, ручные теги сделок. Один владелец у раздела, иначе сторы затирали бы
+ * записи друг друга (сервер хранит последний PUT). Содержимое разделов знают их сторы.
  */
 export interface JournalConfig {
   discipline?: unknown;
   reviews?: unknown;
+  /**
+   * Ручные теги сделок (ManualTagsStore). TODO(release): временно — в API
+   * платформы тегов нет; перед релизом перенести в Journal-Service.
+   */
+  tags?: unknown;
 }
 
 const STORAGE_KEY = 'tj.journal-config';

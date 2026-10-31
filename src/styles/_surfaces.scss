@@ -181,3 +181,22 @@ gridster.display-grid .gridster-row {
     color: var(--fg-muted);
   }
 }
+
+// Ручной тег трейдера — чистым шрифтом: это его пометка, а не голос тренера.
+.tj-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: $radius-full;
+  background: var(--canvas-overlay);
+  color: var(--fg-default);
+  font: 500 12px/1 $font-sans;
+  white-space: nowrap;
+
+  &::before {
+    content: '#';
+    color: var(--fg-subtle);
+    margin-right: 1px;
+  }
+}

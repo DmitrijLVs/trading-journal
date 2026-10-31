@@ -5,6 +5,14 @@
     @if (chartData(); as data) {
       @if (data.candles.length > 0) {
         <app-trade-chart [trade]="t" [chartData]="data" [exchange]="exchange()" [(timeframe)]="timeframe" />
+      } @else if (secondsChart()) {
+        <app-empty-state
+          icon="chart-line"
+          title="Секундных баров нет"
+          description="Секунды хранятся сутки и есть только для Binance — у этой сделки их уже нет."
+        >
+          <button app-button variant="outline" size="sm" (click)="timeframe.set('1m')">Открыть 1m</button>
+        </app-empty-state>
       } @else {
         <app-empty-state
           icon="chart-line"
@@ -80,6 +88,17 @@
       } @else {
         <p class="clean">Разбор появится, когда позиция закроется.</p>
       }
+      <app-ai-review-panel
+        [reviewKey]="ai.tradeKey(t)"
+        hint="Тренер прочитает цифры сделки и ход цены"
+        (run)="reviewWithAi()"
+      />
+    </section>
+
+    <!-- Ручные теги трейдера: сетап, стратегия, ошибка -->
+    <section class="review">
+      <h4 class="review-title">Теги</h4>
+      <app-trade-tag-editor [tradeId]="t.id" />
     </section>
   </div>
 </div>

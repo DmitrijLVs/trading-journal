@@ -35,6 +35,8 @@ import { summarize } from '../analytics/data/metrics';
 import { AUTO_TAGS, AUTO_TAG_LABELS, isAutoTag } from '../analytics/data/behavior';
 import { PortfolioStore } from '../analytics/portfolio-store';
 import { TradeTags } from './trade-tags';
+import { ManualTagsStore } from './manual-tags-store';
+import { manualTagFilter, manualTagOfFilter } from './data/manual-tags.model';
 import { Tooltip } from '../../shared/ui/tooltip';
 import { Icon } from '../../shared/ui/icon';
 import { Button } from '../../shared/ui/button';
@@ -79,6 +81,7 @@ export class TradeList {
   protected readonly accounts = inject(AccountsStore);
 
   private readonly portfolio = inject(PortfolioStore);
+  private readonly manualTags = inject(ManualTagsStore);
 
   /** Из маршрута /trades/:id — сделка, которую нужно сразу раскрыть. */
   readonly id = input<string>();
@@ -112,10 +115,15 @@ export class TradeList {
     { value: 'short', label: 'Шорт' },
   ];
 
-  protected readonly tagOptions: SelectOption[] = AUTO_TAGS.map((tag) => ({
-    value: tag,
-    label: AUTO_TAG_LABELS[tag],
-  }));
+  /** «Разбор»: сначала автотеги тренера, затем ручные теги трейдера («#тег», по частоте). */
+  protected readonly tagOptions = computed<SelectOption[]>(() => [
+    ...AUTO_TAGS.map((tag) => ({ value: tag, label: AUTO_TAG_LABELS[tag] })),
+    ...this.manualTags.usage().map((u) => ({
+      value: manualTagFilter(u.tag),
+      label: '#' + u.tag,
+      hint: String(u.count),
+    })),
+  ]);
 
   protected readonly statusOptions: SelectOption[] = [
     { value: 'closed', label: 'Закрытые' },
@@ -135,6 +143,7 @@ export class TradeList {
 
   private readonly rows = computed<TradeRow[]>(() => {
     const tags = this.store.tags();
+    const manual = this.manualTags.byTrade();
     const unrealized = this.unrealizedById();
     return this.store.tableTrades().map((trade) => ({
       trade,
@@ -142,6 +151,7 @@ export class TradeList {
       pnlPct: calculatePnlPercent(trade),
       notional: notional(trade),
       marks: tags.get(trade.id) ?? [],
+      manualTags: manual.get(trade.id) ?? [],
       unrealized: trade.status === 'open' ? (unrealized.get(trade.id) ?? null) : null,
     }));
   });
@@ -206,7 +216,7 @@ export class TradeList {
       untracked(() => {
         this.store.resetTableFilters();
         this.store.updateTableFilters({
-          tag: isAutoTag(tag) ? tag : undefined,
+          tag: isAutoTag(tag) || manualTagOfFilter(tag) ? tag : undefined,
           side: side === 'long' || side === 'short' ? side : undefined,
         });
         this.page.set(1);

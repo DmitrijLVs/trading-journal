@@ -1,0 +1,169 @@
+@use 'styles/index' as *;
+
+:host {
+  position: relative;
+  display: block;
+  height: 100%;
+  flex: none;
+}
+
+// Стрелки прокрутки поверх краёв панели, с растушёвкой под ними.
+.scroll {
+  appearance: none;
+  position: absolute;
+  left: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  color: var(--fg-muted);
+  cursor: pointer;
+
+  &.up { top: 0; background: linear-gradient(var(--canvas-subtle) 55%, transparent); }
+  &.down { bottom: 0; background: linear-gradient(transparent, var(--canvas-subtle) 45%); }
+  &:hover { color: var(--accent-fg); }
+  @include focus-ring($offset: -2px);
+}
+
+// Вертикальная панель слева от графика — как в wintrading и TradingView.
+.bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 40px;
+  height: 100%;
+  padding: 4px 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  border-right: 1px solid var(--border-muted);
+
+  &::-webkit-scrollbar { display: none; }
+
+  hr {
+    flex: none;
+    width: 60%;
+    margin: 3px 0;
+    border: none;
+    border-top: 1px solid var(--border-muted);
+  }
+}
+
+.item {
+  appearance: none;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: $radius-sm;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  transition: background $duration-fast $ease-apple, color $duration-fast $ease-apple;
+
+  span { display: flex; pointer-events: none; }
+
+  @media (hover: hover) {
+    &:hover:not(:disabled) {
+      background: var(--canvas-overlay);
+      color: var(--fg-default);
+    }
+  }
+
+  @include focus-ring;
+  &.active { color: var(--accent-fg); background: var(--accent-subtle); }
+  &:disabled { opacity: 0.35; cursor: default; }
+}
+
+.group {
+  position: relative;
+  flex: none;
+}
+
+.more {
+  appearance: none;
+  position: absolute;
+  right: -4px;
+  bottom: 1px;
+  width: 10px;
+  height: 12px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--fg-subtle);
+  cursor: pointer;
+
+  &:hover,
+  &.open { color: var(--accent-fg); }
+  @include focus-ring($offset: 0);
+}
+
+// Список группы — во всплывающем слое CDK (не режется рамкой графика).
+.flyout {
+  min-width: 300px;
+  max-height: calc(100dvh - 16px);
+  overflow-y: auto;
+  padding: 6px 0;
+  border: 1px solid var(--border-default);
+  border-radius: $radius-md;
+  background: var(--canvas-overlay);
+  box-shadow: var(--shadow-popover);
+  color: var(--fg-default);
+  font-size: $text-sm;
+  @include styled-scrollbar;
+}
+
+.head {
+  padding: 4px 12px 6px;
+  font-weight: 600;
+}
+
+.section {
+  padding: 8px 12px 3px;
+  font-size: $text-xs;
+  color: var(--fg-subtle);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 30px;
+  padding: 0 6px 0 12px;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible { background: color-mix(in srgb, var(--fg-default) 7%, transparent); outline: none; }
+  &.active { color: var(--accent-fg); }
+
+  .ico { display: flex; color: var(--fg-muted); }
+  &.active .ico { color: inherit; }
+  .name { flex: 1; white-space: nowrap; }
+
+  kbd {
+    font: 11px $font-mono;
+    color: var(--fg-subtle);
+  }
+}
+
+.star {
+  appearance: none;
+  padding: 0 4px;
+  border: none;
+  background: transparent;
+  color: var(--fg-subtle);
+  opacity: 0.45;
+  cursor: pointer;
+  font-size: 13px;
+
+  &:hover { opacity: 0.9; }
+  &.on { opacity: 1; color: var(--accent-fg); }
+}

@@ -29,7 +29,7 @@
       (valueChange)="setSide($event)"
     />
     <app-select
-      [options]="tagOptions"
+      [options]="tagOptions()"
       placeholder="Разбор"
       [clearable]="true"
       size="sm"
@@ -181,7 +181,7 @@
                   }
                 </td>
                 <td class="num muted">{{ fmtDuration(row.trade) }}</td>
-                <td class="tags-col"><app-trade-tags class="inline" [marks]="row.marks" /></td>
+                <td class="tags-col"><app-trade-tags class="inline" [marks]="row.marks" [manual]="row.manualTags" /></td>
               </tr>
               @if (expandedId() === row.trade.id) {
                 <tr class="expand-row">

@@ -1,11 +1,14 @@
 import { Injectable, effect, signal } from '@angular/core';
 import { bumpThemeTick } from './theme-tick';
 
-/** «Графит» — тёмная основная, «Бумага» — светлая. Токены: styles/_theme.scss. */
-export type ThemeName = 'graphite' | 'paper';
+/**
+ * «Кармин» — тёмная основная, «Бумага» — светлая. Токены: styles/_tokens.scss
+ * и styles/_theme.scss. Старое значение `graphite` в localStorage читается как тёмная.
+ */
+export type ThemeName = 'carmine' | 'paper';
 
 export const THEME_LABELS: Record<ThemeName, string> = {
-  graphite: 'Графит',
+  carmine: 'Кармин',
   paper: 'Бумага',
 };
 
@@ -31,9 +34,9 @@ function readStoredDensity(): Density {
 function readStoredTheme(): ThemeName {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored === 'paper' ? 'paper' : 'graphite';
+    return stored === 'paper' ? 'paper' : 'carmine';
   } catch {
-    return 'graphite';
+    return 'carmine';
   }
 }
 

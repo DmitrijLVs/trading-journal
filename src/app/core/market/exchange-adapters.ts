@@ -1,4 +1,4 @@
-import { Candle, CandleQuery, MarketExchange, TIMEFRAME_MS, Timeframe } from './market.model';
+import { Candle, CandleQuery, KlineTimeframe, MarketExchange, TIMEFRAME_MS } from './market.model';
 
 /** Публичный REST-запрос свечей (без ключей, биржи отдают его с CORS). */
 export interface KlinesRequest {
@@ -18,16 +18,21 @@ export interface ExchangeAdapter {
   readonly streamUrl: string;
   /** Сообщение-пинг приложения (null — хватает пингов протокола). */
   readonly ping: string | null;
-  klines(query: CandleQuery): KlinesRequest;
+  klines(query: CandleQuery<KlineTimeframe>): KlinesRequest;
   /** Свечи ответа по возрастанию времени. */
   parseKlines(body: unknown): Candle[];
-  topic(symbol: string, timeframe: Timeframe): string;
+  topic(symbol: string, timeframe: KlineTimeframe): string;
+  /**
+   * Топик потока сделок (только Binance) — из него собираются живые секундные
+   * бары. Сделка приходит свечой из одной сделки: [время, цена ×4, количество].
+   */
+  tradeTopic?(symbol: string): string;
   subscribe(topics: readonly string[]): string;
   unsubscribe(topics: readonly string[]): string;
   parseStream(data: string): StreamTick[];
 }
 
-const BYBIT_INTERVAL: Readonly<Record<Timeframe, string>> = {
+const BYBIT_INTERVAL: Readonly<Record<KlineTimeframe, string>> = {
   '1m': '1',
   '5m': '5',
   '15m': '15',
@@ -38,7 +43,7 @@ const BYBIT_INTERVAL: Readonly<Record<Timeframe, string>> = {
 };
 
 /** Дневки OKX без суффикса `utc` открываются по Гонконгу — берём UTC-вариант. */
-const OKX_BAR: Readonly<Record<Timeframe, string>> = {
+const OKX_BAR: Readonly<Record<KlineTimeframe, string>> = {
   '1m': '1m',
   '5m': '5m',
   '15m': '15m',
@@ -105,11 +110,17 @@ function binance(): ExchangeAdapter {
     parseKlines: (body) =>
       Array.isArray(body) ? ascending(body.map((row: unknown[]) => candleOf(row, 5))) : [],
     topic: (symbol, tf) => `${symbol.toLowerCase()}@kline_${tf}`,
+    tradeTopic: (symbol) => `${symbol.toLowerCase()}@aggTrade`,
     subscribe: (topics) => message('SUBSCRIBE', topics),
     unsubscribe: (topics) => message('UNSUBSCRIBE', topics),
     parseStream: (data) => {
       const parsed = record(parseJson(data));
       const payload = record(parsed?.['data']) ?? parsed;
+      if (payload?.['e'] === 'aggTrade' && typeof payload['s'] === 'string') {
+        const price = payload['p'];
+        const trade = candleOf([payload['T'], price, price, price, price, payload['q']], 5);
+        return trade ? [{ topic: `${payload['s'].toLowerCase()}@aggTrade`, candle: trade }] : [];
+      }
       const k = record(payload?.['k']);
       if (payload?.['e'] !== 'kline' || !k || typeof payload['s'] !== 'string') return [];
       const candle = candleOf([k['t'], k['o'], k['h'], k['l'], k['c'], k['v']], 5);

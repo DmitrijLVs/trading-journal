@@ -24,6 +24,14 @@
 
   <!-- Сделки дня -->
   @if (expanded() && rows().length > 0) {
+    <div class="ai">
+      <app-ai-review-panel
+        [reviewKey]="aiKey()"
+        label="Разбор дня от ИИ"
+        hint="Тренер посмотрит на серию сделок и правила дисциплины"
+        (run)="reviewWithAi()"
+      />
+    </div>
     <div class="trades">
       <table class="tj-table">
         <thead>

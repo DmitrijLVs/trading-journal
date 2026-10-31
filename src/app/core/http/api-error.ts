@@ -28,6 +28,12 @@ const EXACT: Readonly<Record<string, string>> = {
   'invalid input: api key and secret are required': 'Нужны API Key и API Secret',
   'exchange account not found': 'Счёт не найден — возможно, его уже удалили',
   'internal error': 'Ошибка на сервере — попробуйте ещё раз',
+  // «Разбор от ИИ» (server/ai-review.mjs)
+  'ai disabled': 'ИИ-разбор пока не подключён',
+  'ai limit': 'Лимит ИИ-разборов на этот час исчерпан — попробуйте позже',
+  'ai busy': 'ИИ сейчас перегружен — попробуйте через минуту',
+  'ai failed': 'ИИ не ответил — попробуйте ещё раз',
+  'ai refused': 'ИИ отказался разбирать эти данные',
 };
 
 const PATTERNS: readonly [RegExp, (m: RegExpMatchArray) => string][] = [

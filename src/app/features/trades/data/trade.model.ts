@@ -48,7 +48,7 @@ export interface TradeFilters {
   side?: TradeSide;
   status?: TradeStatus;
   search?: string;
-  /** Автотег разбора (`AutoTag`): реванш, тильт, овертрейд… */
+  /** Автотег разбора (`AutoTag`: реванш, тильт…) или ручной тег — «#тег». */
   tag?: string;
 }
 

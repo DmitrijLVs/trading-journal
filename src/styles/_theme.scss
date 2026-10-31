@@ -29,6 +29,7 @@
   --accent-emphasis: #{$accent-emphasis};
   --accent-subtle:   #{$accent-subtle};
   --accent-muted:    #{$accent-muted};
+  --accent-soft:     #{$accent-soft};
 
   // Semantic
   --success-fg:     #{$success-fg};
@@ -119,11 +120,12 @@
   --fg-subtle:      #8f8878;
   --fg-on-emphasis: #ffffff;
 
-  // Карандашная охра на бумаге — темнее, чтобы держать контраст.
-  --accent-fg:       #9c7118;
-  --accent-emphasis: #8f6612;
-  --accent-subtle:   rgba(156, 113, 24, 0.12);
-  --accent-muted:    rgba(156, 113, 24, 0.35);
+  // Кармин на бумаге — темнее, чтобы держать контраст.
+  --accent-fg:       #b02a30;
+  --accent-emphasis: #a3262b;
+  --accent-subtle:   rgba(176, 42, 48, 0.1);
+  --accent-muted:    rgba(176, 42, 48, 0.32);
+  --accent-soft:     #c2646a;
 
   --success-fg:     #2e9e4a;
   --success-subtle: rgba(46, 158, 74, 0.12);

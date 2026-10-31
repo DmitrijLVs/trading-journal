@@ -1,41 +1,9 @@
-import type { Bindings, DrawingStyle, Measurement, ToolTexts } from '@nv/tools';
-import type { IconName } from '../ui/icons';
+import type { DrawingStyle, Measurement, ToolTexts } from '@nv/tools';
 
-/** Инструмент рисования в тулбаре графика. */
-export interface DrawingTool {
-  /** Имя инструмента в @nv/tools. */
-  name: string;
-  label: string;
-  icon: IconName;
-  /** Горячая клавиша или жест — в подсказке кнопки. */
-  hint: string;
-}
-
-/** Основные инструменты журнала: линейка, уровень, коррекция Фибоначчи. */
-export const DRAWING_TOOLS: readonly DrawingTool[] = [
-  { name: 'measure', label: 'Линейка', icon: 'ruler', hint: 'Shift + клик' },
-  { name: 'horizontalLine', label: 'Уровень', icon: 'level', hint: 'Alt + H' },
-  { name: 'fibRetracement', label: 'Фибоначчи', icon: 'fib', hint: 'Alt + F' },
-];
-
-export const DRAWING_TOOL_NAMES: readonly string[] = DRAWING_TOOLS.map((tool) => tool.name);
-
-/** Команды, которые остаются из карты клавиш движка помимо инструментов. */
-const COMMANDS = ['cursor', 'cancel', 'deleteSelected', 'undo', 'redo'];
-
-/** Клавиши и жесты только наших инструментов: остальные (тренд, луч по ПКМ…) выключены. */
-export function drawingBindings(defaults: Readonly<Bindings>): Bindings {
-  const bindings: Bindings = {};
-  for (const action of Object.keys(defaults)) {
-    const kept = DRAWING_TOOL_NAMES.includes(action) || COMMANDS.includes(action);
-    bindings[action] = kept ? (defaults[action] ?? []) : [];
-  }
-  return bindings;
-}
-
-/** Уровень подписывает свою цену на шкале — как в TradingView. */
+/** Уровень и горизонтальный луч подписывают свою цену на шкале — как в TradingView и wintrading. */
 export const TOOL_DEFAULTS: Readonly<Record<string, DrawingStyle>> = {
   horizontalLine: { axisLabel: true },
+  horizontalRay: { axisLabel: true },
 };
 
 export const TOOL_TEXTS: Partial<ToolTexts> = {
@@ -43,6 +11,7 @@ export const TOOL_TEXTS: Partial<ToolTexts> = {
   stop: 'Стоп',
   riskReward: 'Риск/прибыль',
   qty: 'Кол-во',
+  openPnl: 'P&L',
   bars: 'бар.',
   volume: 'Объём',
   days: 'д',
@@ -82,9 +51,12 @@ function spanText(ms: number): string {
   const days = Math.floor(total / DAY_MS);
   const hours = Math.floor((total % DAY_MS) / HOUR_MS);
   const minutes = Math.floor((total % HOUR_MS) / MINUTE_MS);
+  const seconds = Math.floor((total % MINUTE_MS) / 1000);
   const parts: string[] = [];
   if (days > 0) parts.push(`${days} д`);
   if (hours > 0) parts.push(`${hours} ч`);
   if (minutes > 0 && days === 0) parts.push(`${minutes} мин`);
-  return parts.length ? parts.join(' ') : '0 мин';
+  // Секундный график: короткий замер без секунд был бы «0 мин».
+  if (seconds > 0 && days === 0 && hours === 0 && minutes < 10) parts.push(`${seconds} с`);
+  return parts.length ? parts.join(' ') : '0 с';
 }

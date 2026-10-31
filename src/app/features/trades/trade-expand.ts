@@ -32,7 +32,7 @@ import { AccountsStore } from '../accounts/accounts-store';
 import { exchangeMeta } from '../accounts/data/account.model';
 import { TradeChartData, chartTimeframe } from './data/trade-chart.model';
 import { TradeChartLoader } from './data/trade-chart-loader';
-import { Timeframe, marketExchangeOf } from '../../core/market/market.model';
+import { Timeframe, isSecondsTimeframe, marketExchangeOf } from '../../core/market/market.model';
 import { TradeChart } from './trade-chart';
 import { Icon } from '../../shared/ui/icon';
 import { Button } from '../../shared/ui/button';
@@ -40,6 +40,9 @@ import { Badge } from '../../shared/ui/badge';
 import { Skeleton } from '../../shared/ui/skeleton';
 import { EmptyState } from '../../shared/ui/empty-state';
 import { TradeTags } from './trade-tags';
+import { TradeTagEditor } from './trade-tag-editor';
+import { AiReviewPanel } from '../analytics/ai-review-panel';
+import { AiReviewStore } from '../analytics/ai-review-store';
 import { TradesStore } from './trades-store';
 import { PortfolioStore } from '../analytics/portfolio-store';
 
@@ -72,7 +75,7 @@ function orderTypes(t: Trade): string {
  */
 @Component({
   selector: 'app-trade-expand',
-  imports: [TradeChart, Icon, Button, Badge, Skeleton, EmptyState, TradeTags],
+  imports: [TradeChart, Icon, Button, Badge, Skeleton, EmptyState, TradeTags, TradeTagEditor, AiReviewPanel],
   templateUrl: './trade-expand.html',
   styleUrl: './trade-expand.scss',
   host: { '[class]': "'is-' + layout()", '[class.is-embedded]': 'embedded()' },
@@ -81,6 +84,7 @@ function orderTypes(t: Trade): string {
 export class TradeExpand {
   private readonly accountsStore = inject(AccountsStore);
   private readonly loader = inject(TradeChartLoader);
+  protected readonly ai = inject(AiReviewStore);
   private readonly tradesStore = inject(TradesStore);
   private readonly portfolio = inject(PortfolioStore);
 
@@ -124,7 +128,9 @@ export class TradeExpand {
   });
 
   /** Таймфрейм графика: по длительности сделки, дальше — переключается в тулбаре. */
-  protected readonly timeframe = linkedSignal<Timeframe>(() => chartTimeframe(this.trade()));
+  protected readonly timeframe = linkedSignal<Timeframe>(() =>
+    chartTimeframe(this.trade(), this.exchange()),
+  );
 
   /**
    * Что грузить. Сделки перечитываются при каждом событии журнала — новый
@@ -144,6 +150,8 @@ export class TradeExpand {
     params: () => this.chartParams(),
     loader: ({ params }) => this.loader.load(params.trade, params.timeframe, params.exchange),
   });
+  /** График на секундах — пустой ответ значит «история секунд кончилась», а не «нет символа». */
+  protected readonly secondsChart = computed(() => isSecondsTimeframe(this.chartData()?.timeframe ?? '1m'));
   /** Последнее загруженное окно — при смене ТФ график не пропадает на время запроса. */
   protected readonly chartData = signal<TradeChartData | null>(null);
   protected readonly chartFailed = computed(
@@ -182,6 +190,11 @@ export class TradeExpand {
     effect(() => {
       if (this.chartResource.hasValue()) this.chartData.set(this.chartResource.value());
     });
+  }
+
+  /** Факты сделки (с ходом цены по свечам открытого графика) — тренеру-ИИ. */
+  protected reviewWithAi(): void {
+    this.ai.reviewTrade(this.trade(), this.chartData());
   }
 
   protected reloadChart(): void {

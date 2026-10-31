@@ -3,8 +3,8 @@ import { AUTO_TAG_LABELS, AUTO_TAG_SHORT, TagMark } from '../analytics/data/beha
 import { Tooltip } from '../../shared/ui/tooltip';
 
 /**
- * Автотеги сделки — пометки тренера «от руки». Причина — в подсказке;
- * `detailed` — списком с причинами (панель разбора).
+ * Теги сделки: автотеги — пометки тренера «от руки» (причина — в подсказке;
+ * `detailed` — списком с причинами), затем ручные теги трейдера чистым шрифтом.
  */
 @Component({
   selector: 'app-trade-tags',
@@ -22,6 +22,9 @@ import { Tooltip } from '../../shared/ui/tooltip';
     } @else {
       @for (mark of marks(); track mark.tag) {
         <span class="tj-tag" [class]="'tj-tag ' + mark.tag" [appTooltip]="labels[mark.tag] + ': ' + mark.reason">{{ short[mark.tag] }}</span>
+      }
+      @for (tag of manual(); track tag) {
+        <span class="tj-chip">{{ tag }}</span>
       }
     }
   `,
@@ -43,6 +46,8 @@ import { Tooltip } from '../../shared/ui/tooltip';
 export class TradeTags {
   readonly marks = input.required<readonly TagMark[]>();
   readonly detailed = input(false);
+  /** Ручные теги — только в строке (в панели разбора их правит TradeTagEditor). */
+  readonly manual = input<readonly string[]>([]);
 
   protected readonly labels = AUTO_TAG_LABELS;
   protected readonly short = AUTO_TAG_SHORT;

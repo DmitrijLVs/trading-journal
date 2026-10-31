@@ -3,13 +3,16 @@
 // Гейтвей не обрабатывает CORS и ставит host-only куки, поэтому браузер ходит
 // только сюда. Без зависимостей: после сборки buildpack выкидывает devDependencies.
 //
-//   npm run build && npm run serve:prod      PORT и API_TARGET — из окружения
+// Сам отвечает только на `/ai/*` — «Разбор от ИИ» (server/ai-review.mjs).
+//
+//   npm run build && npm run serve:prod      PORT, API_TARGET, ANTHROPIC_API_KEY — из окружения
 import { createServer, request as httpRequest } from 'node:http';
 import { request as httpsRequest } from 'node:https';
 import { createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import { extname, join, sep } from 'node:path';
 import { prefixes, target } from './proxy.conf.mjs';
+import { AI_PATH, handleAiRequest } from './server/ai-review.mjs';
 
 const ROOT = join(import.meta.dirname, 'dist/trading-journal/browser');
 const INDEX = join(ROOT, 'index.html');
@@ -172,6 +175,12 @@ async function serveStatic(req, res) {
 // ── Сервер ───────────────────────────────────────────────────────────────────
 
 const server = createServer((req, res) => {
+  if (AI_PATH.test(req.url ?? '')) {
+    return void handleAiRequest(req, res, target).catch(() => {
+      if (!res.headersSent) res.writeHead(500);
+      res.end();
+    });
+  }
   if (API_PATH.test(req.url ?? '')) return proxy(req, res);
   serveStatic(req, res).catch(() => {
     if (!res.headersSent) res.writeHead(500);
@@ -189,5 +198,6 @@ server.on('upgrade', (req, socket, head) => {
 server.keepAliveTimeout = 65_000;
 
 server.listen(PORT, () => {
-  console.log(`trading-journal: :${PORT}, API → ${upstream.origin}`);
+  const ai = process.env['ANTHROPIC_API_KEY'] ? 'on' : 'off (нет ANTHROPIC_API_KEY)';
+  console.log(`trading-journal: :${PORT}, API → ${upstream.origin}, ИИ-разбор: ${ai}`);
 });

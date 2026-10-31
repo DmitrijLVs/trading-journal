@@ -9,10 +9,22 @@ export const target = process.env['API_TARGET'] ?? 'https://165.245.248.24';
 // цеплять маршрут приложения `/accounts`.
 export const prefixes = ['account', 'exchange', 'journal', 'stats', 'payment', 'config', 'healthcheck', 'ws'];
 
-export default Object.fromEntries(
-  prefixes.map((prefix) => [
-    `^/${prefix}(/|\\?|$)`,
-    // Стенд на самоподписанном сертификате Caddy — проверку TLS не делаем.
-    { target, secure: false, changeOrigin: true, ws: prefix === 'ws' },
-  ]),
-);
+export default {
+  ...Object.fromEntries(
+    prefixes.map((prefix) => [
+      `^/${prefix}(/|\\?|$)`,
+      // Стенд на самоподписанном сертификате Caddy — проверку TLS не делаем.
+      { target, secure: false, changeOrigin: true, ws: prefix === 'ws' },
+    ]),
+  ),
+  // «Разбор от ИИ» отвечает сам дев-сервер — тем же модулем, что и прод-сервер.
+  // Ключ: ANTHROPIC_API_KEY=… npm start. Ответ уже записан — Vite дальше не идёт.
+  '^/ai(/|\\?|$)': {
+    target,
+    bypass: async (req, res) => {
+      const { handleAiRequest } = await import('./server/ai-review.mjs');
+      if (res) await handleAiRequest(req, res, target);
+      return req.url;
+    },
+  },
+};

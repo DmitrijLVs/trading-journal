@@ -83,12 +83,21 @@ export class TradeLayer implements SceneLayer {
     }
   }
 
-  // Автошкала обязана показать цены исполнений (с запасом под шевроны).
+  // Автошкала обязана показать цены исполнений с запасом под шевроны. Запас — доля
+  // разброса исполнений, не меньше 0,02% цены: фиксированные ±0,4% растягивали
+  // секундный график скальпа на сотни долларов вокруг ровной цены.
   extend(range: SceneRange): void {
-    for (const fill of this.markup?.fills ?? []) {
-      range.max = Math.max(range.max, fill.price * 1.004);
-      range.min = Math.min(range.min, fill.price * 0.996);
+    const fills = this.markup?.fills ?? [];
+    if (fills.length === 0) return;
+    let low = Infinity;
+    let high = -Infinity;
+    for (const fill of fills) {
+      low = Math.min(low, fill.price);
+      high = Math.max(high, fill.price);
     }
+    const pad = Math.max((high - low) * 0.15, high * 0.0002);
+    range.max = Math.max(range.max, high + pad);
+    range.min = Math.min(range.min, low - pad);
   }
 }
 

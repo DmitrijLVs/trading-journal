@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { JournalDay } from './journal-store';
 import { calculatePnl, calculatePnlPercent, formatDuration, formatMoney } from '../trades/data/trade.model';
@@ -6,6 +6,8 @@ import { AUTO_TAG_SHORT } from '../analytics/data/behavior';
 import { Icon } from '../../shared/ui/icon';
 import { PnlValue } from '../../shared/ui/pnl-value';
 import { SparkLine } from '../../shared/ui/spark-line';
+import { AiReviewPanel } from '../analytics/ai-review-panel';
+import { AiReviewStore } from '../analytics/ai-review-store';
 
 const WEEKDAYS = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
 const MONTHS_GEN = [
@@ -16,13 +18,17 @@ const MONTHS_GEN = [
 /** Карточка торгового дня: результат и сделки дня. */
 @Component({
   selector: 'app-journal-day-card',
-  imports: [RouterLink, Icon, PnlValue, SparkLine],
+  imports: [RouterLink, Icon, PnlValue, SparkLine, AiReviewPanel],
   templateUrl: './journal-day-card.html',
   styleUrl: './journal-day-card.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class JournalDayCard {
+  private readonly ai = inject(AiReviewStore);
+
   readonly day = input.required<JournalDay>();
+
+  protected readonly aiKey = computed(() => this.ai.dayKey(this.day().date, this.day().trades));
 
   protected readonly expanded = signal(false);
 
@@ -38,6 +44,11 @@ export class JournalDayCard {
   });
 
   protected readonly tagLabels = AUTO_TAG_SHORT;
+
+  /** Сделки дня, автотеги и правила — тренеру-ИИ. */
+  protected reviewWithAi(): void {
+    this.ai.reviewDay(this.day().date, this.day().trades);
+  }
 
   protected readonly fees = computed(() => formatMoney(this.day().fees));
 

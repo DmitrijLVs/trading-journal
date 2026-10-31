@@ -5,6 +5,7 @@ import {
   MarketRef,
   TIMEFRAME_MS,
   Timeframe,
+  isDenseTimeframe,
   isLiveCandle,
 } from '../../core/market/market.model';
 import { CandleSink } from '../../shared/nv-chart/nv-chart.types';
@@ -39,6 +40,11 @@ export class TradeChartFeed {
   private timeframe: Timeframe = '15m';
   private firstTime = 0;
   private lastTime = 0;
+  /**
+   * До какого момента данные уже запрошены. У секундных баров (они редкие)
+   * не совпадает с последней свечой: окно без сделок тоже пройдено.
+   */
+  private fetchedUntil = 0;
   private historyBusy = false;
   private forwardBusy = false;
   private generation = 0;
@@ -56,9 +62,14 @@ export class TradeChartFeed {
     this.ref = ref;
     this.timeframe = timeframe;
     this.firstTime = candles[0][0];
-    this.lastTime = candles[candles.length - 1][0];
+    this.lastTime = this.fetchedUntil = candles[candles.length - 1][0];
     this.historyEndState.set(false);
-    if (isLiveCandle(this.lastTime, timeframe, Date.now())) this.goLive();
+    if (isDenseTimeframe(timeframe)) {
+      if (isLiveCandle(this.lastTime, timeframe, Date.now())) this.goLive();
+    } else if (Date.now() - this.lastTime < this.forwardSpan()) {
+      // Свежая сделка на секундах: одна страница вперёд — и график на потоке.
+      this.fetchForward();
+    }
   }
 
   stop(): void {
@@ -109,10 +120,13 @@ export class TradeChartFeed {
     const ref = this.ref;
     if (!ref || this.forwardBusy) return;
     const generation = this.generation;
+    const dense = isDenseTimeframe(this.timeframe);
+    const after = dense ? this.lastTime : Math.max(this.lastTime, this.fetchedUntil);
+    const until = after + this.forwardSpan();
     this.forwardBusy = true;
     this.syncBusy();
     this.source
-      .candles({ ...ref, timeframe: this.timeframe, after: this.lastTime, limit: FORWARD_PAGE })
+      .candles({ ...ref, timeframe: this.timeframe, after, limit: FORWARD_PAGE })
       .then((rows) => {
         if (generation !== this.generation) return;
         const newer = rows.filter((row) => row[0] > this.lastTime);
@@ -120,9 +134,10 @@ export class TradeChartFeed {
           this.sink?.append(newer);
           this.lastTime = newer[newer.length - 1][0];
         }
-        if (!this.liveState() && isLiveCandle(this.lastTime, this.timeframe, Date.now())) {
-          this.goLive();
-        }
+        const now = Date.now();
+        if (!dense) this.fetchedUntil = Math.max(this.lastTime, Math.min(until, now));
+        const present = dense ? isLiveCandle(this.lastTime, this.timeframe, now) : until >= now;
+        if (!this.liveState() && present) this.goLive();
       })
       .catch(() => undefined)
       .finally(() => {
@@ -145,13 +160,19 @@ export class TradeChartFeed {
 
   private applyLive(candle: Candle): void {
     if (candle[0] < this.lastTime || this.forwardBusy) return;
-    if (candle[0] > this.lastTime + TIMEFRAME_MS[this.timeframe]) {
+    const dense = isDenseTimeframe(this.timeframe);
+    if (dense && candle[0] > this.lastTime + TIMEFRAME_MS[this.timeframe]) {
       // Пропущены свечи (вкладка спала, поток отставал) — догружаем их.
       this.fetchForward();
       return;
     }
     this.sink?.update(candle);
     this.lastTime = candle[0];
+  }
+
+  /** Сколько времени покрывает страница догрузки вперёд. */
+  private forwardSpan(): number {
+    return FORWARD_PAGE * TIMEFRAME_MS[this.timeframe];
   }
 
   private syncBusy(): void {
