@@ -168,7 +168,7 @@ export const BINANCE_API_URL = 'https://www.binance.com/ru/my/settings/api-manag
 
     .soon {
       padding: 0 6px;
-      border-radius: $radius-full;
+      border-radius: $radius-sm;
       background: var(--canvas-overlay);
       font-size: $text-xs;
     }

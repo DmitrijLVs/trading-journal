@@ -24,9 +24,6 @@
             />
           } @else {
             <span class="tab-name">{{ ws.name }}</span>
-            @if (ws.id === store.activeWorkspaceId()) {
-              <i class="tab-ink" appSketchUnderline [sketchSeed]="ws.id" [sketchInset]="0"></i>
-            }
             @if (store.workspaces().length > 1) {
               <button
                 type="button"
@@ -106,10 +103,6 @@
         <div class="blank-inner">
           <h2>Чистый лист</h2>
           <p>Соберите его из виджетов: показатели, графики, календарь, таблицы сделок.</p>
-          <div class="blank-hint" aria-hidden="true">
-            <app-sketch-arrow class="blank-arrow" [sketchDelay]="300" />
-            <span class="blank-note">начни отсюда</span>
-          </div>
           <div class="blank-actions">
             <button app-button variant="primary" (click)="openAddPanel()">
               <app-icon name="plus" style="--icon-size: 14px" />

@@ -46,7 +46,7 @@ export function mix(hexA: string, hexB: string, t: number): string {
  * Цвета графиков — читаются из дизайн-токенов (_tokens.scss → :root), поэтому
  * смена палитры в одном файле перекрашивает и canvas-графики.
  * P&L кодируется полюсами success/danger + обязательным знаком в подписи;
- * категориальные серии — синий/оранжевый/фиолетовый/бирюза (без соседства
+ * категориальные серии — оранжевый/голубой/лаванда/бирюза (без соседства
  * красного с зелёным — CVD).
  */
 export const CHART = {
@@ -64,17 +64,19 @@ export const CHART = {
   get fg() { return cssVar('--fg-default', '#e6edf3'); },
   get fgMuted() { return cssVar('--fg-muted', '#7d8590'); },
   get fgSubtle() { return cssVar('--fg-subtle', '#6e7681'); },
-  get grid() { return cssVar('--border-muted', '#21262d'); },
-  get border() { return cssVar('--border-default', '#30363d'); },
-  get surface() { return cssVar('--canvas-subtle', '#161b22'); },
-  get overlay() { return cssVar('--canvas-overlay', '#1c2128'); },
-  mono: "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace",
-  sans: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  // Непрозрачные двойники кромок и поверхностей: mix() и canvas работают с hex.
+  get grid() { return cssVar('--chart-grid', '#1c1c1f'); },
+  get border() { return cssVar('--chart-border', '#2c2c31'); },
+  get surface() { return cssVar('--chart-surface', '#141416'); },
+  get overlay() { return cssVar('--chart-overlay', '#1c1c1f'); },
+  /** Цифры осей и тултипов — тот же гротеск с табличными цифрами. */
+  num: "'Onest', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  sans: "'Onest', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
 };
 
 /** Категориальный порядок — фиксированный, не циклится. */
 export function categorical(): string[] {
-  return [CHART.accent, CHART.orange, CHART.purple, CHART.teal];
+  return [CHART.accent, CHART.long, CHART.purple, CHART.teal];
 }
 
 /** Подмножество локали echarts: только то, что видно на осях времени. */
@@ -137,7 +139,7 @@ export function registerChartTheme(): void {
 }
 
 function axisLabelDefaults(): Record<string, unknown> {
-  return { color: CHART.fgMuted, fontSize: 12, fontFamily: CHART.mono, margin: 12 };
+  return { color: CHART.fgMuted, fontSize: 12, fontFamily: CHART.num, margin: 12 };
 }
 
 function axisDefaults(): Record<string, unknown> {
@@ -150,15 +152,15 @@ function axisDefaults(): Record<string, unknown> {
   };
 }
 
-/** Базовый tooltip: тёмная плашка, моноширинные значения. */
+/** Базовый tooltip: стеклянная плашка, табличные цифры. */
 export function baseTooltip(): Record<string, unknown> {
   return {
-    backgroundColor: CHART.overlay,
+    backgroundColor: alpha(CHART.overlay, 0.86),
     borderColor: CHART.border,
     borderWidth: 1,
-    padding: [6, 10],
-    textStyle: { color: CHART.fg, fontSize: 13, fontFamily: CHART.mono },
-    extraCssText: 'box-shadow: 0 8px 24px rgba(0,0,0,.5); border-radius: 10px;',
+    padding: [8, 12],
+    textStyle: { color: CHART.fg, fontSize: 13, fontFamily: CHART.num },
+    extraCssText: 'box-shadow: 0 12px 32px rgba(0,0,0,.4); border-radius: 8px; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);',
     confine: true,
   };
 }

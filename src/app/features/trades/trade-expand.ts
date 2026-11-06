@@ -12,7 +12,6 @@ import {
   signal,
 } from '@angular/core';
 import {
-  SESSION_LABELS,
   Trade,
   calculatePnl,
   calculatePnlPercent,
@@ -25,8 +24,8 @@ import {
   formatPrice,
   formatQuantity,
   formatSpan,
+  localDay,
   notional,
-  tradingSession,
 } from './data/trade.model';
 import { AccountsStore } from '../accounts/accounts-store';
 import { exchangeMeta } from '../accounts/data/account.model';
@@ -41,41 +40,43 @@ import { Skeleton } from '../../shared/ui/skeleton';
 import { EmptyState } from '../../shared/ui/empty-state';
 import { TradeTags } from './trade-tags';
 import { TradeTagEditor } from './trade-tag-editor';
-import { AiReviewPanel } from '../analytics/ai-review-panel';
-import { AiReviewStore } from '../analytics/ai-review-store';
 import { TradesStore } from './trades-store';
 import { PortfolioStore } from '../analytics/portfolio-store';
 
-/** Ячейка таблицы фактов: подпись, значение и смысловой цвет. */
+/** Строка фактов: подпись, значение, приглушённое уточнение перед ним и цвет. */
 interface Fact {
   k: string;
   v: string;
-  tone?: 'pos' | 'neg' | 'win' | 'loss';
-  /** На всю ширину таблицы (длинные значения). */
-  wide?: boolean;
+  note?: string;
+  tone?: 'pos' | 'neg';
 }
 
 const ORDER_LABEL = { market: 'маркет', limit: 'лимит' } as const;
 
-/** «маркет → лимит»; неизвестный тип — прочерк. */
-function orderTypes(t: Trade): string {
-  const open = t.openOrderType ? ORDER_LABEL[t.openOrderType] : '—';
-  if (t.status === 'open') return open;
-  const close = t.closeOrderType ? ORDER_LABEL[t.closeOrderType] : '—';
-  return `${open} → ${close}`;
+function orderLabel(type: Trade['openOrderType']): string | undefined {
+  return type ? ORDER_LABEL[type] : undefined;
+}
+
+/** «04 ноя 16:00 – 19:00 · 3ч 0м»; дата закрытия — только если день другой. */
+function timeRange(t: Trade): string {
+  const open = formatDateTime(t.openedAt);
+  if (t.status === 'open') return `${open} · ${formatSpan(durationMs(t))} в позиции`;
+  const sameDay = localDay(t.openedAt) === localDay(t.closedAt);
+  const close = sameDay ? formatDateTime(t.closedAt).split(' ').pop() : formatDateTime(t.closedAt);
+  return `${open} – ${close} · ${formatDuration(t.openedAt, t.closedAt)}`;
 }
 
 /**
- * Разбор сделки: график с исполнениями, итог крупно, факты биржи и автотеги
- * (реванш, тильт, овертрейд…) с причинами.
+ * Сделка: график с исполнениями, итог, короткий список фактов биржи, теги
+ * (автотеги — причина в подсказке).
  *
  * `layout` — 'row' (график слева, факты справа) для раскрытой строки таблицы,
- * 'column' (график сверху, факты колонками под ним) для режима «График».
+ * 'column' (график сверху, полоса фактов под ним) для режима «График».
  * `embedded` — без карточки и отступов, когда компонент лежит в своей панели.
  */
 @Component({
   selector: 'app-trade-expand',
-  imports: [TradeChart, Icon, Button, Badge, Skeleton, EmptyState, TradeTags, TradeTagEditor, AiReviewPanel],
+  imports: [TradeChart, Icon, Button, Badge, Skeleton, EmptyState, TradeTags, TradeTagEditor],
   templateUrl: './trade-expand.html',
   styleUrl: './trade-expand.scss',
   host: { '[class]': "'is-' + layout()", '[class.is-embedded]': 'embedded()' },
@@ -84,7 +85,6 @@ function orderTypes(t: Trade): string {
 export class TradeExpand {
   private readonly accountsStore = inject(AccountsStore);
   private readonly loader = inject(TradeChartLoader);
-  protected readonly ai = inject(AiReviewStore);
   private readonly tradesStore = inject(TradesStore);
   private readonly portfolio = inject(PortfolioStore);
 
@@ -98,7 +98,6 @@ export class TradeExpand {
   private readonly account = computed(() =>
     this.accountsStore.accounts().find((a) => a.id === this.trade().accountId),
   );
-  protected readonly accountName = computed(() => this.account()?.label ?? '—');
   /** Свечи графика — с биржи счёта сделки. */
   protected readonly exchange = computed(() => marketExchangeOf(this.account()?.exchange ?? 'binance'));
   protected readonly marketLabel = computed(() => {
@@ -106,25 +105,33 @@ export class TradeExpand {
     return `${meta.label} ${meta.market}`;
   });
 
-  protected readonly pnl = computed(() => calculatePnl(this.trade()));
   protected readonly marks = computed(() => this.tradesStore.tags().get(this.trade().id) ?? []);
+  protected readonly when = computed(() => timeRange(this.trade()));
 
   /** Нереализованный P&L открытой сделки по позиции биржи; null — неизвестен. */
-  protected readonly unrealized = computed(() => {
+  private readonly unrealized = computed(() => {
     const id = this.trade().id;
     return this.portfolio.positions().find((p) => p.tradeId === id)?.unrealizedPnl ?? null;
   });
 
-  /** Под итогом: движение цены, комиссии; у открытой — сколько уже в позиции. */
+  /** Итог: у закрытой — чистый P&L, у открытой — нереализованный по бирже. */
+  protected readonly result = computed(() => {
+    const t = this.trade();
+    return t.status === 'closed' ? calculatePnl(t) : (this.unrealized() ?? 0);
+  });
+  protected readonly resultText = computed(() =>
+    this.trade().status === 'open' && this.unrealized() === null ? '—' : formatMoney(this.result(), { sign: true }),
+  );
+  /** Рядом с итогом: ход цены; у открытой — что это нереализованный и сколько уже зафиксировано. */
   protected readonly resultNote = computed(() => {
     const t = this.trade();
     if (t.status === 'open') {
-      const partial = t.exitPrice !== null ? ` · частично закрыта, realized ${formatMoney(t.realizedPnl, { sign: true })}` : '';
-      return `в позиции ${formatSpan(durationMs(t))}${partial}`;
+      return t.exitPrice !== null
+        ? `нереализованный · зафиксировано ${formatMoney(t.realizedPnl, { sign: true })}`
+        : 'нереализованный';
     }
     const move = calculatePnlPercent(t);
-    const moveText = move ? `цена ${formatPercent(move, { sign: true })}` : 'движение неизвестно';
-    return `${moveText} · до комиссий ${formatMoney(t.realizedPnl, { sign: true })}`;
+    return move ? formatPercent(move, { sign: true }) : '';
   });
 
   /** Таймфрейм графика: по длительности сделки, дальше — переключается в тулбаре. */
@@ -160,31 +167,27 @@ export class TradeExpand {
 
   protected readonly facts = computed<Fact[]>(() => {
     const t = this.trade();
-    const closed = t.status === 'closed';
-    const sign = (v: number): Fact['tone'] => (v >= 0 ? 'pos' : 'neg');
     const feesOther = formatFeesOther(t);
     return [
-      { k: 'Вход', v: t.carriedIn ? 'до начала истории' : formatPrice(t.entryPrice) },
-      { k: 'Выход', v: t.exitPrice === null ? 'в позиции' : formatPrice(t.exitPrice) },
-      { k: 'Объём', v: formatQuantity(t.quantity) },
-      { k: 'Номинал', v: formatMoney(notional(t)) },
+      {
+        k: 'Вход',
+        v: t.carriedIn ? 'до начала истории' : formatPrice(t.entryPrice),
+        note: orderLabel(t.openOrderType),
+      },
+      {
+        k: 'Выход',
+        v: t.exitPrice === null ? '—' : formatPrice(t.exitPrice),
+        note: t.status === 'closed' ? orderLabel(t.closeOrderType) : undefined,
+      },
+      { k: 'Объём', v: formatMoney(notional(t)), note: formatQuantity(t.quantity) },
       { k: 'Комиссии', v: feesOther ? `${formatMoney(t.fees)} + ${feesOther}` : formatMoney(t.fees) },
       {
         k: 'Фандинг',
-        v: t.funding === 0 ? '—' : formatMoney(t.funding, { sign: true }),
-        tone: t.funding === 0 ? undefined : sign(t.funding),
+        v: t.funding === 0 ? formatMoney(0) : formatMoney(t.funding, { sign: true }),
+        tone: t.funding > 0 ? 'pos' : t.funding < 0 ? 'neg' : undefined,
       },
-      { k: 'В позиции', v: closed ? formatDuration(t.openedAt, t.closedAt) : formatSpan(durationMs(t)) },
-      { k: 'Исполнений', v: `${t.fillsCount}` },
-      { k: 'Ордера', v: orderTypes(t) },
-      { k: 'Сессия', v: SESSION_LABELS[tradingSession(t.openedAt)] },
-      { k: 'Счёт', v: `${this.accountName()} · ${this.marketLabel()}`, wide: true },
     ];
   });
-
-  protected money(value: number): string {
-    return formatMoney(value, { sign: true });
-  }
 
   constructor() {
     effect(() => {
@@ -192,14 +195,8 @@ export class TradeExpand {
     });
   }
 
-  /** Факты сделки (с ходом цены по свечам открытого графика) — тренеру-ИИ. */
-  protected reviewWithAi(): void {
-    this.ai.reviewTrade(this.trade(), this.chartData());
-  }
-
   protected reloadChart(): void {
     this.chartResource.reload();
   }
 
-  protected readonly fmtDateTime = formatDateTime;
 }

@@ -84,21 +84,20 @@ export class ToastService {
       min-width: 240px;
       max-width: 380px;
       padding: $space-3 $space-4;
-      border-radius: $radius-lg;
-      border: 1px solid var(--border-default);
-      box-shadow: $shadow-lg;
+      @include popover-surface($radius-xl);
       font-size: $text-sm;
       cursor: pointer;
       pointer-events: auto;
       animation: toast-in $duration-base $ease-out;
-      @include frosted(color-mix(in srgb, var(--canvas-overlay) 90%, transparent));
 
       &.success app-icon { color: var(--success-fg); }
       &.error app-icon { color: var(--danger-fg); }
       &.info app-icon { color: var(--accent-fg); }
       &.warn {
         align-items: flex-start;
-        border-color: var(--attention-muted);
+        box-shadow:
+          inset 0 0 0 1px var(--attention-muted),
+          var(--shadow-popover);
         app-icon { color: var(--attention-fg); margin-top: 3px; }
       }
     }
@@ -106,9 +105,7 @@ export class ToastService {
     .body { display: flex; flex-direction: column; gap: 2px; }
 
     .title {
-      font-family: $font-hand;
-      font-size: $text-lg;
-      font-weight: 400;
+      @include coach-voice(15px);
       color: var(--attention-fg);
     }
 

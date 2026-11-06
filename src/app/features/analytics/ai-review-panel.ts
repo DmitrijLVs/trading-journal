@@ -15,7 +15,7 @@ import { AiReviewStore } from './ai-review-store';
     @switch (state().status) {
       @case ('idle') {
         <div class="idle">
-          <button app-button variant="outline" size="sm" (click)="run.emit()">
+          <button app-button variant="accent" size="sm" (click)="run.emit()">
             <app-icon name="brain" style="--icon-size: 14px" />
             {{ label() }}
           </button>
@@ -110,18 +110,17 @@ import { AiReviewStore } from './ai-review-store';
       gap: $space-2;
       padding: $space-3 $space-4;
       border-radius: $radius-lg;
-      border: 1px solid var(--border-muted);
-      border-left: 3px solid var(--attention-fg);
-      background: var(--canvas-inset);
+      border: 1px solid var(--attention-muted);
+      background: var(--attention-subtle);
 
-      &.good { border-left-color: var(--success-fg); }
-      &.bad { border-left-color: var(--danger-fg); }
+      &.good { border-color: var(--success-muted); background: var(--success-subtle); }
+      &.bad { border-color: var(--danger-muted); background: var(--danger-subtle); }
     }
 
-    // Голос тренера — почерком, как заголовки инсайтов.
+    // Голос тренера — как заголовки инсайтов.
     .headline {
       margin: 0;
-      @include coach-voice(19px);
+      @include coach-voice(16px);
       color: var(--fg-default);
     }
 

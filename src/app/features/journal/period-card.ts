@@ -92,7 +92,7 @@ export interface PeriodClose {
         } @else if (editing()) {
           <form class="close-form" novalidate (submit)="$event.preventDefault(); submitClose()">
             <textarea
-              class="tj-textarea tj-textarea--hand"
+              class="tj-textarea"
               rows="2"
               [placeholder]="'Главный вывод ' + (p.span === 'week' ? 'недели' : 'месяца') + ': что повторить, что убрать'"
               [formField]="closeForm.note"
@@ -124,23 +124,22 @@ export interface PeriodClose {
     :host { display: block; }
 
     .period { padding: $space-4 $space-5; display: flex; flex-direction: column; gap: $space-3; }
-    .period.pending { border-style: dashed; border-color: var(--accent-muted); }
+    .period.pending { border-color: var(--accent-muted); }
 
     .head { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(150px, auto); align-items: center; gap: $space-5; }
     .title { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
     .label-row { display: flex; align-items: center; gap: $space-2; }
     .label { font-size: $text-lg; font-weight: 600; }
     .meta { font-size: $text-xs; color: var(--fg-subtle); }
-    .badge.now { font-size: $text-xs; padding: 1px 8px; border-radius: $radius-full; background: var(--accent-subtle); color: var(--accent-fg); }
-    // Штамп «закрыта» — от руки, чуть наискось.
+    .badge.now { font-size: $text-xs; padding: 1px 8px; border-radius: $radius-sm; background: var(--accent-subtle); color: var(--accent-fg); }
+    // Штамп «закрыта».
     .stamp {
-      @include coach-voice(17px);
+      font-size: $text-xs;
+      font-weight: 600;
       color: var(--success-fg);
-      border: 1.5px solid currentColor;
-      border-radius: 6px;
-      padding: 0 7px;
-      transform: rotate(-4deg);
-      opacity: 0.9;
+      background: var(--success-subtle);
+      border-radius: $radius-sm;
+      padding: 2px 9px;
     }
 
     .bars { display: flex; align-items: center; gap: 4px; height: 52px; }
@@ -168,17 +167,17 @@ export interface PeriodClose {
     .delta.down { color: var(--danger-fg); }
 
     .facts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px $space-4; font-size: $text-sm; color: var(--fg-muted); }
-    .facts b { font-family: $font-mono; font-weight: 600; }
+    .facts b { font-family: $font-num; font-weight: 600; }
     .pos { color: var(--success-fg); }
     .neg { color: var(--danger-fg); }
 
     .foot { display: flex; align-items: center; gap: $space-3; padding-top: $space-3; border-top: 1px solid var(--border-muted); }
-    .nudge { @include coach-voice(17px); color: var(--accent-fg); }
+    .nudge { @include coach-voice(15px); color: var(--accent-fg); }
 
     .takeaway { display: flex; flex-direction: column; gap: 4px; width: 100%; }
-    .takeaway .note { margin: 0; @include coach-voice(20px); color: var(--fg-default); white-space: pre-wrap; }
+    .takeaway .note { margin: 0; @include coach-voice(16px); color: var(--fg-default); white-space: pre-wrap; }
     .takeaway-meta { display: flex; align-items: center; gap: $space-3; font-size: $text-xs; color: var(--fg-subtle); }
-    .grade { padding: 1px 8px; border-radius: $radius-full; background: var(--canvas-inset); color: var(--fg-muted); }
+    .grade { padding: 1px 8px; border-radius: $radius-sm; background: var(--canvas-inset); color: var(--fg-muted); }
     .grade.plan { background: var(--success-subtle); color: var(--success-fg); }
     .grade.mistakes { background: var(--attention-subtle); color: var(--attention-fg); }
     .grade.tilt { background: var(--danger-subtle); color: var(--danger-fg); }

@@ -32,7 +32,6 @@ import { ToastOutlet } from '../../shared/ui/toast';
       justify-content: center;
       min-height: 100vh;
       padding: 12vh $space-4 $space-8;
-      background: var(--canvas-default);
     }
 
     .column {
@@ -53,24 +52,30 @@ import { ToastOutlet } from '../../shared/ui/toast';
     }
 
     .brand-name {
-      font-family: $font-hand;
-      font-size: 28px;
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.025em;
       color: var(--fg-default);
     }
 
+    // Форма — стеклянная панель; сверху на неё падает фоновый свет.
     .panel {
-      padding: $space-6;
-      background: var(--canvas-subtle);
+      padding: $space-8 $space-6 $space-6;
+      background:
+        radial-gradient(90% 70% at 50% -10%, color-mix(in srgb, var(--accent-fg) 10%, transparent), transparent 70%),
+        var(--canvas-subtle);
       border: 1px solid var(--border-muted);
-      border-radius: $radius-xl;
-      box-shadow: $shadow-md;
+      border-radius: $radius-2xl;
+      box-shadow: var(--inner-highlight);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     }
 
     h1 {
       margin: 0;
-      font-size: $text-xl;
-      font-weight: 650;
-      letter-spacing: -0.01em;
+      font-size: $text-2xl;
+      font-weight: 600;
+      letter-spacing: -0.025em;
     }
 
     .subtitle {

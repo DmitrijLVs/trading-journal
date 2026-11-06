@@ -1,6 +1,4 @@
 <section class="tj-page settings">
-  <h1 class="title">Настройки</h1>
-
   <div class="layout">
     <nav class="nav" aria-label="Разделы настроек">
       @for (t of tabs; track t.id) {
@@ -33,7 +31,7 @@
           <div class="row">
             <div class="row-text">
               <span class="t">Тема</span>
-              <span class="d">«Кармин» — чёрная, «Бумага» — светлая</span>
+              <span class="d">«Ночь» — тёмная, «День» — светлая</span>
             </div>
             <app-segmented [options]="themeOptions" [value]="themeStore.theme()" (valueChange)="setTheme($event)" />
           </div>

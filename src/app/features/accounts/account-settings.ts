@@ -77,7 +77,7 @@ import { ToastService } from '../../shared/ui/toast';
 
     :host { display: block; max-width: 520px; }
 
-    .head h2 { margin: 0 0 $space-4; font-size: $text-lg; font-weight: 650; }
+    .head h2 { margin: 0 0 $space-4; font-size: $text-xl; font-weight: 600; letter-spacing: -0.02em; }
 
     .props {
       display: grid;

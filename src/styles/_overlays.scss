@@ -23,8 +23,9 @@
 
 // ── Диалоги (CDK Dialog) ────────────────────────────────────────────────────
 .tj-dialog-backdrop {
-  background: color-mix(in srgb, var(--canvas-inset) 60%, transparent);
-  backdrop-filter: blur(3px);
+  background: color-mix(in srgb, var(--canvas-default) 55%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   animation: tj-fade-in $duration-base $ease-apple;
 }
 
@@ -34,10 +35,7 @@
 }
 
 .tj-dialog-panel {
-  background: var(--canvas-subtle);
-  border: 1px solid var(--border-default);
-  border-radius: $radius-xl;
-  box-shadow: $shadow-popover, $inner-highlight;
+  @include popover-surface($radius-2xl);
   min-width: 380px;
   max-width: min(92vw, 640px);
   animation: tj-dialog-in $duration-base $ease-out;
@@ -61,14 +59,14 @@
 
 // ── Выезжающая панель (CDK Dialog у правого края) ───────────────────────────
 .tj-drawer-backdrop {
-  background: color-mix(in srgb, var(--canvas-inset) 30%, transparent);
+  background: color-mix(in srgb, var(--canvas-default) 35%, transparent);
   animation: tj-fade-in $duration-base $ease-apple;
 }
 
 .tj-drawer-panel {
-  background: var(--canvas-subtle);
-  border-left: 1px solid var(--border-default);
-  box-shadow: $shadow-popover;
+  @include frosted;
+  border-left: 1px solid var(--glass-edge);
+  box-shadow: var(--shadow-popover);
   animation: tj-drawer-in $duration-slow $ease-out;
   overflow: hidden;
 }
@@ -88,12 +86,9 @@
 .tj-menu {
   display: flex;
   flex-direction: column;
-  min-width: 190px;
-  padding: $space-1;
-  background: var(--canvas-overlay);
-  border: 1px solid var(--border-default);
-  border-radius: $radius-lg;
-  box-shadow: $shadow-popover;
+  min-width: 200px;
+  padding: 5px;
+  @include popover-surface($radius-xl);
   animation: tj-pop-in $duration-fast $ease-out;
 }
 
@@ -101,8 +96,9 @@
   appearance: none;
   display: flex;
   align-items: center;
-  gap: $space-2;
-  padding: $space-2 $space-2;
+  gap: 10px;
+  min-height: 36px;
+  padding: 0 $space-3;
   background: none;
   border: none;
   border-radius: $radius-md;
@@ -119,7 +115,9 @@
 
   &:hover,
   &.cdk-menu-item-highlighted {
-    background: var(--border-muted);
+    background: var(--canvas-overlay);
+
+    app-icon { color: var(--fg-default); }
   }
 
   &.danger {
@@ -138,23 +136,26 @@
 
 .tj-menu-separator {
   height: 1px;
-  margin: $space-1 $space-2;
-  background: var(--border-muted);
+  margin: 5px $space-3;
+  background: var(--border-default);
   border: none;
 }
 
 .tj-menu-label {
-  padding: $space-2 $space-2 $space-1;
+  padding: $space-2 $space-3 $space-1;
   color: var(--fg-subtle);
   font-size: $text-xs;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font-weight: 500;
 }
 
 // Меню «новый лист»: у готового набора — вопрос, на который он отвечает.
 .tj-menu.sheet-menu {
   min-width: 240px;
+}
+
+.tj-menu .preset {
+  padding-top: 7px;
+  padding-bottom: 7px;
 }
 
 .tj-menu .preset-text {

@@ -227,9 +227,6 @@
                 (click)="goTo(item)"
               >
                 {{ item }}
-                @if (item === page()) {
-                  <i class="pg-ink" appSketchUnderline [sketchSeed]="'page-' + item" [sketchInset]="0"></i>
-                }
               </button>
             }
           }

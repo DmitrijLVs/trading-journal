@@ -11,7 +11,7 @@ const TABLE_STYLE = `
   @use 'styles/index' as *;
 
   :host { display: block; height: 100%; overflow: auto; container-type: inline-size; @include styled-scrollbar; }
-  .tj-table th { background: var(--canvas-subtle); }
+  .tj-table th { padding-top: $space-1; }
   // Узкий виджет — прячем второстепенные колонки, чтобы не резать основные.
   @container (max-width: 440px) { .col-narrow-hide { display: none; } }
   .tj-table td { padding-block: 6px; }
@@ -175,10 +175,8 @@ export class WidgetOpenPositions extends WidgetBase {
     .cols { display: grid; grid-template-columns: 1fr 1fr; gap: $space-2; padding: $space-2 $space-3; }
     .col { min-width: 0; }
     .col-title {
-      font-size: $text-xs;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
+      font-size: $text-sm;
+      font-weight: 500;
       padding: $space-1 $space-2;
       &.win { color: var(--success-fg); }
       &.loss { color: var(--danger-fg); }

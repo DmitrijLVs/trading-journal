@@ -58,14 +58,14 @@ import { EmptyState } from '../../../shared/ui/empty-state';
     .label { display: flex; flex-direction: column; font-size: $text-sm; font-weight: 600; min-width: 0; }
     .status { font-size: $text-xs; font-weight: 400; color: var(--fg-subtle); }
     .status.closed { color: var(--success-fg); }
-    .status.pending { @include coach-voice(14px); color: var(--accent-fg); }
+    .status.pending { @include coach-voice(13px); color: var(--accent-fg); }
     .status.current { color: var(--accent-fg); }
     .bars { display: flex; align-items: center; gap: 2px; height: 28px; }
     .bars i { display: block; width: 6px; min-height: 2px; max-height: 50%; border-radius: 1px; background: var(--fg-subtle); }
     .bars i.pos { background: var(--success-fg); transform: translateY(-50%); }
     .bars i.neg { background: var(--danger-fg); transform: translateY(50%); }
     .bars i.none { height: 3px !important; width: 3px; border-radius: 50%; background: var(--border-default); }
-    .wr { font-family: $font-mono; font-size: $text-xs; color: var(--fg-muted); text-align: right; }
+    .wr { font-family: $font-num; font-size: $text-xs; color: var(--fg-muted); text-align: right; }
     .net { text-align: right; font-weight: 600; }
 
     @container (max-width: 380px) {

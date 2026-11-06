@@ -27,7 +27,6 @@
     "@nv/tools": "file:./local_modules/nv-tools-0.0.0.tgz",
     "angular-gridster2": "^21.0.1",
     "echarts": "^6.1.0",
-    "roughjs": "^4.6.6",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

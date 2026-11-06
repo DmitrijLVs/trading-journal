@@ -386,7 +386,7 @@ export class WidgetDistribution extends WidgetBase {
             distance: 6,
             color: CHART.fgMuted,
             fontSize: 11,
-            fontFamily: CHART.mono,
+            fontFamily: CHART.num,
             formatter: (p: { dataIndex: number }) =>
               formatMetric(metricValue(groups[p.dataIndex], metric), metric),
           },
@@ -441,7 +441,7 @@ export class WidgetDistribution extends WidgetBase {
     .row { display: grid; grid-template-columns: 8px 1fr; gap: 3px $space-2; align-items: center; }
     .dot { width: 8px; height: 8px; border-radius: 50%; }
     .name { font-size: $text-sm; font-weight: 600; }
-    .val { grid-column: 2; font-family: $font-mono; font-size: $text-sm; }
+    .val { grid-column: 2; font-family: $font-num; font-size: $text-sm; }
     .val.pos { color: var(--success-fg); }
     .val.neg { color: var(--danger-fg); }
     .meta { grid-column: 2; color: var(--fg-subtle); font-size: $text-xs; }

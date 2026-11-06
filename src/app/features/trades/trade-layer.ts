@@ -24,7 +24,7 @@ export interface TradePalette {
   onColor: string;
 }
 
-const FONT = '510 11px "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace';
+const FONT = '510 11px ui-monospace, SFMono-Regular, Menlo, monospace';
 const CHEVRON = 7;
 
 export function tradeMarkup(trade: Trade, fills: readonly TradeFill[], pnlLabel: string): TradeMarkup {

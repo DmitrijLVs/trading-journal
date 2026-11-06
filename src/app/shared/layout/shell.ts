@@ -8,7 +8,6 @@ import { AccountSwitcher } from './account-switcher';
 import { PeriodPicker } from './period-picker';
 import { SessionStrip } from './session-strip';
 import { IconName } from '../ui/icons';
-import { SketchUnderline } from '../ui/sketch/sketch-underline';
 import { Tooltip } from '../ui/tooltip';
 import { AuthStore } from '../../core/auth/auth-store';
 import { AccountsStore } from '../../features/accounts/accounts-store';
@@ -33,7 +32,6 @@ interface NavItem {
     AccountSwitcher,
     PeriodPicker,
     SessionStrip,
-    SketchUnderline,
     Tooltip,
   ],
   host: { '(document:keydown)': 'toggleMoneyHotkey($event)' },

@@ -67,16 +67,16 @@ let sequence = 0;
 
     .add {
       width: 96px;
-      height: 22px;
-      padding: 0 8px;
-      border: 1px dashed var(--border-default);
-      border-radius: $radius-full;
+      height: 24px;
+      padding: 0 10px;
+      border: 1px solid var(--border-default);
+      border-radius: $radius-sm;
       background: transparent;
       color: var(--fg-default);
       font: 500 12px $font-sans;
 
       &::placeholder { color: var(--fg-subtle); }
-      &:focus { outline: none; border-style: solid; border-color: var(--accent-fg); width: 160px; }
+      &:focus { outline: none; border-color: var(--accent-muted); box-shadow: 0 0 0 3px var(--accent-subtle); width: 160px; }
     }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

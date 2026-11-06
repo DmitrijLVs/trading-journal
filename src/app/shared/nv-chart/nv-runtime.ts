@@ -5,7 +5,7 @@ import { NvContext } from './nv-chart.types';
 import { TOOL_DEFAULTS, TOOL_TEXTS, rulerText } from './nv-drawing-tools';
 
 const CHART_FONT = {
-  family: '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace',
+  family: 'ui-monospace, SFMono-Regular, Menlo, monospace',
   size: 11,
 };
 

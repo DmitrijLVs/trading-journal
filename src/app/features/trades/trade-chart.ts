@@ -135,15 +135,15 @@ const RIGHT_PAD_CANDLES = 8;
 
     .sym {
       font-size: $text-sm;
-      font-weight: 700;
+      font-weight: 600;
       letter-spacing: -0.01em;
     }
 
     .seg {
       display: flex;
       gap: 2px;
-      padding: 2px;
-      border: 1px solid var(--border-muted);
+      padding: 3px;
+      background: var(--canvas-overlay);
       border-radius: $radius-md;
     }
 
@@ -152,12 +152,12 @@ const RIGHT_PAD_CANDLES = 8;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-width: 22px;
-      height: 20px;
+      min-width: 24px;
+      height: 22px;
       background: none;
       border: none;
       border-radius: $radius-sm;
-      padding: 0 5px;
+      padding: 0 6px;
       color: var(--fg-muted);
       cursor: pointer;
       transition: background $duration-fast $ease-apple, color $duration-fast $ease-apple;
@@ -166,14 +166,15 @@ const RIGHT_PAD_CANDLES = 8;
       &:disabled { opacity: 0.4; cursor: help; }
 
       &.active {
-        background: var(--canvas-overlay);
-        color: var(--fg-default);
+        background: var(--primary-bg);
+        color: var(--primary-fg);
+        font-weight: 600;
       }
     }
 
     .tf {
       padding: 0 7px;
-      font-family: $font-mono;
+      font-family: $font-num;
       font-size: $text-xs;
     }
 
@@ -188,7 +189,7 @@ const RIGHT_PAD_CANDLES = 8;
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      font-family: $font-mono;
+      font-family: $font-num;
       font-size: $text-xs;
       font-weight: 600;
       letter-spacing: 0.04em;

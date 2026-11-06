@@ -1,14 +1,12 @@
 @use 'styles/index' as *;
 
+// Виджет — стеклянная панель над фоновым светом.
 :host {
   position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--canvas-subtle);
-  border: 1px solid var(--border-muted);
-  border-radius: $radius-xl;
-  box-shadow: $shadow-md;
+  @include panel;
 }
 
 :host(.is-new) {
@@ -25,9 +23,8 @@
   display: flex;
   align-items: center;
   gap: $space-2;
-  height: 40px;
-  padding: 0 $space-3 0 $space-4;
-  border-bottom: 1px solid var(--border-muted);
+  height: 46px;
+  padding: 0 $space-3 0 18px;
   flex: none;
 
   &.widget-drag-handle {
@@ -44,7 +41,7 @@
   color: var(--fg-subtle);
   opacity: 0;
   transition: opacity $duration-fast $ease-apple;
-  margin-left: -4px;
+  margin-left: -6px;
 
   :host(:hover) & {
     opacity: 0.9;
@@ -54,7 +51,8 @@
 .title {
   margin: 0;
   font-size: $text-md;
-  font-weight: 600;
+  font-weight: 500;
+  letter-spacing: -0.01em;
   color: var(--fg-default);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -65,10 +63,11 @@
 .period {
   flex: none;
   font-size: $text-xs;
-  color: var(--accent-fg);
-  background: var(--accent-subtle);
-  border-radius: $radius-full;
-  padding: 1px $space-2;
+  font-weight: 500;
+  color: var(--fg-muted);
+  background: var(--canvas-overlay);
+  border-radius: $radius-sm;
+  padding: 2px 9px;
 }
 
 .actions {
@@ -78,29 +77,14 @@
   opacity: 0;
   transition: opacity $duration-fast $ease-apple;
 
-  :host(:hover) & {
+  :host(:hover) &,
+  :host(:focus-within) & {
     opacity: 1;
   }
 }
 
 .action {
-  appearance: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  background: none;
-  border: none;
-  border-radius: $radius-sm;
-  color: var(--fg-muted);
-  cursor: pointer;
-  transition: background $duration-instant $ease-apple, color $duration-instant $ease-apple;
-
-  &:hover {
-    background: var(--border-muted);
-    color: var(--fg-default);
-  }
+  @include icon-button(28px);
 }
 
 .body {
@@ -112,52 +96,49 @@
 }
 
 // ── Ранги ───────────────────────────────────────────────────────────────────
-// Инструмент (графики, таблицы) — тихая шапка: мелкий заголовок без черты,
-// чтобы на листе выделялись главная полоса и голос тренера.
+// Инструмент (графики, таблицы) — тихая шапка: заголовок приглушён, чтобы на
+// листе выделялись главная полоса и голос тренера.
 :host(.rank-tool) {
   .head {
-    height: 36px;
-    border-bottom: none;
+    height: 42px;
   }
 
   .title {
     font-size: $text-sm;
-    font-weight: 600;
     color: var(--fg-muted);
   }
 }
 
-// Голос тренера: заголовок от руки, поверхность чуть теплее соседей.
+// Голос тренера: крупный плотный заголовок, кромка чуть теплее соседей.
 :host(.rank-insight) {
-  background: color-mix(in srgb, var(--accent-fg) 4%, var(--canvas-subtle));
-  border-color: color-mix(in srgb, var(--accent-fg) 18%, var(--border-muted));
+  border-color: color-mix(in srgb, var(--accent-fg) 14%, var(--border-muted));
 
   .head {
-    height: 42px;
-    border-bottom: none;
+    height: 50px;
   }
 
   .title {
-    @include coach-voice(22px);
+    @include coach-voice(18px);
     color: var(--fg-default);
   }
 }
 
-// Главная полоса листа: без шапки, приподнята над остальными. Ручка и меню
-// всплывают в углу при наведении.
+// Главная полоса листа — «освещённая» панель: сверху на неё падает тот же
+// янтарный свет, что и на фон. Без шапки; ручка и меню всплывают в углу.
 :host(.rank-hero) {
-  border-color: var(--border-default);
-  box-shadow: $shadow-lg;
+  background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--accent-fg) 16%, transparent), transparent 55%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 50%),
+    var(--canvas-subtle);
+  border-color: color-mix(in srgb, var(--accent-fg) 20%, var(--border-default));
 
   .head {
     position: absolute;
-    top: 6px;
+    top: 8px;
     right: 8px;
     z-index: 3;
     height: auto;
-    padding: 2px 4px;
-    border: none;
-    border-radius: $radius-md;
+    padding: 2px;
     gap: 2px;
   }
 

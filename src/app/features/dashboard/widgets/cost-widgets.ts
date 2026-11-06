@@ -87,7 +87,7 @@ const share = (v: number) => `${Math.round(v * 100)}%`;
     .arrow { color: var(--fg-subtle); margin: 0 6px; font-weight: 400; }
     .pos { color: var(--success-fg); }
     .neg { color: var(--danger-fg); }
-    .note { @include coach-voice(21px); color: var(--attention-fg); }
+    .note { @include coach-voice(15px); color: var(--attention-fg); }
 
     @container (max-width: 1000px) {
       .lab { grid-template-columns: 1fr 1.2fr 1fr; }
@@ -189,7 +189,7 @@ interface Step {
       right: 0;
       transform: translateY(-4px);
       text-align: center;
-      font-family: $font-mono;
+      font-family: $font-num;
       font-size: $text-xs;
       font-weight: 600;
       white-space: nowrap;

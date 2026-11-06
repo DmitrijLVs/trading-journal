@@ -56,20 +56,22 @@ import { plural } from '../../features/analytics/data/behavior';
       align-items: center;
       gap: $space-3;
       min-width: 0;
-      height: 36px;
-      padding: 0 $space-3;
+      height: 44px;
+      padding: 0 $space-4;
       background: var(--canvas-subtle);
       border: 1px solid var(--border-muted);
-      border-radius: $radius-lg;
+      border-radius: $radius-md;
+      box-shadow: var(--inner-highlight);
       color: var(--fg-muted);
       font: inherit;
       font-size: $text-sm;
       white-space: nowrap;
       cursor: pointer;
       transition: border-color $duration-fast $ease-apple, background $duration-fast $ease-apple;
+      @include focus-ring;
 
       &:hover { border-color: var(--border-default); background: var(--canvas-overlay); }
-      &.alarm { border-color: var(--attention-muted); }
+      &.alarm { border-color: var(--attention-muted); background: var(--attention-subtle); }
     }
 
     .live {
@@ -85,7 +87,7 @@ import { plural } from '../../features/analytics/data/behavior';
     .idle { color: var(--fg-subtle); }
 
     .pnl {
-      @include figure(16px, 650);
+      @include figure(17px, 600);
       color: var(--fg-default);
     }
 
@@ -105,16 +107,16 @@ import { plural } from '../../features/analytics/data/behavior';
 
     .bar {
       width: 54px;
-      height: 6px;
+      height: 5px;
       border-radius: 3px;
-      background: var(--canvas-inset);
+      background: var(--border-default);
       overflow: hidden;
       i { display: block; height: 100%; background: var(--fg-subtle); }
     }
     .limit.warn .bar i { background: var(--attention-fg); }
     .limit.hit .bar i { background: var(--danger-fg); }
 
-    .positions b { font-family: $font-mono; font-weight: 600; }
+    .positions b { font-family: $font-num; font-weight: 600; }
     .pos { color: var(--success-fg); }
     .neg { color: var(--danger-fg); }
 

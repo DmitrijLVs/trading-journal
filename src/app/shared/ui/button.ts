@@ -18,7 +18,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Button {
-  readonly variant = input<'primary' | 'subtle' | 'ghost' | 'outline' | 'danger'>('subtle');
+  readonly variant = input<'primary' | 'accent' | 'subtle' | 'ghost' | 'outline' | 'danger'>('subtle');
   readonly size = input<'xs' | 'sm' | 'md'>('md');
   /** Квадратная кнопка под одну иконку. */
   readonly iconOnly = input(false);

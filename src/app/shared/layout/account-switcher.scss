@@ -4,12 +4,13 @@
   appearance: none;
   display: flex;
   align-items: center;
-  gap: $space-2;
-  height: 36px;
-  padding: 0 $space-2 0 6px;
-  background: transparent;
-  border: 1px solid var(--border-default);
-  border-radius: $radius-lg;
+  gap: 10px;
+  height: 44px;
+  padding: 0 14px 0 6px;
+  background: var(--canvas-subtle);
+  border: 1px solid var(--border-muted);
+  border-radius: $radius-md;
+  box-shadow: var(--inner-highlight);
   cursor: pointer;
   color: var(--fg-default);
   transition:
@@ -20,14 +21,14 @@
   &:hover,
   &.open {
     background: var(--canvas-overlay);
-    border-color: var(--border-strong);
+    border-color: var(--border-default);
   }
 
   // Счетов ещё нет — ведём к подключению.
   &.connect {
-    padding-right: $space-3;
+    padding-right: $space-4;
     text-decoration: none;
-    border-style: dashed;
+    border-color: var(--accent-muted);
   }
 }
 
@@ -35,10 +36,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: $radius-md;
-  font-size: $text-xs;
+  width: 32px;
+  height: 32px;
+  border-radius: $radius-sm;
+  font-size: $text-sm;
   font-weight: 700;
   flex: none;
 
@@ -64,8 +65,9 @@
 
 .balance {
   font-size: $text-xs;
-  font-family: $font-mono;
+  font-family: $font-num;
   color: var(--fg-muted);
+  margin-top: 1px;
 }
 
 .caret {
@@ -81,21 +83,18 @@
 // ── Панель ──────────────────────────────────────────────────────────────────
 
 .panel {
-  width: 280px;
-  padding: $space-1;
-  background: var(--canvas-overlay);
-  border: 1px solid var(--border-default);
-  border-radius: $radius-lg;
-  box-shadow: $shadow-popover;
+  width: 290px;
+  padding: 5px;
+  @include popover-surface($radius-xl);
 }
 
 .row {
   appearance: none;
   display: flex;
   align-items: center;
-  gap: $space-2;
+  gap: 10px;
   width: 100%;
-  padding: $space-2;
+  padding: 7px $space-2;
   background: none;
   border: none;
   border-radius: $radius-md;
@@ -106,7 +105,7 @@
   transition: background $duration-instant $ease-apple;
 
   &:hover {
-    background: var(--border-muted);
+    background: var(--canvas-overlay);
   }
 
   &.active .name {
@@ -120,7 +119,7 @@
 
   .value {
     margin-left: auto;
-    font-family: $font-mono;
+    font-family: $font-num;
     font-size: $text-sm;
     color: var(--fg-muted);
   }
@@ -133,14 +132,18 @@
 
 .separator {
   height: 1px;
-  margin: $space-1 $space-2;
-  background: var(--border-muted);
+  margin: 5px $space-3;
+  background: var(--border-default);
 }
 
 // Телефон: в шапке только аватар счёта — место нужно строке сессии.
 @media (max-width: 760px) {
-  .trigger:not(.connect) .titles,
-  .trigger:not(.connect) .caret {
-    display: none;
+  .trigger:not(.connect) {
+    padding: 0 5px;
+
+    .titles,
+    .caret {
+      display: none;
+    }
   }
 }

@@ -21,8 +21,8 @@ import { ChangeDetectionStrategy, Component, model } from '@angular/core';
     .track {
       appearance: none;
       border: none;
-      width: 36px;
-      height: 21px;
+      width: 40px;
+      height: 24px;
       border-radius: $radius-full;
       background: var(--border-strong);
       position: relative;
@@ -31,22 +31,22 @@ import { ChangeDetectionStrategy, Component, model } from '@angular/core';
       transition: background $duration-base $ease-apple;
       @include focus-ring;
 
-      &.on { background: var(--success-fg); }
+      &.on { background: var(--accent-gradient); }
     }
 
     .knob {
       position: absolute;
-      top: 2px;
-      left: 2px;
-      width: 17px;
-      height: 17px;
+      top: 3px;
+      left: 3px;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
       background: #fff;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
       transition: transform $duration-base $ease-out;
     }
 
-    .on .knob { transform: translateX(15px); }
+    .on .knob { transform: translateX(16px); }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

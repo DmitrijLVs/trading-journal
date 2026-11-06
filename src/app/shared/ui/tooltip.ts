@@ -19,11 +19,8 @@ import {
     :host {
       display: block;
       max-width: 280px;
-      padding: $space-1 $space-2;
-      background: var(--canvas-inset);
-      border: 1px solid var(--border-default);
-      border-radius: $radius-md;
-      box-shadow: $shadow-md;
+      padding: 6px 10px;
+      @include popover-surface($radius-md);
       color: var(--fg-default);
       font-size: $text-xs;
       line-height: 1.4;

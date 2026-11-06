@@ -1,14 +1,13 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { Icon } from './icon';
 import { IconName } from './icons';
-import { SketchFrame } from './sketch/sketch-frame';
 
 @Component({
   selector: 'app-empty-state',
-  imports: [Icon, SketchFrame],
+  imports: [Icon],
   template: `
     <div class="wrap">
-      <div class="glyph" appSketchFrame [sketchRadius]="26" [sketchRoughness]="1.4">
+      <div class="glyph">
         <app-icon [name]="icon()" style="--icon-size: 24px" />
       </div>
       <h3>{{ title() }}</h3>
@@ -32,23 +31,26 @@ import { SketchFrame } from './sketch/sketch-frame';
       height: 100%;
     }
 
+    // Иконка в стеклянном круге с бликом — тот же материал, что у панелей.
     .glyph {
-      --sketch-stroke: var(--border-strong);
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 52px;
-      height: 52px;
-      border-radius: 50%;
-      color: var(--fg-subtle);
+      width: 56px;
+      height: 56px;
+      border-radius: $radius-lg;
+      background: var(--canvas-overlay);
+      border: 1px solid var(--border-muted);
+      box-shadow: var(--inner-highlight);
+      color: var(--fg-muted);
       margin-bottom: $space-2;
     }
 
     h3 {
       margin: 0;
-      font-family: $font-hand;
-      font-size: 18px;
-      font-weight: 400;
+      font-size: $text-lg;
+      font-weight: 600;
+      letter-spacing: -0.015em;
       color: var(--fg-default);
     }
 

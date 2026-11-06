@@ -45,7 +45,6 @@ import { Segmented, SegmentOption } from '../../shared/ui/segmented';
 import { PnlValue } from '../../shared/ui/pnl-value';
 import { EmptyState } from '../../shared/ui/empty-state';
 import { Skeleton } from '../../shared/ui/skeleton';
-import { SketchUnderline } from '../../shared/ui/sketch/sketch-underline';
 
 type SortKey = 'openedAt' | 'symbol' | 'notional' | 'pnl' | 'pnlPct' | 'duration';
 
@@ -59,7 +58,6 @@ type ViewMode = 'table' | 'split';
   selector: 'app-trade-list',
   imports: [
     RouterLink,
-    SketchUnderline,
     TradeExpand,
     TradeNav,
     Icon,
@@ -246,7 +244,12 @@ export class TradeList {
   private observeWidth(): void {
     const el = this.tableEl()?.nativeElement;
     if (!el) return;
-    const apply = () => el.style.setProperty('--table-vw', `${el.clientWidth}px`);
+    // clientWidth включает внутренние поля панели — панель разбора лежит внутри них.
+    const apply = () => {
+      const style = getComputedStyle(el);
+      const inner = el.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+      el.style.setProperty('--table-vw', `${inner}px`);
+    };
     apply();
     this.widthObserver = new ResizeObserver(apply);
     this.widthObserver.observe(el);

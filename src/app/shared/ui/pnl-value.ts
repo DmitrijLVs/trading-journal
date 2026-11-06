@@ -12,7 +12,7 @@ import { formatMoney, formatPercent } from '../../features/trades/data/trade.mod
     @use 'styles/index' as *;
 
     :host {
-      font-family: $font-mono;
+      font-family: $font-num;
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
     }

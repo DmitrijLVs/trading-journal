@@ -88,7 +88,7 @@ interface DisciplineModel {
     .row-text { display: flex; flex-direction: column; gap: 2px; }
     .t { font-weight: 500; }
     .d { font-size: $text-sm; color: var(--fg-muted); }
-    .num { width: 110px; text-align: right; font-family: $font-mono; }
+    .num { width: 110px; text-align: right; font-family: $font-num; }
     .error { color: var(--danger-fg); font-size: $text-sm; margin: $space-3 0 0; }
     .actions { display: flex; gap: $space-2; margin-top: $space-4; }
   `,

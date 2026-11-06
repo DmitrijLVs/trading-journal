@@ -139,7 +139,7 @@ function hhmm(ms: number): string {
 
     .limit { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
     .limit-head { display: flex; justify-content: space-between; gap: $space-2; font-size: $text-sm; color: var(--fg-muted); }
-    .mono { font-family: $font-mono; font-size: $text-xs; color: var(--fg-default); }
+    .mono { font-family: $font-num; font-size: $text-xs; color: var(--fg-default); }
     .bar {
       height: 8px;
       border-radius: $radius-full;
@@ -152,9 +152,9 @@ function hhmm(ms: number): string {
     .set-limit { font-size: $text-sm; color: var(--accent-fg); text-decoration: none; &:hover { text-decoration: underline; } }
 
     .side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; text-align: right; min-width: 0; }
-    .open { font-size: $text-sm; color: var(--fg-muted); b { font-family: $font-mono; font-weight: 600; margin-left: 4px; } }
-    .periods { font-size: $text-sm; color: var(--fg-muted); white-space: nowrap; b { font-family: $font-mono; font-weight: 600; } }
-    .note { @include coach-voice(22px); color: var(--fg-muted); }
+    .open { font-size: $text-sm; color: var(--fg-muted); b { font-family: $font-num; font-weight: 600; margin-left: 4px; } }
+    .periods { font-size: $text-sm; color: var(--fg-muted); white-space: nowrap; b { font-family: $font-num; font-weight: 600; } }
+    .note { @include coach-voice(18px); color: var(--fg-muted); }
     .note.good { color: var(--success-fg); }
     .note.warn { color: var(--attention-fg); }
     .note.stop { color: var(--danger-fg); }
@@ -270,7 +270,7 @@ export class WidgetDayHero extends WidgetBase {
       &:disabled { opacity: 0.35; cursor: default; }
     }
     .day { font-weight: 600; font-size: $text-sm; min-width: 92px; text-align: center; }
-    .total { margin-left: auto; font-family: $font-mono; font-weight: 600; font-size: $text-sm; }
+    .total { margin-left: auto; font-family: $font-num; font-weight: 600; font-size: $text-sm; }
     .meta { color: var(--fg-subtle); font-size: $text-xs; margin-left: $space-2; }
     .pos { color: var(--success-fg); }
     .neg { color: var(--danger-fg); }
@@ -445,13 +445,13 @@ export class WidgetDayTimeline extends WidgetBase {
     }
     .dot { width: 8px; height: 8px; margin-top: 8px; border-radius: 50%; background: var(--attention-fg); }
     .danger .dot { background: var(--danger-fg); }
-    .title { @include coach-voice(19px); color: var(--attention-fg); }
+    .title { @include coach-voice(16px); color: var(--attention-fg); }
     .danger .title { color: var(--danger-fg); }
     .text { font-size: $text-sm; color: var(--fg-default); line-height: 1.4; }
-    .time { font-family: $font-mono; font-size: $text-xs; color: var(--fg-subtle); margin-top: 4px; }
+    .time { font-family: $font-num; font-size: $text-xs; color: var(--fg-subtle); margin-top: 4px; }
 
     .calm { padding: $space-2 $space-1; }
-    .calm-title { @include coach-voice(22px); color: var(--success-fg); }
+    .calm-title { @include coach-voice(18px); color: var(--success-fg); }
     .calm p { margin: $space-1 0 $space-2; font-size: $text-sm; color: var(--fg-muted); line-height: 1.45; }
     .calm a { font-size: $text-sm; color: var(--accent-fg); text-decoration: none; &:hover { text-decoration: underline; } }
   `,

@@ -11,16 +11,15 @@
     z-index: $z-sticky + 1;
     flex-direction: row;
     width: auto;
-    height: calc(58px + env(safe-area-inset-bottom));
-    padding-bottom: env(safe-area-inset-bottom);
-    border-right: none;
-    border-top: 1px solid var(--border-muted);
+    height: calc(62px + env(safe-area-inset-bottom));
+    padding: 0 $space-2 env(safe-area-inset-bottom);
+    @include frosted;
+    border-top: 1px solid var(--glass-edge);
   }
 
   .brand,
   .sidebar-foot,
-  .nav-divider,
-  .nav-ink {
+  .nav-divider {
     display: none;
   }
 
@@ -40,8 +39,10 @@
     flex-direction: column;
     justify-content: center;
     gap: 3px;
+    height: auto;
     padding: 6px 0;
-    border-radius: 0;
+    border: none;
+    border-radius: $radius-lg;
     font-size: 11px;
 
     app-icon {
@@ -50,13 +51,14 @@
 
     &.is-active {
       background: none;
-      color: var(--accent-fg);
+      box-shadow: none;
+      color: var(--fg-default);
     }
   }
 
   .topbar {
     height: 52px;
-    padding: 0 $space-3;
+    padding: 0 $page-gutter;
     gap: $space-2;
   }
 

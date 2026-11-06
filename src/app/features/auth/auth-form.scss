@@ -24,19 +24,19 @@
 .secret {
   position: relative;
 
-  .tj-input { padding-right: 40px; }
+  .tj-input { padding-right: 44px; }
 }
 
 .reveal {
   position: absolute;
   top: 50%;
-  right: 6px;
+  right: 8px;
   transform: translateY(-50%);
   display: flex;
-  padding: 5px;
+  padding: 6px;
   background: none;
   border: none;
-  border-radius: $radius-sm;
+  border-radius: $radius-md;
   color: var(--fg-subtle);
   cursor: pointer;
 
@@ -50,8 +50,8 @@
 }
 
 .server-error {
-  padding: $space-2 $space-3;
-  border-radius: $radius-md;
+  padding: 10px 14px;
+  border-radius: $radius-lg;
   background: var(--danger-subtle);
   color: var(--danger-fg);
   font-size: $text-sm;
@@ -59,8 +59,8 @@
 }
 
 .notice {
-  padding: $space-2 $space-3;
-  border-radius: $radius-md;
+  padding: 10px 14px;
+  border-radius: $radius-lg;
   background: var(--success-subtle);
   color: var(--success-fg);
   font-size: $text-sm;

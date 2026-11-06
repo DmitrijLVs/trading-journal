@@ -14,7 +14,7 @@ import { ChangeDetectionStrategy, Component, booleanAttribute, input } from '@an
       gap: $space-1;
       height: 20px;
       padding: 0 $space-2;
-      border-radius: $radius-full;
+      border-radius: $radius-sm;
       font-size: $text-xs;
       font-weight: 500;
       line-height: 1;
@@ -37,11 +37,18 @@ import { ChangeDetectionStrategy, Component, booleanAttribute, input } from '@an
       border-color: var(--border-default);
       color: var(--fg-muted);
     }
+    // Пометка тренера (автотег): точка-индикатор перед текстом.
     :host(.hand) {
-      font-family: $font-hand;
-      font-size: 13px;
+      gap: 5px;
       height: 22px;
-      border-radius: $radius-md;
+      padding: 0 9px 0 8px;
+    }
+    :host(.hand)::before {
+      content: '';
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: currentColor;
     }
   `,
   host: { '[class]': '"tone-" + tone()', '[class.hand]': 'hand()' },

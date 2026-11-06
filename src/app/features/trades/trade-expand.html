@@ -1,6 +1,5 @@
 @let t = trade();
 <div class="expand">
-  <!-- График -->
   <div class="chart">
     @if (chartData(); as data) {
       @if (data.candles.length > 0) {
@@ -29,76 +28,47 @@
     }
   </div>
 
-  <!-- Факты и разбор -->
   <div class="side">
-    <div class="side-head">
-      <div class="who">
+    <header class="head">
+      <div class="title">
         <span class="sym">{{ t.symbol }}</span>
-        <span class="tj-side" [class]="t.side">
-          <app-icon [name]="t.side" style="--icon-size: 13px" />
-          {{ t.side === 'long' ? 'Лонг' : 'Шорт' }}
-        </span>
+        <span class="tj-side" [class]="t.side">{{ t.side === 'long' ? 'Лонг' : 'Шорт' }}</span>
         @if (t.status === 'open') {
           <span app-badge tone="accent">Открыта</span>
         }
-        <span class="when">
-          {{ fmtDateTime(t.openedAt) }}
-          @if (t.status === 'closed') { → {{ fmtDateTime(t.closedAt) }} }
-        </span>
       </div>
-      <div class="side-actions">
-        @if (!embedded()) {
-          <button app-button variant="ghost" size="sm" [iconOnly]="true" aria-label="Свернуть" (click)="closed.emit()">
-            <app-icon name="x" style="--icon-size: 15px" />
-          </button>
-        }
-      </div>
-    </div>
+      <span class="when">{{ when() }}</span>
+      @if (!embedded()) {
+        <button app-button class="close" variant="ghost" size="sm" [iconOnly]="true" aria-label="Свернуть" (click)="closed.emit()">
+          <app-icon name="x" style="--icon-size: 15px" />
+        </button>
+      }
+    </header>
 
-    <!-- Итог сделки — крупно; у открытой — нереализованный по данным биржи -->
     <div class="result">
-      @if (t.status === 'closed') {
-        <span class="result-v" [class.pos]="pnl() > 0" [class.neg]="pnl() < 0">{{ money(pnl()) }}</span>
-        <span class="result-s">{{ resultNote() }}</span>
-      } @else {
-        <span class="result-v" [class.pos]="(unrealized() ?? 0) > 0" [class.neg]="(unrealized() ?? 0) < 0">
-          {{ unrealized() === null ? 'в позиции' : money(unrealized() ?? 0) }}
-        </span>
-        <span class="result-s">{{ resultNote() }}</span>
+      <span class="result-v" [class.pos]="result() > 0" [class.neg]="result() < 0">{{ resultText() }}</span>
+      @if (resultNote(); as note) {
+        <span class="result-s">{{ note }}</span>
       }
     </div>
 
-    <!-- Цифры сделки — одной плотной таблицей -->
-    <div class="facts">
+    <dl class="facts">
       @for (f of facts(); track f.k) {
-        <div class="fact" [class.wide]="f.wide">
-          <span class="fk">{{ f.k }}</span>
-          <span class="fv" [class]="f.tone ?? ''" [title]="f.v">{{ f.v }}</span>
+        <div class="fact">
+          <dt>{{ f.k }}</dt>
+          <dd [class]="f.tone ?? ''">
+            @if (f.note) {
+              <span class="note">{{ f.note }}</span>
+            }
+            {{ f.v }}
+          </dd>
         </div>
       }
-    </div>
+    </dl>
 
-    <!-- Разбор: автотеги с причинами -->
-    <section class="review">
-      <h4 class="review-title">Разбор</h4>
-      @if (marks().length > 0) {
-        <app-trade-tags [marks]="marks()" [detailed]="true" />
-      } @else if (t.status === 'closed') {
-        <p class="clean">Чистая сделка: ни реванша, ни тильта, ни овертрейда.</p>
-      } @else {
-        <p class="clean">Разбор появится, когда позиция закроется.</p>
-      }
-      <app-ai-review-panel
-        [reviewKey]="ai.tradeKey(t)"
-        hint="Тренер прочитает цифры сделки и ход цены"
-        (run)="reviewWithAi()"
-      />
-    </section>
-
-    <!-- Ручные теги трейдера: сетап, стратегия, ошибка -->
-    <section class="review">
-      <h4 class="review-title">Теги</h4>
+    <div class="tags">
+      <app-trade-tags [marks]="marks()" />
       <app-trade-tag-editor [tradeId]="t.id" />
-    </section>
+    </div>
   </div>
 </div>

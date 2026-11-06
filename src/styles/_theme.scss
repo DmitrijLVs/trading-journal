@@ -1,6 +1,6 @@
 // Exposes SCSS tokens as CSS custom properties on :root.
 // Components consume `var(--token)` — never the SCSS variable directly —
-// so theming (light mode, custom palettes) becomes a one-file swap.
+// so the light theme is a one-file swap.
 
 @use 'tokens' as *;
 
@@ -12,6 +12,13 @@
   --canvas-subtle:  #{$canvas-subtle};
   --canvas-overlay: #{$canvas-overlay};
   --canvas-inset:   #{$canvas-inset};
+  --surface-solid:  #{$surface-solid};
+  --surface-raised: #{$surface-raised};
+  // Стекло всплывающих слоёв: полупрозрачный raised + blur.
+  --glass-bg:       rgba(24, 24, 27, 0.72);
+  --glass-edge:     rgba(255, 255, 255, 0.1);
+  // Липкие заголовки внутри карточек: почти непрозрачный цвет карточки.
+  --sticky-bg:      rgba(17, 17, 19, 0.92);
 
   // Borders
   --border-muted:   #{$border-muted};
@@ -24,12 +31,18 @@
   --fg-subtle:      #{$fg-subtle};
   --fg-on-emphasis: #{$fg-on-emphasis};
 
+  // Primary action (white pill)
+  --primary-bg:       #{$primary-bg};
+  --primary-bg-hover: #{$primary-bg-hover};
+  --primary-fg:       #{$primary-fg};
+
   // Accent
   --accent-fg:       #{$accent-fg};
   --accent-emphasis: #{$accent-emphasis};
   --accent-subtle:   #{$accent-subtle};
   --accent-muted:    #{$accent-muted};
   --accent-soft:     #{$accent-soft};
+  --accent-gradient: #{$accent-gradient};
 
   // Semantic
   --success-fg:     #{$success-fg};
@@ -52,10 +65,22 @@
   --long-fg:     #{$long-fg};
   --short-fg:    #{$short-fg};
 
+  // Ambient light
+  --glow-warm:     #{$glow-warm};
+  --glow-warm-far: #{$glow-warm-far};
+  --glow-cool:     #{$glow-cool};
+
+  // Charts: canvas не понимает rgba-кромки в mix(), поэтому графикам —
+  // непрозрачные двойники поверхностей и линий.
+  --chart-grid:    #1c1c1f;
+  --chart-border:  #2c2c31;
+  --chart-surface: #{$surface-solid};
+  --chart-overlay: #{$surface-raised};
+
   // Typography
   --font-sans: #{$font-sans};
+  --font-num:  #{$font-num};
   --font-mono: #{$font-mono};
-  --font-hand: #{$font-hand};
 
   --text-xs:  #{$text-xs};
   --text-sm:  #{$text-sm};
@@ -81,6 +106,7 @@
   --radius-md:   #{$radius-md};
   --radius-lg:   #{$radius-lg};
   --radius-xl:   #{$radius-xl};
+  --radius-2xl:  #{$radius-2xl};
   --radius-full: #{$radius-full};
 
   // Elevation
@@ -100,56 +126,75 @@
   --duration-slow:    #{$duration-slow};
 }
 
-// ── Тема «Бумага» — светлая: слоновая кость, графитовые чернила ─────────────
+// ── Тема «День» — светлая: холодно-белый холст, тот же оранжевый свет ──────
 // Переключается ThemeStore через data-theme на <html>. Переопределяем только
 // цвета; типографика, отступы и motion общие.
-:root[data-theme='paper'] {
+:root[data-theme='light'] {
   color-scheme: light;
 
-  --canvas-default: #efeae0;
-  --canvas-subtle:  #fdfcf8;
-  --canvas-overlay: #ffffff;
-  --canvas-inset:   #e8e2d4;
+  --canvas-default: #f2f2f4;
+  --canvas-subtle:  rgba(255, 255, 255, 0.7);
+  --canvas-overlay: rgba(16, 16, 24, 0.05);
+  --canvas-inset:   rgba(16, 16, 24, 0.04);
+  --surface-solid:  #fbfbfc;
+  --surface-raised: #ffffff;
+  --glass-bg:       rgba(255, 255, 255, 0.78);
+  --glass-edge:     rgba(16, 16, 24, 0.08);
+  --sticky-bg:      rgba(250, 250, 251, 0.92);
 
-  --border-muted:   #e3ddcf;
-  --border-default: #d2cbba;
-  --border-strong:  #9d9584;
+  --border-muted:   rgba(16, 16, 24, 0.06);
+  --border-default: rgba(16, 16, 24, 0.1);
+  --border-strong:  rgba(16, 16, 24, 0.2);
 
-  --fg-default:     #2b2824;
-  --fg-muted:       #6b655a;
-  --fg-subtle:      #8f8878;
+  --fg-default:     #18181b;
+  --fg-muted:       #52525b;
+  --fg-subtle:      #6b6b74;
   --fg-on-emphasis: #ffffff;
 
-  // Кармин на бумаге — темнее, чтобы держать контраст.
-  --accent-fg:       #b02a30;
-  --accent-emphasis: #a3262b;
-  --accent-subtle:   rgba(176, 42, 48, 0.1);
-  --accent-muted:    rgba(176, 42, 48, 0.32);
-  --accent-soft:     #c2646a;
+  // На светлом главное действие — чёрная плашка.
+  --primary-bg:       #18181b;
+  --primary-bg-hover: #000000;
+  --primary-fg:       #ffffff;
 
-  --success-fg:     #2e9e4a;
-  --success-subtle: rgba(46, 158, 74, 0.12);
-  --success-muted:  rgba(46, 158, 74, 0.3);
+  // Оранжевый на белом темнее — держит контраст текста.
+  --accent-fg:       #d9640c;
+  --accent-emphasis: #ef7414;
+  --accent-subtle:   rgba(239, 116, 20, 0.1);
+  --accent-muted:    rgba(239, 116, 20, 0.34);
+  --accent-soft:     #f0a35c;
 
-  --danger-fg:      #d64a3e;
-  --danger-subtle:  rgba(214, 74, 62, 0.12);
-  --danger-muted:   rgba(214, 74, 62, 0.3);
+  --success-fg:     #138a57;
+  --success-subtle: rgba(19, 138, 87, 0.1);
+  --success-muted:  rgba(19, 138, 87, 0.3);
 
-  --attention-fg:     #c9671f;
-  --attention-subtle: rgba(201, 103, 31, 0.14);
-  --attention-muted:  rgba(201, 103, 31, 0.36);
+  --danger-fg:      #d33645;
+  --danger-subtle:  rgba(211, 54, 69, 0.09);
+  --danger-muted:   rgba(211, 54, 69, 0.3);
 
-  --done-fg:     #7c4fd6;
-  --done-subtle: rgba(124, 79, 214, 0.14);
+  --attention-fg:     #a8750a;
+  --attention-subtle: rgba(168, 117, 10, 0.1);
+  --attention-muted:  rgba(168, 117, 10, 0.32);
 
-  --teal-fg:     #1f9fb0;
+  --done-fg:     #7348cf;
+  --done-subtle: rgba(115, 72, 207, 0.1);
 
-  --long-fg:     #2f7fae;
-  --short-fg:    #9256b8;
+  --teal-fg:     #1a8fa0;
 
-  --shadow-sm:       0 1px 2px rgba(60, 50, 30, 0.1);
-  --shadow-md:       0 1px 2px rgba(60, 50, 30, 0.08), 0 8px 20px rgba(60, 50, 30, 0.1);
-  --shadow-lg:       0 12px 32px rgba(60, 50, 30, 0.16);
-  --shadow-popover:  0 16px 48px rgba(60, 50, 30, 0.2);
-  --inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  --long-fg:     #2c6fc4;
+  --short-fg:    #8a4fc8;
+
+  --glow-warm:     rgba(255, 140, 50, 0.22);
+  --glow-warm-far: rgba(255, 170, 90, 0.1);
+  --glow-cool:     rgba(110, 140, 210, 0.12);
+
+  --chart-grid:    #e7e7eb;
+  --chart-border:  #d2d2d8;
+  --chart-surface: #fbfbfc;
+  --chart-overlay: #ffffff;
+
+  --shadow-sm:       0 1px 2px rgba(20, 20, 40, 0.06);
+  --shadow-md:       0 4px 14px rgba(20, 20, 40, 0.07);
+  --shadow-lg:       0 16px 40px rgba(20, 20, 40, 0.12);
+  --shadow-popover:  0 18px 48px rgba(20, 20, 40, 0.16);
+  --inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }

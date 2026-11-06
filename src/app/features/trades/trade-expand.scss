@@ -1,5 +1,8 @@
 @use 'styles/index' as *;
 
+// Сделка: график + короткая колонка «итог → факты → теги». Без плиток и
+// подзаголовков: факты — список «подпись … значение» с тонкими линиями.
+
 :host {
   // Прилипает к левому краю прокрутки и занимает ровно видимую ширину таблицы
   // (--table-vw ставит TradeList), даже если сама таблица шире экрана.
@@ -8,19 +11,18 @@
   left: 0;
   width: var(--table-vw, 100%);
   box-sizing: border-box;
-  padding: $space-2 $space-1 $space-3;
+  padding: $space-2 0 $space-3;
 }
 
 .expand {
-  position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(340px, 1fr);
-  gap: $space-4;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: $space-5;
   padding: $space-4;
-  background: var(--canvas-subtle);
-  border: 1px solid var(--border-muted);
-  border-radius: $radius-xl;
-  box-shadow: $shadow-md;
+  // Непрозрачная панель: свечной график рисует такой же фон (--chart-surface).
+  background: var(--surface-solid);
+  border: 1px solid var(--border-default);
+  border-radius: $radius-lg;
   animation: expand-in $duration-base $ease-out;
 
   @media (max-width: 1100px) {
@@ -28,53 +30,10 @@
   }
 }
 
-// ── Режим «График»: график сверху, разбор под ним, без прокрутки ──────────
-
-:host(.is-column) {
-  position: static;
-  width: 100%;
-  height: 100%;
-  padding: 0;
-
-  .expand {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) auto;
-    height: 100%;
-    animation: none;
-  }
-
-  .chart {
-    min-height: 0;
-  }
-
-  .side {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
-    gap: $space-3 $space-4;
-    align-items: start;
-  }
-
-  .side-head {
-    grid-column: 1 / -1;
-  }
-}
-
-// Внутри собственной панели карточка не нужна.
-:host(.is-embedded) .expand {
-  border: none;
-  box-shadow: none;
-  background: transparent;
-  padding: 0;
-}
-
 @keyframes expand-in {
   from {
     opacity: 0;
     transform: translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
   }
 }
 
@@ -91,109 +50,56 @@
   }
 }
 
-// ── Шапка разбора ─────────────────────────────────────────────────────────
+// ── Колонка сделки ────────────────────────────────────────────────────────
 
 .side {
   display: flex;
   flex-direction: column;
-  gap: $space-3;
   min-width: 0;
 }
 
-.side-head {
+.head {
+  position: relative;
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: $space-2;
+  flex-direction: column;
+  gap: 4px;
+  padding-right: 36px;
 }
 
-.who {
+.title {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
   gap: $space-2;
   min-width: 0;
 }
 
 .sym {
-  font-size: $text-lg;
-  font-weight: 700;
+  font-size: 17px;
+  font-weight: 600;
   letter-spacing: -0.01em;
 }
 
 .when {
-  flex-basis: 100%;
   color: var(--fg-muted);
   font-size: $text-xs;
 }
 
-.side-actions {
-  display: flex;
-  gap: 2px;
-  flex: none;
+.close {
+  position: absolute;
+  top: -4px;
+  right: -6px;
 }
-
-// ── Таблица фактов: подпись над значением, ячейки в сетке ─────────────────
-
-.facts {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(94px, 1fr));
-  gap: 1px;
-  background: var(--border-muted);
-  border: 1px solid var(--border-muted);
-  border-radius: $radius-md;
-  overflow: hidden;
-}
-
-.fact {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-  padding: 5px $space-2 6px;
-  background: var(--canvas-subtle);
-}
-
-.fk {
-  font-size: 11px;
-  line-height: 1.2;
-  color: var(--fg-subtle);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.fact.wide {
-  grid-column: 1 / -1;
-}
-
-// Значения не режем многоточием — переносим: «Binance USD…» ничего не говорит.
-.fv {
-  font-family: $font-mono;
-  font-variant-numeric: tabular-nums;
-  font-size: $text-sm;
-  line-height: 1.25;
-  color: var(--fg-default);
-  overflow-wrap: anywhere;
-
-  &.pos { color: var(--success-fg); }
-  &.neg { color: var(--danger-fg); }
-  &.win { color: var(--success-fg); }
-  &.loss { color: var(--danger-fg); }
-}
-
-// ── Итог сделки ───────────────────────────────────────────────────────────
 
 .result {
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
   gap: 2px $space-3;
-  margin: $space-1 0 $space-3;
+  margin: $space-4 0 $space-4;
 }
 
 .result-v {
-  @include figure(30px);
+  @include figure(28px);
   color: var(--fg-default);
 
   &.pos { color: var(--success-fg); }
@@ -205,21 +111,140 @@
   color: var(--fg-muted);
 }
 
-// ── Разбор ────────────────────────────────────────────────────────────────
+// ── Факты ─────────────────────────────────────────────────────────────────
 
-.review {
-  min-width: 0;
-  margin-top: $space-3;
-}
-
-.review-title {
-  margin: 0 0 $space-2;
-  @include coach-voice(21px);
-  color: var(--fg-default);
-}
-
-.clean {
+.facts {
   margin: 0;
+  border-top: 1px solid var(--border-muted);
+}
+
+.fact {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: $space-3;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border-muted);
+}
+
+dt {
   font-size: $text-sm;
   color: var(--fg-muted);
+  white-space: nowrap;
+}
+
+dd {
+  margin: 0;
+  font-size: $text-sm;
+  color: var(--fg-default);
+  text-align: right;
+  overflow-wrap: anywhere;
+
+  &.pos { color: var(--success-fg); }
+  &.neg { color: var(--danger-fg); }
+}
+
+.note {
+  margin-right: 6px;
+  color: var(--fg-subtle);
+}
+
+// ── Теги ──────────────────────────────────────────────────────────────────
+
+.tags {
+  margin-top: $space-4;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+// ── Режим «График»: график сверху, под ним одна полоса сделки ────────────
+
+:host(.is-column) {
+  position: static;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+
+  .expand {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    gap: $space-4;
+    height: 100%;
+    animation: none;
+  }
+
+  .chart {
+    min-height: 0;
+  }
+
+  // Слева имя и итог, справа факты в строку, ниже — теги.
+  .side {
+    display: grid;
+    grid-template-columns: minmax(220px, max-content) minmax(0, 1fr);
+    grid-template-areas:
+      'head   facts'
+      'result facts'
+      'tags   tags';
+    column-gap: $space-8;
+    padding-top: $space-4;
+    border-top: 1px solid var(--border-muted);
+  }
+
+  .head { grid-area: head; }
+
+  .close { display: none; }
+
+  .result {
+    grid-area: result;
+    margin: $space-2 0 0;
+  }
+
+  .facts {
+    grid-area: facts;
+    align-self: center;
+    display: flex;
+    justify-content: flex-end;
+    border-top: none;
+  }
+
+  .fact {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 4px;
+    padding: 0 $space-5;
+    border-bottom: none;
+    border-left: 1px solid var(--border-muted);
+
+    &:last-child { padding-right: 0; }
+  }
+
+  // Уточнение (тип ордера, количество) — строкой под значением, чтобы полоса
+  // фактов не переносилась.
+  dd {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 2px;
+    text-align: left;
+    font-size: $text-md;
+  }
+
+  .note {
+    margin: 0;
+    font-size: $text-xs;
+  }
+
+  .tags {
+    grid-area: tags;
+    margin-top: $space-3;
+  }
+}
+
+// Внутри собственной панели карточка не нужна.
+:host(.is-embedded) .expand {
+  padding: 0;
+  background: transparent;
+  border: none;
 }

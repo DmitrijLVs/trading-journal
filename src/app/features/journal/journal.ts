@@ -93,7 +93,7 @@ const PAGE_SIZE = 30;
       align-items: center;
       justify-content: space-between;
       gap: $space-3;
-      margin-bottom: $space-4;
+      margin-bottom: $page-gutter;
     }
 
     .stat {
@@ -127,9 +127,9 @@ const PAGE_SIZE = 30;
       display: block;
       width: 100%;
       margin-top: $space-3;
-      padding: $space-2;
-      background: none;
-      border: 1px dashed var(--border-default);
+      height: 40px;
+      background: var(--canvas-subtle);
+      border: 1px solid var(--border-muted);
       border-radius: $radius-md;
       color: var(--fg-muted);
       font-size: $text-sm;

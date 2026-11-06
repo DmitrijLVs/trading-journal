@@ -35,23 +35,24 @@ export interface SegmentOption<T extends string = string> {
       display: grid;
       grid-auto-flow: column;
       grid-auto-columns: 1fr;
-      background: var(--canvas-inset);
+      background: var(--canvas-subtle);
       border: 1px solid var(--border-muted);
       border-radius: $radius-md;
-      padding: 2px;
-      height: 30px;
+      box-shadow: var(--inner-highlight);
+      padding: 3px;
+      height: 38px;
     }
 
+    // Бегунок — светлая стеклянная плашка, как активный лист дашборда.
     .thumb {
       position: absolute;
-      top: 2px;
-      bottom: 2px;
-      left: 2px;
-      width: calc((100% - 4px) / var(--count));
-      background: var(--canvas-overlay);
-      border: 1px solid var(--border-default);
-      border-radius: 5px;
-      box-shadow: $shadow-sm;
+      top: 3px;
+      bottom: 3px;
+      left: 3px;
+      width: calc((100% - 6px) / var(--count));
+      background: color-mix(in srgb, var(--fg-default) 11%, transparent);
+      border-radius: $radius-sm;
+      box-shadow: var(--inner-highlight);
       transition: transform $duration-base $ease-out;
     }
 
@@ -66,7 +67,7 @@ export interface SegmentOption<T extends string = string> {
       font-size: $text-sm;
       font-weight: 500;
       cursor: pointer;
-      padding: 0 $space-3;
+      padding: 0 14px;
       transition: color $duration-fast $ease-apple;
       white-space: nowrap;
       @include focus-ring;

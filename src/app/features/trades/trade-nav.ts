@@ -86,10 +86,7 @@ export interface TradeRow {
       display: flex;
       flex-direction: column;
       min-height: 0;
-      background: var(--canvas-subtle);
-      border: 1px solid var(--border-muted);
-      border-radius: $radius-xl;
-      box-shadow: $shadow-md;
+      @include panel;
       overflow: hidden;
     }
 
@@ -105,7 +102,7 @@ export interface TradeRow {
     .title { font-size: $text-md; font-weight: 600; }
 
     .range {
-      font-family: $font-mono;
+      font-family: $font-num;
       font-size: $text-xs;
       color: var(--fg-subtle);
     }
@@ -126,7 +123,6 @@ export interface TradeRow {
       padding: $space-2 $space-4;
       background: none;
       border: none;
-      border-left: 2px solid transparent;
       border-bottom: 1px solid var(--border-muted);
       text-align: left;
       color: var(--fg-default);
@@ -136,8 +132,8 @@ export interface TradeRow {
       &:hover { background: var(--canvas-overlay); }
 
       &.active {
-        background: var(--canvas-overlay);
-        border-left-color: var(--accent-fg);
+        background: color-mix(in srgb, var(--accent-fg) 9%, transparent);
+        box-shadow: inset 0 1px 0 var(--accent-subtle);
       }
     }
 
@@ -150,14 +146,14 @@ export interface TradeRow {
 
     .grow { flex: 1; }
     .sym { font-size: $text-sm; font-weight: 600; }
-    .pnl { font-family: $font-mono; font-size: $text-sm; }
+    .pnl { font-family: $font-num; font-size: $text-sm; }
     .pct { display: inline-block; min-width: 56px; font-size: $text-xs; text-align: right; }
 
     .open {
       font-size: $text-xs;
       color: var(--accent-fg);
       background: var(--accent-subtle);
-      border-radius: $radius-full;
+      border-radius: $radius-sm;
       padding: 1px $space-2;
     }
 
@@ -188,7 +184,7 @@ export interface TradeRow {
 
     .date {
       flex: none;
-      font-family: $font-mono;
+      font-family: $font-num;
       font-size: 11px;
       color: var(--fg-subtle);
       opacity: 0.6;
@@ -211,7 +207,7 @@ export interface TradeRow {
     }
 
     .page {
-      font-family: $font-mono;
+      font-family: $font-num;
       font-size: $text-sm;
       color: var(--fg-muted);
       min-width: 56px;

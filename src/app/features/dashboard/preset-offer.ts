@@ -30,12 +30,12 @@ import { Icon } from '../../shared/ui/icon';
       gap: $space-3;
       margin: $space-2 $space-3 0;
       padding: $space-2 $space-3 $space-2 $space-4;
-      border: 1px dashed var(--accent-muted);
+      border: 1px solid var(--accent-muted);
       border-radius: $radius-lg;
       background: var(--accent-subtle);
     }
 
-    .note { @include coach-voice(20px); color: var(--accent-fg); white-space: nowrap; }
+    .note { @include coach-voice(16px); color: var(--accent-fg); white-space: nowrap; }
     .text { flex: 1; font-size: $text-sm; color: var(--fg-muted); }
     b { color: var(--fg-default); font-weight: 600; }
 

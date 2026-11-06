@@ -88,7 +88,7 @@ import { Account, SYNC_STATUS, exchangeMeta } from './data/account.model';
     .head {
       margin-bottom: $space-5;
 
-      h2 { margin: 0; font-size: $text-lg; font-weight: 650; }
+      h2 { margin: 0; font-size: $text-xl; font-weight: 600; letter-spacing: -0.02em; }
 
       p {
         margin: $space-1 0 0;

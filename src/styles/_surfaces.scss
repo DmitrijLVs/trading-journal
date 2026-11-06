@@ -3,39 +3,38 @@
 @use 'tokens' as *;
 @use 'mixins' as *;
 
+// Страница: те же поля, что у дашборда; первая строка — тулбар прямо под шапкой.
 .tj-page {
-  padding: $space-5 $space-6;
-  max-width: 1600px;
-  margin: 0 auto;
+  padding: 0 $page-gutter $page-gutter;
 }
 
 .tj-card {
   position: relative;
-  background: var(--canvas-subtle);
-  border: 1px solid var(--border-muted);
-  border-radius: $radius-xl;
-  box-shadow: $shadow-md;
+  @include panel;
 }
 
 // ── Таблица данных ──────────────────────────────────────────────────────────
+// Строки без сетки: тонкий разделитель и подсветка строки плашкой при
+// наведении — как список операций в банковском приложении.
 .tj-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: $text-sm;
 
-  // Шапка без капса и разрядки: tracked-out ALL CAPS — самый узнаваемый
-  // признак старого интерфейса.
   th {
     position: sticky;
     top: 0;
     z-index: 2;
-    background: var(--canvas-default);
-    color: var(--fg-muted);
+    // Липкая шапка внутри виджета: почти непрозрачный цвет карточки. Без
+    // blur — он затягивает в шапку размытый заголовок виджета.
+    background: var(--sticky-bg);
+    color: var(--fg-subtle);
     font-size: $text-sm;
     font-weight: 500;
     text-align: left;
     padding: $space-2 $space-3 $space-3;
-    border-bottom: 1px solid var(--border-default);
+    border-bottom: 1px solid var(--border-muted);
     white-space: nowrap;
     user-select: none;
   }
@@ -51,8 +50,18 @@
   tbody tr {
     transition: background $duration-instant $ease-apple;
 
+    td:first-child {
+      border-top-left-radius: $radius-md;
+      border-bottom-left-radius: $radius-md;
+    }
+
+    td:last-child {
+      border-top-right-radius: $radius-md;
+      border-bottom-right-radius: $radius-md;
+    }
+
     &:hover {
-      background: var(--canvas-subtle);
+      background: var(--canvas-overlay);
     }
 
     &.clickable {
@@ -62,12 +71,8 @@
 
   .num {
     text-align: right;
-    font-family: $font-mono;
+    font-family: $font-num;
     font-variant-numeric: tabular-nums;
-  }
-
-  th.num {
-    font-family: $font-sans;
   }
 
   .muted {
@@ -99,6 +104,7 @@
 
     .arrow {
       opacity: 1;
+      color: var(--accent-fg);
     }
   }
 }
@@ -110,16 +116,15 @@
   border-radius: $radius-xl;
 }
 
-// Уголок ресайза: вместо серого треугольника gridster — два карандашных
-// штриха, видны только при наведении на виджет.
+// Уголок ресайза: дуга в углу карточки, видна только при наведении.
 gridster-item .gridster-item-resizable-handler.handle-se {
-  width: 16px;
-  height: 16px;
-  right: 4px;
-  bottom: 4px;
+  width: 14px;
+  height: 14px;
+  right: 5px;
+  bottom: 5px;
   border: none;
   background-color: var(--fg-subtle);
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M14.5 6.5 6.8 14.2'/%3E%3Cpath d='M14.3 11.4 11.6 14.1'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14' fill='none' stroke='%23000' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M12.5 4.5v1A7 7 0 0 1 5.5 12.5h-1'/%3E%3C/svg%3E") center / contain no-repeat;
   opacity: 0;
   transition: opacity $duration-fast $ease-apple;
 }
@@ -157,18 +162,28 @@ gridster.display-grid .gridster-row {
   --table-cell-py: 6px;
 }
 
-// Автотег — пометка тренера «от руки». Реванш и тильт — красным, деньги,
-// отданные бирже, — нейтрально (это не поведенческая ошибка).
+// Автотег — пометка тренера: метка с точкой-индикатором. Реванш и тильт —
+// красным, деньги, отданные бирже, — нейтрально (не поведенческая ошибка).
 .tj-tag {
   display: inline-flex;
   align-items: center;
-  padding: 0 7px;
-  border-radius: $radius-full;
+  gap: 5px;
+  height: 22px;
+  padding: 0 9px 0 8px;
+  border-radius: $radius-sm;
   background: var(--attention-subtle);
   color: var(--attention-fg);
-  @include coach-voice(14px);
-  line-height: 20px;
+  font: 500 12px/1 $font-sans;
   white-space: nowrap;
+
+  &::before {
+    content: '';
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+    flex: none;
+  }
 
   &.revenge,
   &.tilt {
@@ -177,19 +192,20 @@ gridster.display-grid .gridster-row {
   }
 
   &.fee-eaten {
-    background: var(--canvas-inset);
+    background: var(--canvas-overlay);
     color: var(--fg-muted);
   }
 }
 
-// Ручной тег трейдера — чистым шрифтом: это его пометка, а не голос тренера.
+// Ручной тег трейдера — его пометка, а не голос тренера: без индикатора.
 .tj-chip {
   display: inline-flex;
   align-items: center;
-  height: 20px;
-  padding: 0 7px;
-  border-radius: $radius-full;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: $radius-sm;
   background: var(--canvas-overlay);
+  border: 1px solid var(--border-muted);
   color: var(--fg-default);
   font: 500 12px/1 $font-sans;
   white-space: nowrap;

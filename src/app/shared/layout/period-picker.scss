@@ -5,14 +5,16 @@
   display: inline-flex;
   align-items: center;
   gap: $space-2;
-  height: 36px;
-  padding: 0 $space-3;
-  background: transparent;
-  border: 1px solid var(--border-default);
-  border-radius: $radius-lg;
+  height: 38px;
+  padding: 0 14px;
+  background: var(--canvas-subtle);
+  border: 1px solid var(--border-muted);
+  border-radius: $radius-md;
+  box-shadow: var(--inner-highlight);
   color: var(--fg-default);
   font-size: $text-sm;
   font-weight: 500;
+  white-space: nowrap;
   cursor: pointer;
   transition:
     background $duration-fast $ease-apple,
@@ -26,7 +28,7 @@
   &:hover,
   &.open {
     background: var(--canvas-overlay);
-    border-color: var(--border-strong);
+    border-color: var(--border-default);
   }
 }
 
@@ -40,16 +42,13 @@
 }
 
 .panel {
-  width: 250px;
-  background: var(--canvas-overlay);
-  border: 1px solid var(--border-default);
-  border-radius: $radius-lg;
-  box-shadow: $shadow-popover;
+  width: 260px;
+  @include popover-surface($radius-xl);
   overflow: hidden;
 }
 
 .presets {
-  padding: $space-1;
+  padding: 5px;
 }
 
 .preset {
@@ -58,7 +57,8 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: $space-2 $space-2;
+  min-height: 36px;
+  padding: 0 $space-3;
   background: none;
   border: none;
   border-radius: $radius-md;
@@ -72,7 +72,7 @@
   }
 
   &:hover {
-    background: var(--border-muted);
+    background: var(--canvas-overlay);
   }
 
   &.active {
@@ -90,10 +90,8 @@
 
 .custom-title {
   font-size: $text-xs;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--fg-subtle);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
 .range {
@@ -102,7 +100,7 @@
   gap: $space-1;
 
   .tj-input {
-    height: 28px;
+    height: 32px;
     padding: 0 $space-2;
     font-size: $text-xs;
     min-width: 0;
@@ -119,6 +117,11 @@
 
 // Телефон: только иконка календаря и подпись периода, без стрелки.
 @media (max-width: 760px) {
+  .trigger {
+    gap: 6px;
+    padding: 0 12px;
+  }
+
   .trigger .caret {
     display: none;
   }

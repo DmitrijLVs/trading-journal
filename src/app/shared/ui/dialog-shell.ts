@@ -42,8 +42,7 @@ import { Button } from './button';
       display: flex;
       align-items: flex-start;
       gap: $space-3;
-      padding: $space-4 $space-5;
-      border-bottom: 1px solid var(--border-muted);
+      padding: $space-6 $space-6 $space-2;
     }
 
     .titles {
@@ -53,7 +52,8 @@ import { Button } from './button';
       h2 {
         margin: 0;
         font-size: $text-xl;
-        font-weight: 650;
+        font-weight: 600;
+        letter-spacing: -0.02em;
         line-height: 1.2;
       }
 
@@ -67,7 +67,7 @@ import { Button } from './button';
     .body {
       flex: 1;
       overflow-y: auto;
-      padding: $space-5;
+      padding: $space-4 $space-6 $space-5;
       @include styled-scrollbar;
     }
 
@@ -75,8 +75,7 @@ import { Button } from './button';
       display: flex;
       justify-content: flex-end;
       gap: $space-2;
-      padding: $space-3 $space-5;
-      border-top: 1px solid var(--border-muted);
+      padding: $space-3 $space-6 $space-6;
 
       &:empty {
         display: none;

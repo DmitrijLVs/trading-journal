@@ -6,13 +6,12 @@
 .tj-field {
   display: flex;
   flex-direction: column;
-  gap: $space-1;
+  gap: 6px;
 
   > label {
     color: var(--fg-muted);
-    font-size: $text-xs;
-    font-weight: 600;
-    letter-spacing: 0.02em;
+    font-size: $text-sm;
+    font-weight: 500;
   }
 
   .tj-error {
@@ -21,6 +20,8 @@
   }
 }
 
+// Поля — стеклянные капсулы: заливка чуть светлее поверхности, кромка
+// проявляется при наведении, фокус — оранжевым светом.
 .tj-input,
 .tj-textarea {
   appearance: none;
@@ -31,10 +32,11 @@
   color: var(--fg-default);
   font-size: $text-md;
   font-family: inherit;
-  padding: 0 $space-3;
-  height: 36px;
+  padding: 0 $space-4;
+  height: 40px;
   transition:
     border-color $duration-fast $ease-apple,
+    background $duration-fast $ease-apple,
     box-shadow $duration-fast $ease-apple;
 
   &::placeholder {
@@ -47,16 +49,17 @@
 
   &:focus {
     outline: none;
-    border-color: var(--accent-fg);
-    box-shadow: 0 0 0 3px var(--accent-subtle);
+    border-color: var(--accent-muted);
+    background: color-mix(in srgb, var(--accent-fg) 4%, var(--canvas-inset));
+    box-shadow: 0 0 0 4px var(--accent-subtle);
   }
 
   &.ng-invalid.ng-touched,
   &.invalid {
-    border-color: var(--danger-fg);
+    border-color: var(--danger-muted);
 
     &:focus {
-      box-shadow: 0 0 0 3px var(--danger-subtle);
+      box-shadow: 0 0 0 4px var(--danger-subtle);
     }
   }
 
@@ -66,6 +69,7 @@
   }
 }
 
+// API-ключи и секреты — моноширинным: это код, его сверяют по символам.
 .tj-input--mono {
   font-family: $font-mono;
   font-size: $text-sm;
@@ -73,23 +77,19 @@
 
 .tj-textarea {
   height: auto;
-  min-height: 84px;
-  padding: $space-2 $space-3;
-  line-height: 1.5;
+  min-height: 92px;
+  padding: $space-3 $space-4;
+  border-radius: $radius-lg;
+  line-height: 1.55;
   resize: vertical;
   @include styled-scrollbar;
 }
 
-// Заметки пользователя — «от руки», как запись в тетради.
-.tj-textarea--hand {
-  font-family: $font-hand;
-  font-size: 15px;
-  line-height: 1.6;
+// Нативный date-input
+input[type='date'].tj-input {
+  font-size: $text-sm;
 }
 
-// Нативный date-input в тёмной теме
-input[type='date'].tj-input {
+:root:not([data-theme='light']) input[type='date'].tj-input {
   color-scheme: dark;
-  font-family: $font-mono;
-  font-size: $text-sm;
 }

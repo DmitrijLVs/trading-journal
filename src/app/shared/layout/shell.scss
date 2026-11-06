@@ -11,46 +11,43 @@
 }
 
 // ── Сайдбар ─────────────────────────────────────────────────────────────────
+// Без собственной панели: лежит прямо на фоновом свете, пункты — плашки.
 
 .sidebar {
   display: flex;
   flex-direction: column;
-  width: 216px;
+  width: 228px;
   flex: none;
-  background: var(--canvas-subtle);
-  border-right: 1px solid var(--border-muted);
+  padding: 0 $space-3;
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: $space-2;
-  height: 56px;
-  padding: 0 $space-4;
+  gap: 10px;
+  height: 64px;
+  padding: 0 $space-2;
   text-decoration: none;
   color: var(--fg-default);
 }
 
 .brand-mark {
-  // Логотип — круглый тёмный бейдж; обводка отделяет его от тёмного сайдбара.
   flex: none;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
-  box-shadow: 0 0 0 1px var(--border-muted);
+  box-shadow: 0 0 0 1px var(--border-default);
 }
 
 .brand-name {
-  // Название — рукописная подпись на обложке.
-  font-family: $font-hand;
-  font-size: 21px;
-  font-weight: 400;
-  letter-spacing: 0.01em;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 .nav {
   flex: 1;
-  padding: $space-2 $space-2;
+  padding: $space-2 0;
   overflow-y: auto;
   @include styled-scrollbar;
 }
@@ -63,29 +60,29 @@
 
 .nav-divider {
   height: 1px;
-  margin: $space-3 $space-2;
+  margin: $space-3 $space-3;
   background: var(--border-muted);
 }
 
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 7px $space-3;
-  border-radius: $radius-md;
+  gap: 12px;
+  height: 42px;
+  padding: 0 14px;
+  border-radius: $radius-lg;
+  border: 1px solid transparent;
   color: var(--fg-muted);
   font-size: $text-md;
   font-weight: 500;
   text-decoration: none;
-  position: relative;
-  transition:
-    background $duration-fast $ease-apple,
-    color $duration-fast $ease-apple;
+  transition: background $duration-fast $ease-apple, color $duration-fast $ease-apple;
+
+  @include focus-ring($offset: 0);
 
   app-icon {
-    --icon-size: 17px;
+    --icon-size: 18px;
     color: var(--fg-subtle);
-    transition: color $duration-fast $ease-apple;
   }
 
   &:hover {
@@ -95,35 +92,29 @@
     app-icon { color: var(--fg-muted); }
   }
 
+  // Активный пункт — стеклянная плашка с бликом, иконка горит оранжевым.
   &.is-active {
-    background: var(--accent-subtle);
+    background: color-mix(in srgb, var(--fg-default) 8%, transparent);
+    border-color: var(--border-muted);
+    box-shadow: var(--inner-highlight);
     color: var(--fg-default);
 
     app-icon { color: var(--accent-fg); }
   }
 }
 
-// Активный пункт подчёркнут «от руки» (SketchUnderline).
-.nav-ink {
-  --sketch-stroke: var(--accent-fg);
-  position: absolute;
-  left: 39px;
-  right: $space-3;
-  bottom: 3px;
-  height: 5px;
-}
-
 .sidebar-foot {
-  padding: $space-3;
-  border-top: 1px solid var(--border-muted);
+  padding: $space-3 0;
 }
 
 .user {
   display: flex;
   align-items: center;
-  gap: $space-2;
-  padding: $space-1;
+  gap: 10px;
+  padding: 6px 6px 6px 8px;
   border-radius: $radius-md;
+  background: var(--canvas-subtle);
+  border: 1px solid var(--border-muted);
 }
 
 .user-avatar {
@@ -132,11 +123,12 @@
   justify-content: center;
   width: 30px;
   height: 30px;
-  border-radius: 50%;
-  background: var(--done-subtle);
-  color: var(--done-fg);
-  font-size: $text-xs;
+  border-radius: $radius-sm;
+  background: var(--accent-gradient);
+  color: #1d0f02;
+  font-size: 11px;
   font-weight: 700;
+  letter-spacing: 0.02em;
   flex: none;
 }
 
@@ -151,7 +143,7 @@
 .user-name {
   overflow: hidden;
   font-size: $text-sm;
-  font-weight: 600;
+  font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -159,13 +151,12 @@
 .logout {
   display: flex;
   flex: none;
-  padding: 6px;
+  padding: 7px;
   background: none;
   border: none;
   border-radius: $radius-md;
   color: var(--fg-subtle);
   cursor: pointer;
-  transition: color $duration-fast $ease-apple, background $duration-fast $ease-apple;
 
   &:hover {
     background: var(--canvas-overlay);
@@ -186,12 +177,9 @@
   display: flex;
   align-items: center;
   gap: $space-2;
-  height: 56px;
+  height: 64px;
   flex: none;
-  padding: 0 $space-5;
-  border-bottom: 1px solid var(--border-muted);
-  background: color-mix(in srgb, var(--canvas-default) 85%, transparent);
-  backdrop-filter: saturate(160%) blur(12px);
+  padding: 0 $page-gutter;
   position: relative;
   z-index: $z-sticky;
 }
@@ -200,18 +188,21 @@
   flex: 1;
 }
 
-// «Скрыть суммы»: активное состояние — акцентом, чтобы не забыть, что суммы спрятаны.
+// «Скрыть суммы»: активное состояние — оранжевым, чтобы не забыть, что
+// суммы спрятаны.
 .money-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  background: none;
-  border: 1px solid var(--border-default);
-  border-radius: $radius-lg;
+  width: 38px;
+  height: 38px;
+  background: var(--canvas-subtle);
+  border: 1px solid var(--border-muted);
+  border-radius: $radius-md;
   color: var(--fg-muted);
   cursor: pointer;
+
+  @include focus-ring;
 
   &:hover { color: var(--fg-default); background: var(--canvas-overlay); }
   &.active { color: var(--accent-fg); border-color: var(--accent-muted); background: var(--accent-subtle); }

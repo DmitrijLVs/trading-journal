@@ -16,11 +16,8 @@
   display: flex;
   align-items: center;
   gap: 2px;
-  padding: 3px;
-  border: 1px solid var(--border-default);
-  border-radius: $radius-md;
-  background: var(--canvas-overlay);
-  box-shadow: var(--shadow-popover);
+  padding: 4px;
+  @include popover-surface($radius-lg);
   pointer-events: auto;
   white-space: nowrap;
 }
@@ -56,7 +53,7 @@
 }
 
 .mark {
-  font: 11px $font-mono;
+  font: 11px $font-num;
 }
 
 .sep {
@@ -73,10 +70,7 @@
   gap: 2px;
   min-width: 150px;
   padding: 6px;
-  border: 1px solid var(--border-default);
-  border-radius: $radius-md;
-  background: var(--canvas-overlay);
-  box-shadow: var(--shadow-popover);
+  @include popover-surface($radius-lg);
   color: var(--fg-default);
   font-size: $text-sm;
 }
@@ -131,7 +125,7 @@
 
   &:hover { background: color-mix(in srgb, var(--fg-default) 7%, transparent); }
   &.active { color: var(--accent-fg); }
-  &.mono { font-family: $font-mono; }
+  &.mono { font-family: $font-num; }
 }
 
 .line {

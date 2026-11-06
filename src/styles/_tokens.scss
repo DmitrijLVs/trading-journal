@@ -1,71 +1,92 @@
-// Design tokens — source of truth.
-// Тёмная тема «Кармин» (выбрана 2026-10-31, референс партнёра «Design»):
-// графитово-чёрный, белый текст и малиново-красный акцент с розовым. Партнёр
-// делится сделками в сообществе — серый «Графит» на скриншотах читался тускло.
-// Акцент близок к цвету убытка, поэтому убыток — светлее и холоднее (#f0616d),
-// а красную заливку получают только действия, не цифры.
-// Светлая тема «Бумага» переопределяет цвета в _theme.scss (data-theme='paper').
+// Design tokens — source of truth. Описание системы — DESIGN.md в корне.
+//
+// «Ночь»: почти чёрный холст, тёплый янтарный свет из угла (связь с
+// Wintrading), панели — матовое стекло над этим светом. Белая плашка —
+// главное действие, оранжевый — бренд и выбор, зелёный/красный — только
+// деньги. Светлая тема «День» переопределяет цвета в _theme.scss.
 
 // ─── Canvas / surfaces ─────────────────────────────────────────────────────
-// Четыре ступени глубины: страница → карточка → вложенная поверхность →
-// всплывающий слой. На чёрном ступени держит граница, тень почти не видна.
-$canvas-default: #0d0d0e; // page background — графитово-чёрный
-$canvas-subtle:  #18181a; // cards, sidebar
-$canvas-overlay: #222224; // popovers, hover surfaces
-$canvas-inset:   #09090a; // inputs, ячейки, deep wells
+// Холст непрозрачный, поверхности над ним — полупрозрачные: сквозь них
+// проступает фоновый свет, это и даёт «стекло» без blur на каждой карточке.
+$canvas-default: #09090b; // холст страницы
+$canvas-subtle:  rgba(255, 255, 255, 0.035); // карточки, сайдбар
+$canvas-overlay: rgba(255, 255, 255, 0.07);  // hover, вложенные поверхности
+$canvas-inset:   rgba(255, 255, 255, 0.045); // поля ввода, ячейки
+// Непрозрачные двойники — там, где под поверхностью есть контент
+// (поповеры, липкие шапки, холст свечного графика).
+$surface-solid:   #141416; // ≈ карточка поверх холста
+$surface-raised:  #1c1c1f; // поповеры, меню, тултипы (под стеклом)
 
 // ─── Borders ───────────────────────────────────────────────────────────────
-$border-muted:   #232326; // hairlines inside surfaces
-$border-default: #2e2e31; // standard separators
-$border-strong:  #45454a; // emphasised dividers, focus outlines, штрих рамок
+// Кромки стекла: светлые линии с альфой, не серые заливки.
+$border-muted:   rgba(255, 255, 255, 0.055);
+$border-default: rgba(255, 255, 255, 0.09);
+$border-strong:  rgba(255, 255, 255, 0.17);
 
 // ─── Foreground ────────────────────────────────────────────────────────────
-$fg-default:     #fefefe; // body text
-$fg-muted:       #9a9a9f; // secondary text
-$fg-subtle:      #6c6c72; // tertiary / captions
-$fg-on-emphasis: #ffffff; // белый текст на кармине
+$fg-default:     #f4f4f5;
+$fg-muted:       #a1a1aa;
+$fg-subtle:      #7b7b85; // ≥4.5:1 на холсте
+$fg-on-emphasis: #ffffff; // текст на оранжевой заливке
+
+// Главное действие — белая плашка с почти чёрным текстом (как в референсах:
+// «Add money», «Upload Media»).
+$primary-bg:       #f4f4f5;
+$primary-bg-hover: #ffffff;
+$primary-fg:       #0b0b0d;
 
 // ─── Semantic colors ───────────────────────────────────────────────────────
-// Акцент — кармин: подчёркивания, активные состояния, кнопки.
-$accent-fg:        #d5575e;
-$accent-emphasis:  #b62a2d; // filled CTAs — текст белый ($fg-on-emphasis)
-$accent-subtle:    rgba(213, 87, 94, 0.14);
-$accent-muted:     rgba(213, 87, 94, 0.4);
-// Розовый кармин — мягкий второй тон бренда (шорт, вторичные пометки).
-$accent-soft:      #e6a8a8;
+// Акцент — оранжевый Wintrading: активные состояния, фокус, свет, ИИ.
+$accent-fg:        #ff9a3c;
+$accent-emphasis:  #f27a1a; // заливка (кнопка ИИ, бейджи)
+$accent-subtle:    rgba(255, 154, 60, 0.12);
+$accent-muted:     rgba(255, 154, 60, 0.38);
+$accent-soft:      #ffc48a;
+// Градиент бренда: янтарь → оранжевый. Только на заливке кнопок и свете,
+// никогда на тексте.
+$accent-gradient:  linear-gradient(135deg, #ffb24d 0%, #ff7a1a 100%);
 
-$success-fg:       #4cc38a;
-$success-subtle:   rgba(76, 195, 138, 0.10);
-$success-muted:    rgba(76, 195, 138, 0.28);
+$success-fg:       #44cf8f;
+$success-subtle:   rgba(68, 207, 143, 0.11);
+$success-muted:    rgba(68, 207, 143, 0.3);
 
-$danger-fg:        #f0616d;
-$danger-subtle:    rgba(240, 97, 109, 0.10);
-$danger-muted:     rgba(240, 97, 109, 0.28);
+$danger-fg:        #f2616e;
+$danger-subtle:    rgba(242, 97, 110, 0.11);
+$danger-muted:     rgba(242, 97, 110, 0.3);
 
-$attention-fg:     #e8924a; // оранжевый — подсказки, стрелки, «не по плану»
-$attention-subtle: rgba(232, 146, 74, 0.12);
-$attention-muted:  rgba(232, 146, 74, 0.36);
+// Внимание — золотисто-жёлтый: рядом с оранжевым брендом должен читаться
+// как предупреждение, а не как акцент.
+$attention-fg:     #f2c55c;
+$attention-subtle: rgba(242, 197, 92, 0.12);
+$attention-muted:  rgba(242, 197, 92, 0.34);
 
-$done-fg:          #b592e0; // лаванда
-$done-subtle:      rgba(181, 146, 224, 0.15);
+$done-fg:          #b79cf0; // лаванда
+$done-subtle:      rgba(183, 156, 240, 0.14);
 
-$teal-fg:          #5cbfc9; // 4-я категориальная серия графиков
+$teal-fg:          #5cc4d0; // 4-я категориальная серия графиков
 
-// Направление сделки — не результат: свои нейтральные цвета, чтобы лонг/шорт
-// не спорили с зелёным/красным P&L.
-$long-fg:          #8db6e8; // холодный голубой
-$short-fg:         $accent-soft; // розовый кармин
+// Направление сделки — не результат: холодные нейтральные цвета, чтобы
+// лонг/шорт не спорили ни с P&L, ни с оранжевым брендом.
+$long-fg:          #84b4f2; // голубой
+$short-fg:         #c4a0f2; // сирень
+
+// ─── Ambient light ─────────────────────────────────────────────────────────
+// Фон приложения: янтарный свет из левого верхнего угла и холодный отсвет
+// справа снизу. Рисуется один раз на body (_base.scss).
+$glow-warm: rgba(255, 128, 32, 0.20);
+$glow-warm-far: rgba(255, 168, 82, 0.06);
+$glow-cool: rgba(96, 118, 168, 0.10);
 
 // ─── Typography ────────────────────────────────────────────────────────────
-$font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
-            'Noto Sans', Helvetica, Arial, sans-serif,
-            'Apple Color Emoji', 'Segoe UI Emoji';
-$font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco,
-            Consolas, 'Liberation Mono', 'Courier New', monospace;
-// Рукописный акцент (Excalidraw). Только для подписей и заголовков — не для цифр.
-$font-hand: 'Excalifont', 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', cursive;
+// Один шрифт на всё: Onest — гротеск с кириллицей и табличными цифрами.
+// Цифры в таблицах выравнивает tnum (включён на body), моноширинный шрифт
+// остаётся только для API-ключей.
+$font-sans: 'Onest', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans',
+            Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+// Шрифт цифр — тот же гротеск (имя роли, чтобы не путать с кодом).
+$font-num: $font-sans;
+$font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas, monospace;
 
-// База 15px: плотность 13px читалась как админка, а не как продукт.
 $text-xs:   0.75rem;    // 12px — caption, labels
 $text-sm:   0.875rem;   // 14px — footnote
 $text-md:   0.9375rem;  // 15px — body
@@ -88,21 +109,31 @@ $space-8:  2rem;
 $space-10: 2.5rem;
 $space-12: 3rem;
 
-// ─── Radius (Apple-leaning softness) ───────────────────────────────────────
+// Один шаг раскладки на всё приложение: поля страницы, зазор от тулбара до
+// содержимого и между виджетами дашборда (GRID_MARGIN в dashboard.ts).
+$page-gutter: 12px;
+
+// ─── Radius ────────────────────────────────────────────────────────────────
+// Сдержанные скругления: метки 4px, контролы 6px, карточки 8–10px, диалоги 12px.
 $radius-sm:   4px;
 $radius-md:   6px;
-$radius-lg:   10px;
-$radius-xl:   14px;
+$radius-lg:   8px;
+$radius-xl:   10px;
+$radius-2xl:  12px;
 $radius-full: 9999px;
 
 // ─── Elevation / shadows ───────────────────────────────────────────────────
-// Тени настоящие: без них карточка не отделяется от страницы и весь экран
-// читается как каркас.
-$shadow-sm:       0 1px 2px rgba(0, 0, 0, 0.35);
-$shadow-md:       0 2px 4px rgba(0, 0, 0, 0.3), 0 8px 20px rgba(0, 0, 0, 0.32);
-$shadow-lg:       0 12px 32px rgba(0, 0, 0, 0.5);
-$shadow-popover:  0 18px 48px rgba(0, 0, 0, 0.55);
-$inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+// Карточки держит кромка, а не тень (на чёрном тень не видна). Тени — только
+// у слоёв, которые всплывают над контентом.
+$shadow-sm:       0 1px 2px rgba(0, 0, 0, 0.4);
+$shadow-md:       0 4px 12px rgba(0, 0, 0, 0.35);
+$shadow-lg:       0 16px 40px rgba(0, 0, 0, 0.5);
+$shadow-popover:  0 20px 50px rgba(0, 0, 0, 0.55);
+// Свет на верхней кромке стекла.
+$inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
+// Матовое стекло всплывающих слоёв.
+$glass-blur: saturate(160%) blur(22px);
 
 // ─── Motion ────────────────────────────────────────────────────────────────
 $ease-out:    cubic-bezier(0.16, 1, 0.3, 1);

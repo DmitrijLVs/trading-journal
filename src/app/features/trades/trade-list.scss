@@ -9,23 +9,27 @@
   align-items: center;
   flex-wrap: wrap;
   gap: $space-2;
-  margin-bottom: $space-4;
+  margin-bottom: $page-gutter;
 }
 
 .search {
   display: flex;
   align-items: center;
   gap: $space-2;
-  height: 36px;
+  height: 38px;
   flex: 1 1 340px;
   max-width: 560px;
-  padding: 0 $space-3;
-  background: var(--canvas-inset);
+  padding: 0 $space-4;
+  background: var(--canvas-subtle);
   border: 1px solid var(--border-default);
   border-radius: $radius-md;
   color: var(--fg-subtle);
+  transition: border-color $duration-fast $ease-apple, box-shadow $duration-fast $ease-apple;
 
-  &:focus-within { border-color: var(--accent-fg); }
+  &:focus-within {
+    border-color: var(--accent-muted);
+    box-shadow: 0 0 0 4px var(--accent-subtle);
+  }
 
   input {
     flex: 1;
@@ -46,8 +50,9 @@
 .split {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
-  gap: $space-4;
-  height: calc(100vh - 168px);
+  gap: $page-gutter;
+  // Шапка 64 + фильтры 38 + два шага сетки.
+  height: calc(100vh - 64px - 38px - 2 * #{$page-gutter});
   min-height: 520px;
 
   @media (max-width: 1100px) {
@@ -61,10 +66,21 @@
   min-width: 0;
   min-height: 0;
   overflow: hidden;
+  // Непрозрачная панель: свечной график рисует такой же фон.
+  padding: $space-4;
+  background: var(--surface-solid);
+  border: 1px solid var(--border-default);
+  border-radius: $radius-xl;
+  box-shadow: var(--inner-highlight);
 }
 
-// Таблица без карточки: лежит прямо на странице, рамок нет — только линии строк.
-.table-wrap { scroll-margin-top: $space-4; container-type: inline-size; }
+// Таблица — в стеклянной панели, как список операций в банке.
+.table-wrap {
+  scroll-margin-top: $space-4;
+  container-type: inline-size;
+  @include panel;
+  padding: $space-2 $space-2 0;
+}
 
 .table-scroll {
   overflow-x: auto;
@@ -72,9 +88,12 @@
 }
 
 .trades {
-  th { background: var(--canvas-default); }
+  th { background: none; }
 
-  tbody tr.is-open > td { background: var(--canvas-subtle); border-bottom-color: transparent; }
+  tbody tr.is-open > td { background: var(--canvas-overlay); border-bottom-color: transparent; }
+
+  tbody tr.is-open > td:first-child { border-bottom-left-radius: 0; }
+  tbody tr.is-open > td:last-child { border-bottom-right-radius: 0; }
 
   tr.expand-row > td {
     padding: 0;
@@ -99,7 +118,7 @@
   color: var(--accent-fg);
   background: var(--accent-subtle);
   padding: 1px $space-2;
-  border-radius: $radius-full;
+  border-radius: $radius-sm;
 }
 
 .pager-size { width: 170px; flex: none; }
@@ -118,11 +137,11 @@ tfoot td {
   display: flex;
   align-items: center;
   gap: $space-4;
-  padding: $space-3 0;
+  padding: $space-3 $space-3 $space-3;
 }
 
 .pager-range {
-  font-family: $font-mono;
+  font-family: $font-num;
   font-size: $text-xs;
   color: var(--fg-muted);
   min-width: 120px;
@@ -133,20 +152,19 @@ tfoot td {
 .pager-pages { display: flex; align-items: center; gap: 2px; margin: 0 auto; }
 
 .pg {
-  --sketch-stroke: var(--accent-fg);
   position: relative;
   appearance: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 30px;
-  height: 30px;
+  min-width: 32px;
+  height: 32px;
   padding: 0 $space-2;
   background: none;
   border: none;
   border-radius: $radius-md;
   color: var(--fg-muted);
-  font-family: $font-mono;
+  font-family: $font-num;
   font-size: $text-sm;
   cursor: pointer;
 
@@ -155,11 +173,14 @@ tfoot td {
     color: var(--fg-default);
   }
 
-  &.active { color: var(--fg-default); font-weight: 600; }
+  &.active {
+    color: var(--primary-fg);
+    background: var(--primary-bg);
+    font-weight: 600;
+  }
   &:disabled { opacity: 0.35; cursor: default; }
 }
 
-.pg-ink { position: absolute; left: 6px; right: 6px; bottom: 3px; height: 5px; }
 
 
 

@@ -60,18 +60,18 @@ interface EvidenceBar extends InsightBar {
 
     .insight {
       position: relative;
-      padding: $space-1 0 $space-3 $space-4;
+      padding: $space-1 0 $space-3 18px;
       border-bottom: 1px solid var(--border-muted);
       &:last-child { border-bottom: none; }
-      // Маркер тона слева — карандашная черта.
+      // Тон инсайта — точка у заголовка.
       &::before {
         content: '';
         position: absolute;
         left: 0;
-        top: 8px;
-        bottom: 14px;
-        width: 3px;
-        border-radius: 2px;
+        top: 11px;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
         background: var(--fg-subtle);
       }
       &.neg::before { background: var(--danger-fg); }
@@ -80,7 +80,7 @@ interface EvidenceBar extends InsightBar {
       &.info::before { background: var(--accent-fg); }
     }
 
-    .title { margin: 0 0 2px; @include coach-voice(21px); color: var(--fg-default); }
+    .title { margin: 0 0 2px; @include coach-voice(15px); color: var(--fg-default); }
     .text { margin: 0; font-size: $text-sm; line-height: 1.45; color: var(--fg-muted); }
 
     .bars { display: flex; flex-direction: column; gap: 3px; margin-top: $space-2; max-width: 460px; }
@@ -90,7 +90,7 @@ interface EvidenceBar extends InsightBar {
     .track { height: 6px; border-radius: 3px; background: var(--canvas-inset); overflow: hidden; }
     .track i { display: block; height: 100%; border-radius: inherit; background: var(--success-fg); opacity: 0.85; }
     .track i.neg { background: var(--danger-fg); }
-    .bar-value { font-family: $font-mono; font-size: $text-xs; text-align: right; color: var(--success-fg); }
+    .bar-value { font-family: $font-num; font-size: $text-xs; text-align: right; color: var(--success-fg); }
     .bar-value.neg { color: var(--danger-fg); }
 
     .show {
@@ -106,7 +106,7 @@ interface EvidenceBar extends InsightBar {
     }
 
     .quiet { padding: $space-3 0; }
-    .quiet-title { @include coach-voice(22px); color: var(--fg-muted); }
+    .quiet-title { @include coach-voice(18px); color: var(--fg-muted); }
     .quiet p { margin: $space-1 0 0; font-size: $text-sm; color: var(--fg-subtle); line-height: 1.45; }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

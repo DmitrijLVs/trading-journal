@@ -101,10 +101,10 @@ import { ToastService } from '../../shared/ui/toast';
 
       h1 {
         margin: 0;
-        font-family: $font-hand;
-        font-size: 30px;
-        font-weight: 400;
-        line-height: 1.2;
+        font-size: $text-3xl;
+        font-weight: 600;
+        letter-spacing: -0.03em;
+        line-height: 1.15;
       }
 
       p {
@@ -148,18 +148,18 @@ import { ToastService } from '../../shared/ui/toast';
       justify-content: center;
       width: 32px;
       height: 32px;
-      border-radius: 50%;
+      border-radius: $radius-md;
       border: 1px solid var(--border-default);
       color: var(--fg-subtle);
-      font-family: $font-mono;
+      font-family: $font-num;
       font-size: $text-sm;
       font-weight: 600;
     }
 
     .step.current .num {
-      border-color: var(--accent-fg);
-      background: var(--accent-subtle);
-      color: var(--accent-fg);
+      border-color: transparent;
+      background: var(--accent-gradient);
+      color: #1d0f02;
     }
 
     .step.done .num {

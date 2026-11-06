@@ -61,7 +61,7 @@
   gap: $space-2;
 
   .total-pnl {
-    font-family: $font-mono;
+    font-family: $font-num;
     font-size: $text-sm;
     font-weight: 600;
 
@@ -171,7 +171,7 @@
 
 .p {
   margin-top: auto;
-  font-family: $font-mono;
+  font-family: $font-num;
   font-size: clamp(11px, 30cqh, 15px);
   font-weight: 700;
   line-height: 1.25;

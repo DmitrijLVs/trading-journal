@@ -17,19 +17,37 @@ body {
 
 body {
   // Через CSS-переменные, а не SCSS-константы: так тема переключается на :root.
-  background: var(--canvas-default);
+  background-color: var(--canvas-default);
   color: var(--fg-default);
   font-family: $font-sans;
   font-size: $text-md;
   line-height: $leading-normal;
+  // Табличные цифры везде: журнал — это колонки денег и цен.
+  font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  caret-color: var(--accent-fg);
+}
+
+// Фоновый свет: янтарный из левого верхнего угла (за сайдбаром и шапкой) и
+// холодный отсвет справа снизу. Полупрозрачные панели над ним и есть стекло.
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(52rem 34rem at -6% -12%, var(--glow-warm), transparent 70%),
+    radial-gradient(40rem 30rem at 34% -20%, var(--glow-warm-far), transparent 72%),
+    radial-gradient(46rem 36rem at 108% 112%, var(--glow-cool), transparent 70%);
 }
 
 a {
   color: var(--accent-fg);
   text-decoration: none;
+  text-underline-offset: 3px;
 }
 
 button,
@@ -42,5 +60,12 @@ textarea {
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--accent-fg) 35%, transparent);
+  background: color-mix(in srgb, var(--accent-fg) 32%, transparent);
+  color: var(--fg-default);
+}
+
+// Тонкий скроллбар для всего, что не задало свой.
+html {
+  scrollbar-color: var(--border-strong) transparent;
+  scrollbar-width: thin;
 }

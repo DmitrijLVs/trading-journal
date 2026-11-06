@@ -38,7 +38,7 @@ import { BINANCE_API_URL } from './exchange-key-form';
 
     li::marker {
       color: var(--fg-subtle);
-      font-family: $font-mono;
+      font-family: $font-num;
       font-size: $text-xs;
     }
 

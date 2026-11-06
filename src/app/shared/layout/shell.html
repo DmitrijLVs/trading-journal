@@ -8,12 +8,9 @@
     <nav class="nav">
       <div class="nav-section">
         @for (item of mainNav; track item.path) {
-          <a class="nav-item" [routerLink]="item.path" routerLinkActive="is-active" #rla="routerLinkActive">
+          <a class="nav-item" [routerLink]="item.path" routerLinkActive="is-active">
             <app-icon [name]="item.icon" />
             <span>{{ item.label }}</span>
-            @if (rla.isActive) {
-              <i class="nav-ink" appSketchUnderline [sketchSeed]="item.path" [sketchInset]="0"></i>
-            }
           </a>
         }
       </div>
@@ -22,12 +19,9 @@
 
       <div class="nav-section">
         @for (item of systemNav; track item.path) {
-          <a class="nav-item" [routerLink]="item.path" routerLinkActive="is-active" #rla="routerLinkActive">
+          <a class="nav-item" [routerLink]="item.path" routerLinkActive="is-active">
             <app-icon [name]="item.icon" />
             <span>{{ item.label }}</span>
-            @if (rla.isActive) {
-              <i class="nav-ink" appSketchUnderline [sketchSeed]="item.path" [sketchInset]="0"></i>
-            }
           </a>
         }
       </div>

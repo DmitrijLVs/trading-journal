@@ -4,26 +4,17 @@
   display: block;
 }
 
-.settings {
-  max-width: 1120px;
-}
-
-.title {
-  margin: 0 0 $space-5;
-  font-size: $text-2xl;
-  font-weight: 650;
-  letter-spacing: -0.01em;
-}
-
+// Как остальные страницы: от левого поля и сразу под шапкой, без заголовка
+// (раздел и так подсвечен в сайдбаре).
 .layout {
   display: grid;
   grid-template-columns: 200px minmax(0, 1fr);
-  gap: $space-8;
+  gap: $page-gutter;
+  max-width: 1120px;
   align-items: start;
 
   @media (max-width: 860px) {
     grid-template-columns: minmax(0, 1fr);
-    gap: $space-4;
   }
 }
 
@@ -31,7 +22,7 @@
 
 .nav {
   position: sticky;
-  top: $space-4;
+  top: 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -46,10 +37,11 @@
 .nav-item {
   display: flex;
   align-items: center;
-  gap: $space-2;
-  height: 36px;
-  padding: 0 $space-3;
-  border-radius: $radius-md;
+  gap: 10px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: $radius-lg;
+  border: 1px solid transparent;
   color: var(--fg-muted);
   font-size: $text-sm;
   font-weight: 500;
@@ -64,9 +56,10 @@
   }
 
   &.active {
-    background: var(--canvas-subtle);
+    background: color-mix(in srgb, var(--fg-default) 8%, transparent);
+    border-color: var(--border-muted);
+    box-shadow: var(--inner-highlight);
     color: var(--fg-default);
-    box-shadow: inset 0 0 0 1px var(--border-muted);
 
     app-icon { color: var(--accent-fg); }
   }
@@ -74,15 +67,18 @@
 
 // ── Содержимое ──────────────────────────────────────────────────────────────
 
+// Раздел — стеклянная панель.
 .content {
   min-width: 0;
-  padding-bottom: $space-8;
+  padding: $space-5;
+  @include panel;
 }
 
 .head h2 {
   margin: 0 0 $space-4;
-  font-size: $text-lg;
-  font-weight: 650;
+  font-size: $text-xl;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 .row {
@@ -90,11 +86,9 @@
   align-items: center;
   justify-content: space-between;
   gap: $space-4;
-  max-width: 720px;
-  padding: $space-3 0;
+  max-width: 760px;
+  padding: $space-4 0;
   border-top: 1px solid var(--border-muted);
-
-  &:last-child { border-bottom: 1px solid var(--border-muted); }
 }
 
 .row-text {
@@ -102,6 +96,6 @@
   flex-direction: column;
   gap: 2px;
 
-  .t { font-size: $text-sm; font-weight: 600; }
+  .t { font-size: $text-md; font-weight: 500; }
   .d { color: var(--fg-muted); font-size: $text-xs; line-height: 1.45; }
 }

@@ -33,10 +33,9 @@ import { Icon } from '../../shared/ui/icon';
 import { Button } from '../../shared/ui/button';
 import { Tooltip } from '../../shared/ui/tooltip';
 import { ConfirmService } from '../../shared/ui/confirm-dialog';
-import { SketchArrow } from '../../shared/ui/sketch/sketch-arrow';
-import { SketchUnderline } from '../../shared/ui/sketch/sketch-underline';
 
-const GRID_MARGIN = 10;
+/** = $page-gutter: поля и зазоры сетки совпадают с полями остальных страниц. */
+const GRID_MARGIN = 12;
 
 /** Gridster мутирует x/y/cols/rows прямо на элементах — работаем с локальными
  *  копиями, позиции возвращаются в стор через itemChangeCallback. */
@@ -57,8 +56,6 @@ interface DashGridItem extends GridsterItemConfig {
     Icon,
     Button,
     Tooltip,
-    SketchArrow,
-    SketchUnderline,
     PresetOffer,
   ],
   templateUrl: './dashboard.html',

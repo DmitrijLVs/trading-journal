@@ -11,7 +11,6 @@ import { WidgetPreview } from './widget-preview';
 import { Icon } from '../../shared/ui/icon';
 import { Button } from '../../shared/ui/button';
 import { ToastService } from '../../shared/ui/toast';
-import { SketchUnderline } from '../../shared/ui/sketch/sketch-underline';
 
 export interface AddWidgetPanelData {
   /** Вызывается после добавления — дашборд подсвечивает новый виджет. */
@@ -33,12 +32,12 @@ interface PanelItem {
  * добавить несколько подряд.
  */
 @Component({
-  imports: [Icon, Button, WidgetPreview, SketchUnderline],
+  imports: [Icon, Button, WidgetPreview],
   template: `
     <aside class="panel">
       <header class="head">
         <div class="titles">
-          <h2 class="title" appSketchUnderline sketchSeed="add-panel" [sketchInset]="0">Добавить виджет</h2>
+          <h2 class="title">Добавить виджет</h2>
           <p class="sub">На лист «{{ store.activeWorkspace().name }}»</p>
         </div>
         <button app-button variant="ghost" size="sm" [iconOnly]="true" aria-label="Закрыть" (click)="ref.close()">
@@ -74,9 +73,6 @@ interface PanelItem {
             (click)="filter.set(chip.value)"
           >
             {{ chip.label }}
-            @if (chip.value === filter()) {
-              <i class="chip-ink" appSketchUnderline [sketchSeed]="'chip-' + chip.value" [sketchInset]="0"></i>
-            }
           </button>
         }
       </div>
@@ -137,13 +133,10 @@ interface PanelItem {
     }
 
     .title {
-      --sketch-stroke: var(--accent-fg);
-      position: relative;
-      display: inline-block;
       margin: 0;
-      padding-bottom: 5px;
       font-size: $text-xl;
-      font-weight: 650;
+      font-weight: 600;
+      letter-spacing: -0.02em;
       line-height: 1.2;
     }
 
@@ -158,16 +151,16 @@ interface PanelItem {
       align-items: center;
       gap: $space-2;
       margin: 0 $space-5;
-      height: 34px;
-      padding: 0 $space-3;
+      height: 40px;
+      padding: 0 $space-4;
       background: var(--canvas-inset);
       border: 1px solid var(--border-default);
       border-radius: $radius-md;
       color: var(--fg-subtle);
-      transition: border-color $duration-fast $ease-apple;
 
       &:focus-within {
-        border-color: var(--accent-fg);
+        border-color: var(--accent-muted);
+        box-shadow: 0 0 0 4px var(--accent-subtle);
       }
 
       input {
@@ -197,37 +190,32 @@ interface PanelItem {
 
     .chips {
       display: flex;
-      gap: 2px;
-      padding: $space-3 $space-4 $space-2;
+      gap: 6px;
+      padding: $space-3 $space-5 $space-3;
       overflow-x: auto;
       scrollbar-width: none;
     }
 
     .chip {
-      --sketch-stroke: var(--accent-fg);
-      position: relative;
       appearance: none;
       background: none;
-      border: none;
-      border-radius: $radius-md;
-      padding: 5px $space-2 7px;
+      border: 1px solid var(--border-default);
+      border-radius: $radius-sm;
+      height: 30px;
+      padding: 0 12px;
       font-size: $text-sm;
       font-weight: 500;
       color: var(--fg-muted);
       cursor: pointer;
       white-space: nowrap;
-      transition: color $duration-fast $ease-apple, background $duration-fast $ease-apple;
 
       &:hover { color: var(--fg-default); background: var(--canvas-overlay); }
-      &.active { color: var(--fg-default); }
-    }
-
-    .chip-ink {
-      position: absolute;
-      left: $space-2;
-      right: $space-2;
-      bottom: 1px;
-      height: 5px;
+      &.active {
+        color: var(--primary-fg);
+        background: var(--primary-bg);
+        border-color: transparent;
+      }
+      @include focus-ring;
     }
 
     .list {
@@ -260,14 +248,22 @@ interface PanelItem {
       &:hover {
         background: var(--canvas-overlay);
 
-        .preview { color: var(--fg-default); }
+        .preview { color: var(--fg-muted); }
         .plus { opacity: 1; transform: none; }
       }
 
       &:active { background: var(--canvas-inset); }
     }
 
+    // Миниатюра — на стеклянной подложке, как превью файла.
     .preview {
+      padding: 6px 7px;
+      width: 72px;
+      height: 54px;
+      box-sizing: border-box;
+      background: var(--canvas-inset);
+      border: 1px solid var(--border-muted);
+      border-radius: $radius-md;
       transition: color $duration-fast $ease-apple;
     }
 
@@ -280,7 +276,7 @@ interface PanelItem {
 
     .name {
       font-size: $text-md;
-      font-weight: 600;
+      font-weight: 500;
       line-height: 1.25;
     }
 
@@ -295,7 +291,7 @@ interface PanelItem {
       gap: $space-2;
       font-size: $text-xs;
       color: var(--fg-subtle);
-      font-family: $font-mono;
+      font-family: $font-num;
     }
 
     .count {
@@ -308,11 +304,11 @@ interface PanelItem {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 26px;
-      height: 26px;
-      border-radius: $radius-full;
-      background: var(--accent-subtle);
-      color: var(--accent-fg);
+      width: 28px;
+      height: 28px;
+      border-radius: $radius-md;
+      background: var(--primary-bg);
+      color: var(--primary-fg);
       opacity: 0;
       transform: translateX(4px);
       transition: opacity $duration-fast $ease-apple, transform $duration-fast $ease-out;

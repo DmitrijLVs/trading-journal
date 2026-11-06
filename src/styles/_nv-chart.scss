@@ -1,13 +1,14 @@
 // chart-engine: графики с `theme: 'css'` берут цвета из --nv-* на своём
-// элементе. Переменные смотрят на токены темы, поэтому «Кармин» ↔ «Бумага»
-// перекрашивает свечи без пересоздания графика.
+// элементе. Переменные смотрят на токены темы, поэтому смена темы
+// перекрашивает свечи без пересоздания графика. Холст графика непрозрачный —
+// его панель тоже непрозрачная (--surface-solid), чтобы не было шва.
 :root {
-  --nv-background: var(--canvas-subtle);
+  --nv-background: var(--chart-surface);
   --nv-up: var(--success-fg);
   --nv-down: var(--danger-fg);
-  --nv-grid: var(--border-muted);
-  --nv-text: var(--fg-muted);
-  --nv-axis-line: var(--border-default);
+  --nv-grid: var(--chart-grid);
+  --nv-text: var(--fg-subtle);
+  --nv-axis-line: var(--chart-border);
   --nv-crosshair: var(--fg-subtle);
-  --nv-label-background: var(--border-default);
+  --nv-label-background: var(--chart-border);
 }
