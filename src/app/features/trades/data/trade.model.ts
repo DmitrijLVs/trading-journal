@@ -159,8 +159,12 @@ export function isMoneyHidden(): boolean {
   return moneyHidden();
 }
 
-export function formatMoney(value: number, opts: { sign?: boolean } = {}): string {
-  if (moneyHidden()) {
+/**
+ * `mask` — скрыть или показать суммы независимо от режима приложения (снимок
+ * для публикации со своим переключателем «Суммы»); не задан — по режиму.
+ */
+export function formatMoney(value: number, opts: { sign?: boolean; mask?: boolean } = {}): string {
+  if (opts.mask ?? moneyHidden()) {
     const masked = value < 0 ? '−' : opts.sign && value > 0 ? '+' : '';
     return `${masked}$${MONEY_MASK}`;
   }
@@ -185,8 +189,8 @@ export function decimal(value: number, digits: number): string {
 }
 
 /** Объём в монетах: разряды пробелом, дробная часть через запятую. Выдаёт размер — прячется вместе с деньгами. */
-export function formatQuantity(value: number): string {
-  if (moneyHidden()) return MONEY_MASK;
+export function formatQuantity(value: number, opts: { mask?: boolean } = {}): string {
+  if (opts.mask ?? moneyHidden()) return MONEY_MASK;
   return value.toLocaleString('ru-RU', { maximumFractionDigits: 8 });
 }
 
@@ -237,6 +241,15 @@ export function formatSpan(ms: number): string {
 export function formatDuration(openedAt: string, closedAt: string): string {
   if (!closedAt) return '—';
   return formatSpan(new Date(closedAt).getTime() - new Date(openedAt).getTime());
+}
+
+/** «04 ноя 16:00 – 19:00 · 3ч 0м»; дата закрытия — только если день другой. */
+export function tradeTimeRange(t: Trade): string {
+  const open = formatDateTime(t.openedAt);
+  if (t.status === 'open') return `${open} · ${formatSpan(durationMs(t))} в позиции`;
+  const sameDay = localDay(t.openedAt) === localDay(t.closedAt);
+  const close = sameDay ? formatDateTime(t.closedAt).split(' ').pop() : formatDateTime(t.closedAt);
+  return `${open} – ${close} · ${formatDuration(t.openedAt, t.closedAt)}`;
 }
 
 /** Компактно для осей и плиток: «−1,2K», «146K», «38». Меньше 10 — с десятыми. */

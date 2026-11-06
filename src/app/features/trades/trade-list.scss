@@ -49,8 +49,10 @@
 
 .split {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
-  gap: $page-gutter;
+  // Зазор между графиком и списком — колонка границы (app-resize-handle);
+  // список не шире половины, как и при перетаскивании.
+  grid-template-columns: minmax(0, 1fr) $page-gutter min(var(--nav-w), 50%);
+  gap: $page-gutter 0;
   // Шапка 64 + фильтры 38 + два шага сетки.
   height: calc(100vh - 64px - 38px - 2 * #{$page-gutter});
   min-height: 520px;
@@ -58,6 +60,8 @@
   @media (max-width: 1100px) {
     grid-template-columns: 1fr;
     height: auto;
+
+    app-resize-handle { display: none; }
   }
 }
 

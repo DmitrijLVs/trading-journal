@@ -16,8 +16,10 @@
 
 .expand {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
-  gap: $space-5;
+  // Зазор между графиком и фактами — колонка границы (app-resize-handle);
+  // колонка сделки не шире половины, как и при перетаскивании.
+  grid-template-columns: minmax(0, 1fr) $space-5 min(var(--side-w), 50%);
+  gap: $space-5 0;
   padding: $space-4;
   // Непрозрачная панель: свечной график рисует такой же фон (--chart-surface).
   background: var(--surface-solid);
@@ -27,6 +29,8 @@
 
   @media (max-width: 1100px) {
     grid-template-columns: 1fr;
+
+    app-resize-handle { display: none; }
   }
 }
 
@@ -166,6 +170,9 @@ dd {
   width: 100%;
   height: 100%;
   padding: 0;
+  // Ширина разбора меняется вместе со списком сделок справа — полоса фактов
+  // перестраивается по ней, а не по окну.
+  container: trade-strip / inline-size;
 
   .expand {
     grid-template-columns: minmax(0, 1fr);
@@ -229,6 +236,7 @@ dd {
     gap: 2px;
     text-align: left;
     font-size: $text-md;
+    white-space: nowrap;
   }
 
   .note {
@@ -239,6 +247,39 @@ dd {
   .tags {
     grid-area: tags;
     margin-top: $space-3;
+  }
+}
+
+// Узкий разбор (список сделок растянут): имя слева, итог справа, факты —
+// сеткой под ними без разделителей. Числа не рвутся по строкам.
+@container trade-strip (max-width: 820px) {
+  :host(.is-column) {
+    .side {
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas:
+        'head  result'
+        'facts facts'
+        'tags  tags';
+    }
+
+    .result {
+      align-self: center;
+      justify-content: flex-end;
+      margin: 0;
+    }
+
+    .facts {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+      gap: $space-3 $space-5;
+      margin-top: $space-4;
+    }
+
+    .fact,
+    .fact:last-child {
+      padding: 0;
+      border-left: none;
+    }
   }
 }
 

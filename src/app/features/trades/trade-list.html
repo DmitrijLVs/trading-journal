@@ -62,7 +62,7 @@
 
   <!-- ── Режим «График»: разбор слева, навигация по сделкам справа ──── -->
   @if (viewMode() === 'split') {
-    <div class="split">
+    <div class="split" [style.--nav-w]="navWidth() + 'px'">
       <section class="split-main">
         @if (selectedRow(); as row) {
           <app-trade-expand [trade]="row.trade" layout="column" embedded />
@@ -74,6 +74,14 @@
           />
         }
       </section>
+
+      <app-resize-handle
+        [(size)]="navWidth"
+        [min]="navWidthLimits.min"
+        [max]="navWidthLimits.max"
+        [defaultSize]="navWidthLimits.default"
+        label="Ширина списка сделок"
+      />
 
       <app-trade-nav
         [rows]="visibleRows()"

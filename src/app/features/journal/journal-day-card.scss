@@ -1,18 +1,30 @@
 @use 'styles/index' as *;
 
+// День в журнале — та же система, что у карточки недели: цвет только у денег
+// (итог и кривая), разбор ошибок — нейтральной строкой в подписи.
+
 :host {
   display: block;
 }
 
 .head {
-  appearance: none;
   display: flex;
   align-items: center;
-  gap: $space-3;
-  width: 100%;
-  padding: $space-3 $space-4;
+  gap: $space-1;
+  padding-right: $space-3;
+}
+
+.toggle {
+  appearance: none;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: $space-4;
+  padding: $space-3 $space-2 $space-3 $space-4;
   background: none;
   border: none;
+  border-radius: $radius-lg;
   cursor: pointer;
   text-align: left;
   color: var(--fg-default);
@@ -20,68 +32,63 @@
   &:hover .chevron {
     color: var(--fg-default);
   }
+
+  @include focus-ring;
 }
 
 .date {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 3px;
   min-width: 0;
-
-  .title {
-    font-size: $text-lg;
-    font-weight: 600;
-    line-height: 1.25;
-  }
-
-  .meta {
-    font-size: $text-xs;
-    color: var(--fg-subtle);
-    display: flex;
-    gap: $space-2;
-  }
 }
 
-.pnl {
+.title {
   font-size: $text-lg;
   font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
 }
 
-.day-tags {
+.meta {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 4px;
-  margin-left: auto;
-  min-width: 0;
+  gap: 2px $space-3;
+  font-size: $text-xs;
+  color: var(--fg-subtle);
 }
 
+.mistakes {
+  color: var(--fg-muted);
+}
 
 .spark {
   flex: none;
   width: 120px;
-  height: 30px;
+  height: 28px;
 }
 
 .pnl {
   min-width: 96px;
   text-align: right;
+  @include figure(18px);
+}
+
+.chevron {
+  flex: none;
+  color: var(--fg-subtle);
+  transition: color $duration-fast $ease-apple;
 }
 
 @media (max-width: 760px) {
-  .day-tags,
   .spark {
     display: none;
   }
 
-  .pnl {
-    margin-left: auto;
+  .toggle {
+    gap: $space-3;
   }
-}
-
-.chevron {
-  color: var(--fg-subtle);
-  transition: color $duration-fast $ease-apple;
 }
 
 // ── Сделки ─────────────────────────────────────────────────────────────────

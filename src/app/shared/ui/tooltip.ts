@@ -71,6 +71,9 @@ export class Tooltip {
 
   protected schedule(): void {
     if (!this.appTooltip()) return;
+    // Наведение и фокус при нажатии приходят подряд: без сброса первый таймер
+    // терялся, клик гасил только второй — и подсказка всплывала поверх окна.
+    if (this.timer) clearTimeout(this.timer);
     this.timer = setTimeout(() => this.show(), 350);
   }
 

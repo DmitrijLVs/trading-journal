@@ -205,6 +205,19 @@ export function currentPeriodNet(trades: readonly Trade[], span: PeriodSpan, tod
     .reduce((s, t) => s + calculatePnl(t), 0);
 }
 
+const WEEKDAYS_LONG = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
+const MONTHS_FULL_GEN = [
+  'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+  'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
+];
+
+/** «Четверг, 6 ноября»; год — только если он не текущий. */
+export function longDay(day: string): string {
+  const d = noon(day);
+  const year = d.getFullYear() === new Date().getFullYear() ? '' : ` ${d.getFullYear()}`;
+  return `${WEEKDAYS_LONG[d.getDay()]}, ${d.getDate()} ${MONTHS_FULL_GEN[d.getMonth()]}${year}`;
+}
+
 /** «пт, 23 окт» — короткая подпись дня для лучшего/худшего. */
 export function shortDay(day: string): string {
   const d = noon(day);

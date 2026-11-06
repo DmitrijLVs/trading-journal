@@ -1,43 +1,45 @@
-import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { JournalDay } from './journal-store';
 import { calculatePnl, calculatePnlPercent, formatDuration, formatMoney } from '../trades/data/trade.model';
 import { AUTO_TAG_SHORT } from '../analytics/data/behavior';
+import { longDay } from '../analytics/data/periods';
+import { dayShareCard } from './data/journal-share';
+import { ShareService } from '../../shared/share/share-dialog';
+import { Button } from '../../shared/ui/button';
 import { Icon } from '../../shared/ui/icon';
 import { PnlValue } from '../../shared/ui/pnl-value';
 import { SparkLine } from '../../shared/ui/spark-line';
+import { Tooltip } from '../../shared/ui/tooltip';
 
-const WEEKDAYS = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота'];
-const MONTHS_GEN = [
-  'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-  'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
-];
-
-/** Карточка торгового дня: результат и сделки дня. */
+/** Карточка торгового дня: итог, разбор ошибок строкой, сделки дня по раскрытию и снимок. */
 @Component({
   selector: 'app-journal-day-card',
-  imports: [RouterLink, Icon, PnlValue, SparkLine],
+  imports: [RouterLink, Button, Icon, PnlValue, SparkLine, Tooltip],
   templateUrl: './journal-day-card.html',
   styleUrl: './journal-day-card.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class JournalDayCard {
+  private readonly share = inject(ShareService);
+
   readonly day = input.required<JournalDay>();
 
   protected readonly expanded = signal(false);
 
-  protected readonly title = computed(() => {
-    const d = new Date(`${this.day().date}T12:00:00`);
-    const year = d.getFullYear() === new Date().getFullYear() ? '' : ` ${d.getFullYear()}`;
-    return `${WEEKDAYS[d.getDay()]}, ${d.getDate()} ${MONTHS_GEN[d.getMonth()]}${year}`;
-  });
+  protected readonly title = computed(() => longDay(this.day().date));
 
   protected readonly winRate = computed(() => {
     const day = this.day();
     return day.trades.length === 0 ? 0 : (day.wins / day.trades.length) * 100;
   });
 
-  protected readonly tagLabels = AUTO_TAG_SHORT;
+  /** «реванш ×2 · тильт ×1» — пометки тренера за день, без цвета. */
+  protected readonly mistakes = computed(() =>
+    this.day()
+      .tags.map((item) => `${AUTO_TAG_SHORT[item.tag]} ×${item.count}`)
+      .join(' · '),
+  );
 
   protected readonly fees = computed(() => formatMoney(this.day().fees));
 
@@ -50,6 +52,15 @@ export class JournalDayCard {
       time: formatTime(trade.closedAt),
     })),
   );
+
+  protected shareSnapshot(): void {
+    const day = this.day();
+    this.share.open({
+      title: 'Снимок дня',
+      fileName: `day-${day.date}`,
+      build: ({ mask }) => dayShareCard(day, mask),
+    });
+  }
 }
 
 function formatTime(iso: string): string {

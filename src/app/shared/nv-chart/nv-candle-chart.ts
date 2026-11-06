@@ -46,6 +46,11 @@ export class NvCandleChart implements CandleSink {
     return this.context?.tools ?? null;
   }
 
+  /** Свечи графика (общий набор движка): снимок показывает их на своём графике. */
+  get candles(): CandleDataset | null {
+    return this.dataset;
+  }
+
   async mount(host: HTMLElement, options: ChartOptions, handlers: CandleChartHandlers): Promise<boolean> {
     const generation = ++this.generation;
     const context = await this.runtime.load().catch(() => null);

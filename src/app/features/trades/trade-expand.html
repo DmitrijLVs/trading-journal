@@ -1,5 +1,5 @@
 @let t = trade();
-<div class="expand">
+<div class="expand" [style.--side-w]="sideWidth() + 'px'">
   <div class="chart">
     @if (chartData(); as data) {
       @if (data.candles.length > 0) {
@@ -27,6 +27,16 @@
       <app-skeleton height="100%" />
     }
   </div>
+
+  @if (layout() === 'row') {
+    <app-resize-handle
+      [(size)]="sideWidth"
+      [min]="sideWidthLimits.min"
+      [max]="sideWidthLimits.max"
+      [defaultSize]="sideWidthLimits.default"
+      label="Ширина колонки сделки"
+    />
+  }
 
   <div class="side">
     <header class="head">

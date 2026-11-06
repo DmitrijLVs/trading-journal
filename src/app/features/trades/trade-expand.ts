@@ -15,17 +15,13 @@ import {
   Trade,
   calculatePnl,
   calculatePnlPercent,
-  durationMs,
-  formatDateTime,
-  formatDuration,
   formatFeesOther,
   formatMoney,
   formatPercent,
   formatPrice,
   formatQuantity,
-  formatSpan,
-  localDay,
   notional,
+  tradeTimeRange,
 } from './data/trade.model';
 import { AccountsStore } from '../accounts/accounts-store';
 import { exchangeMeta } from '../accounts/data/account.model';
@@ -42,6 +38,8 @@ import { TradeTags } from './trade-tags';
 import { TradeTagEditor } from './trade-tag-editor';
 import { TradesStore } from './trades-store';
 import { PortfolioStore } from '../analytics/portfolio-store';
+import { ResizeHandle } from '../../shared/ui/resize-handle';
+import { storedNumber } from '../../core/state/stored-signal';
 
 /** Строка фактов: подпись, значение, приглушённое уточнение перед ним и цвет. */
 interface Fact {
@@ -53,17 +51,11 @@ interface Fact {
 
 const ORDER_LABEL = { market: 'маркет', limit: 'лимит' } as const;
 
+/** Ширина колонки сделки рядом с графиком (раскрытая строка), px. */
+const SIDE_WIDTH = { default: 340, min: 280, max: 720 } as const;
+
 function orderLabel(type: Trade['openOrderType']): string | undefined {
   return type ? ORDER_LABEL[type] : undefined;
-}
-
-/** «04 ноя 16:00 – 19:00 · 3ч 0м»; дата закрытия — только если день другой. */
-function timeRange(t: Trade): string {
-  const open = formatDateTime(t.openedAt);
-  if (t.status === 'open') return `${open} · ${formatSpan(durationMs(t))} в позиции`;
-  const sameDay = localDay(t.openedAt) === localDay(t.closedAt);
-  const close = sameDay ? formatDateTime(t.closedAt).split(' ').pop() : formatDateTime(t.closedAt);
-  return `${open} – ${close} · ${formatDuration(t.openedAt, t.closedAt)}`;
 }
 
 /**
@@ -76,7 +68,17 @@ function timeRange(t: Trade): string {
  */
 @Component({
   selector: 'app-trade-expand',
-  imports: [TradeChart, Icon, Button, Badge, Skeleton, EmptyState, TradeTags, TradeTagEditor],
+  imports: [
+    TradeChart,
+    Icon,
+    Button,
+    Badge,
+    Skeleton,
+    EmptyState,
+    TradeTags,
+    TradeTagEditor,
+    ResizeHandle,
+  ],
   templateUrl: './trade-expand.html',
   styleUrl: './trade-expand.scss',
   host: { '[class]': "'is-' + layout()", '[class.is-embedded]': 'embedded()' },
@@ -105,8 +107,12 @@ export class TradeExpand {
     return `${meta.label} ${meta.market}`;
   });
 
+  /** Ширина колонки сделки в раскладке 'row' — настройка устройства. */
+  protected readonly sideWidth = storedNumber('tj.trades.sideWidth', SIDE_WIDTH.default);
+  protected readonly sideWidthLimits = SIDE_WIDTH;
+
   protected readonly marks = computed(() => this.tradesStore.tags().get(this.trade().id) ?? []);
-  protected readonly when = computed(() => timeRange(this.trade()));
+  protected readonly when = computed(() => tradeTimeRange(this.trade()));
 
   /** Нереализованный P&L открытой сделки по позиции биржи; null — неизвестен. */
   private readonly unrealized = computed(() => {

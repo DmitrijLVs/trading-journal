@@ -37,6 +37,10 @@ import { NvRuntime } from '../../shared/nv-chart/nv-runtime';
 import { NvSelectionBar } from '../../shared/nv-chart/nv-selection-bar';
 import { Icon } from '../../shared/ui/icon';
 import { Tooltip } from '../../shared/ui/tooltip';
+import { ShareService } from '../../shared/share/share-dialog';
+import { ShareLayout, shareChartSize } from '../../shared/share/share-card';
+import { chartSnapshot } from '../../shared/nv-chart/nv-snapshot';
+import { tradeShareCard, tradeShareFileName } from './data/trade-share';
 
 /** Сколько свечей воздуха справа от последней у открытой сделки. */
 const RIGHT_PAD_CANDLES = 8;
@@ -96,6 +100,16 @@ const RIGHT_PAD_CANDLES = 8;
           <span class="pnl" [class.pos]="isProfit()" [class.neg]="!isProfit()">{{ label }}</span>
         }
       </span>
+      <button
+        type="button"
+        class="snap"
+        appTooltip="Снимок сделки"
+        aria-label="Снимок сделки"
+        [disabled]="!chart()"
+        (click)="shareTrade()"
+      >
+        <app-icon name="camera" style="--icon-size: 15px" />
+      </button>
     </div>
     <div class="body">
       <app-nv-drawbar [chart]="chart()" />
@@ -200,6 +214,31 @@ const RIGHT_PAD_CANDLES = 8;
       b { font-weight: inherit; }
     }
 
+    .snap {
+      appearance: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      margin-left: -4px;
+      padding: 0;
+      background: none;
+      border: none;
+      border-radius: $radius-md;
+      color: var(--fg-muted);
+      cursor: pointer;
+      transition: background $duration-fast $ease-apple, color $duration-fast $ease-apple;
+
+      &:hover:not(:disabled) {
+        background: var(--canvas-overlay);
+        color: var(--fg-default);
+      }
+
+      &:disabled { opacity: 0.4; cursor: default; }
+      @include focus-ring;
+    }
+
     .dot { color: var(--fg-subtle); }
     .pnl.pos { color: var(--success-fg); }
     .pnl.neg { color: var(--danger-fg); }
@@ -227,6 +266,7 @@ export class TradeChart {
   private readonly destroyRef = inject(DestroyRef);
   private readonly runtime = inject(NvRuntime);
   private readonly drawingsStore = inject(ChartDrawingsStore);
+  private readonly share = inject(ShareService);
   private readonly host = viewChild.required<ElementRef<HTMLElement>>('host');
   private readonly view = new NvCandleChart(this.runtime);
   protected readonly feed = inject(TradeChartFeed);
@@ -329,6 +369,41 @@ export class TradeChart {
       this.symbol = trade.symbol;
       this.restoreDrawings();
     }
+  }
+
+  /**
+   * Снимок: отдельный график ровно под картинку — тот же отрезок времени,
+   * разметка и рисунки, что на экране, но без растяжения. Кадр под каждый
+   * вид рисуется один раз и переживает переключение «Показывать суммы».
+   */
+  protected shareTrade(): void {
+    const trade = this.trade();
+    const source = this.view.chart;
+    const candles = this.view.candles;
+    const data = this.shown;
+    const markup = tradeMarkup(trade, data ? tradeFills(trade, data) : [], this.pnlLabel());
+    const palette = this.palette();
+    const frames = new Map<ShareLayout, Promise<HTMLCanvasElement | null>>();
+    const frame = (layout: ShareLayout): Promise<HTMLCanvasElement | null> => {
+      let image = frames.get(layout);
+      if (!image) {
+        const layer = new TradeLayer();
+        layer.set(markup, palette);
+        image =
+          source && candles
+            ? chartSnapshot(this.runtime, { source, candles, layers: [layer], ...shareChartSize(layout) })
+            : Promise.resolve(null);
+        frames.set(layout, image);
+      }
+      return image;
+    };
+    const context = { timeframe: this.timeframe(), exchange: this.exchange() };
+    this.share.open({
+      title: 'Снимок сделки',
+      fileName: tradeShareFileName(trade),
+      layouts: true,
+      build: async ({ mask, layout }) => tradeShareCard(trade, { ...context, mask, layout, chart: await frame(layout) }),
+    });
   }
 
   private paintTrade(trade: Trade, data: TradeChartData, palette: TradePalette): void {

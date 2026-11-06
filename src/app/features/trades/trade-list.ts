@@ -45,6 +45,8 @@ import { Segmented, SegmentOption } from '../../shared/ui/segmented';
 import { PnlValue } from '../../shared/ui/pnl-value';
 import { EmptyState } from '../../shared/ui/empty-state';
 import { Skeleton } from '../../shared/ui/skeleton';
+import { ResizeHandle } from '../../shared/ui/resize-handle';
+import { storedNumber } from '../../core/state/stored-signal';
 
 type SortKey = 'openedAt' | 'symbol' | 'notional' | 'pnl' | 'pnlPct' | 'duration';
 
@@ -52,6 +54,9 @@ const PAGE_SIZES = [25, 50, 100] as const;
 
 /** 'table' — таблица с раскрытием строки, 'split' — график слева, список справа. */
 type ViewMode = 'table' | 'split';
+
+/** Ширина списка сделок в режиме «График», px: тянется границей у графика. */
+const NAV_WIDTH = { default: 320, min: 240, max: 720 } as const;
 
 /** Список сделок с фильтрами, пагинацией и разбором, раскрывающимся под строкой. */
 @Component({
@@ -69,6 +74,7 @@ type ViewMode = 'table' | 'split';
     Skeleton,
     TradeTags,
     Tooltip,
+    ResizeHandle,
   ],
   templateUrl: './trade-list.html',
   styleUrl: './trade-list.scss',
@@ -97,6 +103,9 @@ export class TradeList {
   protected readonly expandedId = signal<string | null>(null);
   /** Страница всегда открывается таблицей; «График» — только на текущий визит. */
   protected readonly viewMode = signal<ViewMode>('table');
+  /** Ширина списка в режиме «График» — настройка устройства. */
+  protected readonly navWidth = storedNumber('tj.trades.navWidth', NAV_WIDTH.default);
+  protected readonly navWidthLimits = NAV_WIDTH;
 
   protected readonly viewOptions: SegmentOption[] = [
     { value: 'table', label: 'Таблица' },
